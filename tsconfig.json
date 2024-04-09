@@ -11,6 +11,7 @@
         "diagnostics": true,
         "extendedDiagnostics": true,
         "pretty": true,
+        "moduleResolution":"Classic",
         "module": "ES2020",
         "outDir": "build/",
         "target" : "es2020",

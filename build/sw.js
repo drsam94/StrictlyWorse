@@ -1,12 +1,37 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import * as rawData from '../res/data.js';
+import * as oracleData from '../res/filtered-oracle.js';
+var Direction;
+(function (Direction) {
+    Direction[Direction["Worse"] = 0] = "Worse";
+    Direction[Direction["Better"] = 1] = "Better";
+})(Direction || (Direction = {}));
+;
+class DirStats {
+    constructor() {
+        this.cards = [];
+        this.degree = 0;
+        this.total = 0;
+    }
+}
+;
+class Card {
+    constructor(nm) {
+        this.worseStats = new DirStats();
+        this.betterStats = new DirStats();
+        this.name = nm;
+    }
+    isPlaceholder() {
+        return (this.name.indexOf('/') > 0 && this.name.indexOf('//') < 0) || this.name == "MORPH";
+    }
+    stats(dir) {
+        return dir == Direction.Worse ? this.worseStats : this.betterStats;
+    }
+}
+;
 function initNode(dag, key) {
     if (!(key in dag)) {
-        dag[key] = {
-            name: key,
-            better: [],
-            worse: []
-        };
+        dag[key] = new Card(key);
     }
     return dag[key];
 }
@@ -32,7 +57,6 @@ function deep_equal(arr1, arr2) {
 function processData(dag, inData) {
     const top_level = [];
     for (const elem of inData) {
-        console.log(elem);
         if (elem.length != 2) {
             continue;
         }
@@ -40,22 +64,23 @@ function processData(dag, inData) {
         const better = elem[1];
         const worseNode = initNode(dag, worse);
         const betterNode = initNode(dag, better);
-        worseNode.better.push(betterNode);
-        betterNode.worse.push(worseNode);
-        if (betterNode.better.length == 0) {
+        worseNode.stats(Direction.Better).cards.push(betterNode);
+        const betterCards = betterNode.stats(Direction.Worse).cards;
+        betterCards.push(worseNode);
+        if (betterCards.length == 0) {
             top_level.push(betterNode);
         }
     }
     for (let i = top_level.length - 1; i >= 0; --i) {
-        if (top_level[i].better.length > 0) {
+        if (top_level[i].stats(Direction.Better).cards.length > 0) {
             top_level.splice(i, 1);
         }
     }
     const to_remove = [];
     for (let i = 0; i < top_level.length; ++i) {
         for (let j = i + 1; j < top_level.length; ++j) {
-            if ((deep_equal(top_level[i].worse, top_level[j].worse) &&
-                deep_equal(top_level[i].better, top_level[j].better))) {
+            if ((deep_equal(top_level[i].stats(Direction.Worse).cards, top_level[j].stats(Direction.Worse).cards) &&
+                deep_equal(top_level[i].stats(Direction.Better).cards, top_level[j].stats(Direction.Better).cards))) {
                 to_remove.push(j);
             }
         }
@@ -69,38 +94,60 @@ function processData(dag, inData) {
         }
     }
     for (let i = top_level.length - 1; i >= 0; --i) {
-        if (top_level[i].worse.length == 1 && top_level[i].worse[0].worse.length == 0) {
+        const worse = top_level[i].stats(Direction.Worse).cards;
+        if (worse.length == 1 && worse[0].stats(Direction.Worse).cards.length == 0) {
             top_level.splice(i, 1);
         }
     }
     const data = { "name": "root", "children": [], value: 1, depth: 1 };
-    recurAddChildren(data, top_level, "worse");
+    recurAddChildren(data, top_level, Direction.Worse);
     return data;
 }
-function isPlaceholder(childName) {
-    if ((childName[0] < '0' || childName[0] > '9') && childName != "MORPH") {
-        return false;
+function computeStats(dag) {
+    const worseSet = {};
+    const betterSet = {};
+    const getSet = (dir) => dir == Direction.Worse ? worseSet : betterSet;
+    function computeStatsRecursive(card, dir) {
+        const set = getSet(dir);
+        if (set[card.name] === undefined) {
+            set[card.name] = new Set();
+            const ws = set[card.name];
+            let maxDegree = 0;
+            for (const worse of card.stats(dir).cards) {
+                computeStatsRecursive(worse, dir);
+                ws.add(worse.name);
+                for (const x of set[worse.name]) {
+                    ws.add(x);
+                }
+                let childDegree = worse.stats(dir).degree + (worse.isPlaceholder() ? 0 : 1);
+                maxDegree = Math.max(maxDegree, childDegree);
+            }
+            const stats = card.stats(dir);
+            stats.degree = maxDegree;
+            for (const c of ws) {
+                stats.total += dag[c].isPlaceholder() ? 0 : 1;
+            }
+        }
     }
-    return true;
+    for (const card of Object.values(dag)) {
+        computeStatsRecursive(card, Direction.Worse);
+        computeStatsRecursive(card, Direction.Better);
+    }
 }
 function recurAddChildren(rootNode, childList, dir) {
-    let depthIncrease = 0;
     for (const child of childList) {
-        const obj = { name: child.name, children: [], value: 1, depth: 1 };
+        const obj = { name: child.name,
+            children: [],
+            value: child.stats(dir).total,
+            depth: child.stats(dir).degree
+        };
         rootNode.children.push(obj);
-        let depthSubtree = recurAddChildren(obj, child[dir], dir);
-        if (isPlaceholder(child.name)) {
-            --depthSubtree;
-        }
-        depthIncrease = Math.max(depthIncrease, depthSubtree);
-        rootNode.value += obj.value;
+        recurAddChildren(obj, child.stats(dir).cards, dir);
     }
-    rootNode.depth += depthIncrease;
-    return rootNode.depth;
 }
 function makeTree(rootNode, dir) {
-    const data = { name: rootNode.name, "children": [], value: 1, depth: 1 };
-    recurAddChildren(data, rootNode[dir], dir);
+    const data = { name: rootNode.name, "children": [], value: rootNode.stats(dir).total, depth: rootNode.stats(dir).degree };
+    recurAddChildren(data, rootNode.stats(dir).cards, dir);
     return data;
 }
 function makeChart(data, rootName, startExpanded) {
@@ -115,7 +162,7 @@ function makeChart(data, rootName, startExpanded) {
     const dx = 12;
     const dy = (width - marginRight - marginLeft) / (1 + root.height);
     const tree = d3.tree().nodeSize([dx, dy]);
-    const diagonal = d3.linkHorizontal().x(d => d.y).y(d => d.x);
+    const diagonal = d3.linkHorizontal().x((d) => d.y).y((d) => d.x);
     const svg = d3.create("svg")
         .attr("width", width)
         .attr("height", dx)
@@ -136,7 +183,7 @@ function makeChart(data, rootName, startExpanded) {
         tree(root);
         let left = root;
         let right = root;
-        root.eachBefore(node => {
+        root.eachBefore((node) => {
             if (node.x < left.x)
                 left = node;
             if (node.x > right.x)
@@ -149,9 +196,9 @@ function makeChart(data, rootName, startExpanded) {
             .attr("viewBox", [-marginLeft, left.x - marginTop, width, height])
             .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
         const node = gNode.selectAll("g")
-            .data(nodes, d => d.id);
+            .data(nodes, (d) => d.id);
         const nodeEnter = node.enter().append("g")
-            .attr("transform", d => `translate(${source.y0},${source.x0})`)
+            .attr("transform", (d) => `translate(${source.y0},${source.x0})`)
             .attr("fill-opacity", 0)
             .attr("stroke-opacity", 0)
             .on("click", (event, d) => {
@@ -160,7 +207,7 @@ function makeChart(data, rootName, startExpanded) {
         });
         nodeEnter.append("circle")
             .attr("r", 2.5)
-            .attr("fill", d => d.data.value > 5 ? "#900" : d._children ? "#555" : "#999")
+            .attr("fill", (d) => d.data.value > 5 ? "#900" : d._children ? "#555" : "#999")
             .attr("stroke-width", 10);
         const getLabel = (data) => {
             if (data.value <= 1) {
@@ -172,37 +219,37 @@ function makeChart(data, rootName, startExpanded) {
         };
         nodeEnter.append("text")
             .attr("dy", "0.31em")
-            .attr("x", d => d._children ? -6 : 6)
-            .attr("text-anchor", d => d._children ? "end" : "start")
-            .text(d => getLabel(d.data))
+            .attr("x", (d) => d._children ? -6 : 6)
+            .attr("text-anchor", (d) => d._children ? "end" : "start")
+            .text((d) => getLabel(d.data))
             .attr("stroke-linejoin", "round")
             .attr("stroke-width", 3)
             .attr("stroke", "white")
-            .attr("fill", d => d.data.value > 5 ? "#900" : "#555")
+            .attr("fill", (d) => d.data.value > 5 ? "#900" : "#555")
             .attr("paint-order", "stroke");
         const nodeUpdate = node.merge(nodeEnter).transition(transition)
-            .attr("transform", d => `translate(${d.y},${d.x})`)
+            .attr("transform", (d) => `translate(${d.y},${d.x})`)
             .attr("fill-opacity", 1)
             .attr("stroke-opacity", 1);
         const nodeExit = node.exit().transition(transition).remove()
-            .attr("transform", d => `translate(${source.y},${source.x})`)
+            .attr("transform", (d) => `translate(${source.y},${source.x})`)
             .attr("fill-opacity", 0)
             .attr("stroke-opacity", 0);
         const link = gLink.selectAll("path")
-            .data(links, d => d.target.id);
+            .data(links, (d) => d.target.id);
         const linkEnter = link.enter().append("path")
-            .attr("d", d => {
+            .attr("d", (d) => {
             const o = { x: source.x0, y: source.y0 };
             return diagonal({ source: o, target: o });
         });
         link.merge(linkEnter).transition(transition)
             .attr("d", diagonal);
         link.exit().transition(transition).remove()
-            .attr("d", d => {
+            .attr("d", (d) => {
             const o = { x: source.x, y: source.y };
             return diagonal({ source: o, target: o });
         });
-        root.eachBefore(d => {
+        root.eachBefore((d) => {
             d.x0 = d.x;
             d.y0 = d.y;
         });
@@ -230,53 +277,152 @@ function addCheckBox(base, label) {
     base.appendChild(boxElem);
     return () => checkbox.checked ? label : "";
 }
-const dag = {};
-const chart1 = makeChart(processData(dag, rawData.black), "black");
-const chart2 = makeChart(processData(dag, rawData.red), "red");
-const chart3 = makeChart(processData(dag, rawData.white), "white");
-const chart4 = makeChart(processData(dag, rawData.artifact), "artifact");
-const chart5 = makeChart(processData(dag, rawData.blue), "blue");
-const chart6 = makeChart(processData(dag, rawData.green), "green");
-const chart7 = makeChart(processData(dag, rawData.multi), "multi");
-const inputElem = document.createElement("input");
-inputElem.type = "text";
-inputElem.style.border = "1px solid transparent";
-inputElem.style.backgroundColor = "#f1f1f1";
-inputElem.style.padding = "10px";
-inputElem.style.fontSize = "16px";
-inputElem.style.width = "100%";
-const div = document.createElement("div");
-div.appendChild(inputElem);
-const outdiv = document.createElement("div");
-div.appendChild(outdiv);
-div.appendChild(chart1.node());
-div.appendChild(chart2.node());
-div.appendChild(chart3.node());
-div.appendChild(chart4.node());
-div.appendChild(chart5.node());
-div.appendChild(chart6.node());
-div.appendChild(chart7.node());
-document.body.appendChild(div);
-inputElem.onkeydown = (event) => {
-    if (event.key != "Enter") {
-        return;
-    }
-    outdiv.replaceChildren("");
-    const card = dag[inputElem.value];
-    if (!card) {
-        const text = document.createElement("p");
-        text.textContent = inputElem.value + " Not Found";
-        outdiv.appendChild(text);
-        return;
-    }
-    if (card.better.length > 0) {
-        const tree = makeTree(card, "better");
-        const chart = makeChart(tree, card.name, true);
-        outdiv.appendChild(chart.node());
-    }
-    if (card.worse.length > 0) {
-        const tree = makeTree(card, "worse");
-        const chart = makeChart(tree, card.name, true);
-        outdiv.appendChild(chart.node());
-    }
-};
+function cardSort(cards) {
+    const compare = (a, b) => {
+        const colorCountDiff = a.colors.length - b.colors.length;
+        if (colorCountDiff != 0) {
+            return colorCountDiff;
+        }
+        const colorToNum = (color) => { return "WUBRG".indexOf(color); };
+        if (a.colors.length == 1) {
+            const colorDiff = colorToNum(a.colors[0]) - colorToNum(b.colors[0]);
+            if (colorDiff != 0) {
+                return colorDiff;
+            }
+        }
+        return a.cmc - b.cmc;
+    };
+    cards.sort(compare);
+}
+function main() {
+    const style = document.createElement("style");
+    let cssText = ".mytable { border: 1px solid black; }";
+    const cssStyleNode = document.createTextNode(cssText);
+    style.appendChild(cssStyleNode);
+    document.head.appendChild(style);
+    const dag = {};
+    const chart1 = makeChart(processData(dag, rawData.black), "black");
+    const chart2 = makeChart(processData(dag, rawData.red), "red");
+    const chart3 = makeChart(processData(dag, rawData.white), "white");
+    const chart4 = makeChart(processData(dag, rawData.artifact), "artifact");
+    const chart5 = makeChart(processData(dag, rawData.blue), "blue");
+    const chart6 = makeChart(processData(dag, rawData.green), "green");
+    const chart7 = makeChart(processData(dag, rawData.multi), "multi");
+    const inputElem = document.createElement("input");
+    computeStats(dag);
+    inputElem.type = "text";
+    inputElem.style.border = "1px solid transparent";
+    inputElem.style.backgroundColor = "#f1f1f1";
+    inputElem.style.padding = "10px";
+    inputElem.style.fontSize = "16px";
+    inputElem.style.width = "100%";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.style.display = "block";
+    button.style.border = "none";
+    button.style.textAlign = "center";
+    button.style.cursor = "pointer";
+    button.style.backgroundColor = "#4CAF50";
+    button.innerText = "Generate";
+    const div = document.createElement("div");
+    div.appendChild(inputElem);
+    div.appendChild(button);
+    const outdiv = document.createElement("div");
+    div.appendChild(outdiv);
+    div.appendChild(chart1.node());
+    div.appendChild(chart2.node());
+    div.appendChild(chart3.node());
+    div.appendChild(chart4.node());
+    div.appendChild(chart5.node());
+    div.appendChild(chart6.node());
+    div.appendChild(chart7.node());
+    document.body.appendChild(div);
+    inputElem.onkeydown = (event) => {
+        if (event.key != "Enter") {
+            return;
+        }
+        outdiv.replaceChildren("");
+        const card = dag[inputElem.value];
+        if (!card) {
+            const text = document.createElement("p");
+            text.textContent = inputElem.value + " Not Found";
+            outdiv.appendChild(text);
+            return;
+        }
+        if (card.stats(Direction.Better).cards.length > 0) {
+            const tree = makeTree(card, Direction.Better);
+            const chart = makeChart(tree, card.name, true);
+            outdiv.appendChild(chart.node());
+        }
+        if (card.stats(Direction.Worse).cards.length > 0) {
+            const tree = makeTree(card, Direction.Worse);
+            const chart = makeChart(tree, card.name, true);
+            outdiv.appendChild(chart.node());
+        }
+    };
+    const swCards = [];
+    button.onclick = () => {
+        outdiv.replaceChildren("");
+        if (swCards.length == 0) {
+            for (const cardName in dag) {
+                const card = dag[cardName];
+                if (card.stats(Direction.Worse).cards.length == 0 && !card.isPlaceholder()) {
+                    swCards.push(card);
+                }
+            }
+        }
+        function makeElement(type, parent, text) {
+            const elem = document.createElement(type);
+            elem.className = "mytable";
+            if (text) {
+                elem.textContent = text;
+            }
+            parent.appendChild(elem);
+            return elem;
+        }
+        ;
+        const table = makeElement("table", outdiv);
+        const hdrRow = makeElement("tr", table);
+        makeElement("th", hdrRow, "Card");
+        makeElement("th", hdrRow, "Cost");
+        makeElement("th", hdrRow, "Type");
+        makeElement("th", hdrRow, "P / T");
+        makeElement("th", hdrRow, "Degree");
+        makeElement("th", hdrRow, "Total Worse");
+        const swData = [];
+        for (const card of swCards) {
+            const oracle = oracleData.all_cards[card.name];
+            if (!oracle) {
+                continue;
+            }
+            const getPTString = (orcle) => {
+                if (oracle.power === undefined) {
+                    return "";
+                }
+                return oracle.power + " / " + oracle.toughness;
+            };
+            swData.push({
+                name: card.name,
+                colors: oracle.colors,
+                cost: oracle.mana_cost,
+                cmc: oracle.cmc,
+                type: oracle.type_line,
+                pt: getPTString(oracle),
+                degree: card.stats(Direction.Better).degree,
+                totalWorse: card.stats(Direction.Better).total,
+            });
+        }
+        cardSort(swData);
+        for (const card of swData) {
+            const elemRow = makeElement("tr", table);
+            makeElement("td", elemRow, card.name);
+            makeElement("td", elemRow, card.cost);
+            makeElement("td", elemRow, card.type);
+            makeElement("td", elemRow, card.pt);
+            makeElement("td", elemRow, card.degree + "");
+            makeElement("td", elemRow, card.totalWorse + "");
+        }
+        outdiv.appendChild(table);
+    };
+}
+main();
