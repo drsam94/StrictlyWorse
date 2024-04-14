@@ -1,9 +1,35 @@
+// Fuck fuck fuck fuck fuck
+// So apparently these sorts of imports CANNOT be combine with typescript imports
+// e.g /// reference style
+// So options are to put additional code in the same file or write it untyped
+// wtf is this fucking piece of shit system
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import * as rawData from '../res/data.js';
 import * as oracleData from '../res/filtered-oracle.js'
 
+/****    file hover.ts */
 
+function showImage(elem: HTMLElement, imgSrc: string) {
+  const popImage = new Image();
+  popImage.src = imgSrc;
+  popImage.style.position = "absolute";
+  popImage.style.zIndex = "1";
+  popImage.style.width = "342";
+  popImage.style.height = "476";
+  elem.appendChild(popImage);
+}
+function hideImage(elem: HTMLElement) {
+  elem.removeChild(elem.lastChild);
+}
 
+function imbueHoverImage(elem: HTMLElement, imgSrc: string) {
+  elem.onmouseover = () => { showImage(elem, imgSrc); }
+  elem.onmouseout = () => { hideImage(elem); };
+}
+
+/*****   end file */
+
+/*****   file Card.ts */
 enum Direction {
   Worse, // Cards worse than this card, indicating this card is good
   Better, // Cards better than this card, indicating this card is bad
@@ -33,6 +59,9 @@ class Card {
     return dir == Direction.Worse ? this.worseStats : this.betterStats;
   }
 };
+/****** end file */
+
+
 
 function initNode(dag: any, key: string): Card {
   if (!(key in dag)) {
@@ -180,6 +209,12 @@ function makeTree(rootNode: Card, dir: Direction) {
   return data;
 }
 
+function getImageURL(name: string) {
+  console.log(name);
+  console.log(oracleData.all_cards[name])
+  return oracleData.all_cards[name]["image_uris"]["normal"];
+}
+let emptyDiv = null;
 function makeChart(data: any, rootName: string, startExpanded?: boolean) {
   data["name"] = rootName;
   console.log(data);
@@ -264,7 +299,11 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
       if (data.value <= 1) { return data.name; }
       else { return data.name + " " + data.value + "(" + data.depth + ")"; }
     };
-    nodeEnter.append("text")
+    const hoverDiv = d3.select("body").append("div")
+      .attr("class", "hoverImage-chart")
+      .style("opacity", 0);
+
+    const text = nodeEnter.append("text")
       .attr("dy", "0.31em")
       .attr("x", (d: any) => d._children ? -6 : 6)
       .attr("text-anchor", (d: any) => d._children ? "end" : "start")
@@ -273,8 +312,27 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
       .attr("stroke-width", 3)
       .attr("stroke", "white")
       .attr("fill", (d: any) => d.data.value > 5 ? "#900" : "#555")
-      .attr("paint-order", "stroke");
+      .attr("paint-order", "stroke")
+      .on("mouseover", (event: MouseEvent, d: any) => {
+        hoverDiv.transition()
+          .style("opacity", 1)
+          .style("position", "absolute")
+          .style("left", (d3.event.pageX + 10) + "px")
+          .style("top", (d3.event.pageY - 15) + "px");
 
+        hoverDiv.append("img")
+          .attr("src", getImageURL(d.data.name))
+          .style("width", "342")
+          .style("height", "476")
+          .style("position", "absolute")
+          .style("zIndex", "1");
+      })
+      .on("mouseout", (event: MouseEvent) => {
+        hoverDiv.transition()
+          .style("opacity", 0);
+      });
+    
+    
     // Transition nodes to their new position.
     const nodeUpdate = node.merge(nodeEnter).transition(transition)
       .attr("transform", (d: any) => `translate(${d.y},${d.x})`)
@@ -371,13 +429,13 @@ function main(): void {
   document.head.appendChild(style);
 
   const dag: Record<string, Card> = {};
-  const chart1 = makeChart(processData(dag, rawData.black), "black");
-  const chart2 = makeChart(processData(dag, rawData.red), "red");
-  const chart3 = makeChart(processData(dag, rawData.white), "white");
-  const chart4 = makeChart(processData(dag, rawData.artifact), "artifact");
-  const chart5 = makeChart(processData(dag, rawData.blue), "blue");
-  const chart6 = makeChart(processData(dag, rawData.green), "green");
-  const chart7 = makeChart(processData(dag, rawData.multi), "multi");
+  processData(dag, rawData.black);
+  processData(dag, rawData.red);
+  processData(dag, rawData.white);
+  processData(dag, rawData.artifact);
+  processData(dag, rawData.blue);
+  processData(dag, rawData.green);
+  processData(dag, rawData.multi);
   const inputElem = document.createElement("input");
 
   computeStats(dag);
@@ -398,18 +456,13 @@ function main(): void {
   button.style.backgroundColor = "#4CAF50";
   button.innerText = "Generate";
   const div = document.createElement("div");
+  emptyDiv = document.createElement("div");
   div.appendChild(inputElem);
   div.appendChild(button);
+  div.appendChild(emptyDiv);
 
   const outdiv = document.createElement("div");
   div.appendChild(outdiv);
-  div.appendChild(chart1.node());
-  div.appendChild(chart2.node());
-  div.appendChild(chart3.node());
-  div.appendChild(chart4.node());
-  div.appendChild(chart5.node());
-  div.appendChild(chart6.node());
-  div.appendChild(chart7.node());
   document.body.appendChild(div);
 
   inputElem.onkeydown = (event) => {
@@ -492,7 +545,8 @@ function main(): void {
     cardSort(swData);
     for (const card of swData) {
       const elemRow = makeElement("tr", table);
-      makeElement("td", elemRow, card.name);
+      const nameRow = makeElement("td", elemRow, card.name);
+      imbueHoverImage(nameRow, getImageURL(card.name));
       makeElement("td", elemRow, card.cost);
       makeElement("td", elemRow, card.type);
       makeElement("td", elemRow, card.pt);

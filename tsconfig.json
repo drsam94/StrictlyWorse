@@ -18,6 +18,7 @@
         "types" : []
     },
     "files" : [
+        "src/hover.ts",
         "src/sw.ts",
     ]
 }

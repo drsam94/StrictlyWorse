@@ -1,6 +1,22 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import * as rawData from '../res/data.js';
 import * as oracleData from '../res/filtered-oracle.js';
+function showImage(elem, imgSrc) {
+    const popImage = new Image();
+    popImage.src = imgSrc;
+    popImage.style.position = "absolute";
+    popImage.style.zIndex = "1";
+    popImage.style.width = "342";
+    popImage.style.height = "476";
+    elem.appendChild(popImage);
+}
+function hideImage(elem) {
+    elem.removeChild(elem.lastChild);
+}
+function imbueHoverImage(elem, imgSrc) {
+    elem.onmouseover = () => { showImage(elem, imgSrc); };
+    elem.onmouseout = () => { hideImage(elem); };
+}
 var Direction;
 (function (Direction) {
     Direction[Direction["Worse"] = 0] = "Worse";
@@ -150,6 +166,12 @@ function makeTree(rootNode, dir) {
     recurAddChildren(data, rootNode.stats(dir).cards, dir);
     return data;
 }
+function getImageURL(name) {
+    console.log(name);
+    console.log(oracleData.all_cards[name]);
+    return oracleData.all_cards[name]["image_uris"]["normal"];
+}
+let emptyDiv = null;
 function makeChart(data, rootName, startExpanded) {
     data["name"] = rootName;
     console.log(data);
@@ -217,7 +239,10 @@ function makeChart(data, rootName, startExpanded) {
                 return data.name + " " + data.value + "(" + data.depth + ")";
             }
         };
-        nodeEnter.append("text")
+        const hoverDiv = d3.select("body").append("div")
+            .attr("class", "hoverImage-chart")
+            .style("opacity", 0);
+        const text = nodeEnter.append("text")
             .attr("dy", "0.31em")
             .attr("x", (d) => d._children ? -6 : 6)
             .attr("text-anchor", (d) => d._children ? "end" : "start")
@@ -226,7 +251,22 @@ function makeChart(data, rootName, startExpanded) {
             .attr("stroke-width", 3)
             .attr("stroke", "white")
             .attr("fill", (d) => d.data.value > 5 ? "#900" : "#555")
-            .attr("paint-order", "stroke");
+            .attr("paint-order", "stroke")
+            .on("mouseover", (event, d) => {
+            console.log(hoverDiv);
+            hoverDiv.transition()
+                .style("opacity", 1);
+            hoverDiv.append("img")
+                .attr("src", getImageURL(d.data.name))
+                .style("position", "absolute")
+                .style("zIndex", "1")
+                .style("width", "342")
+                .style("height", "476");
+        })
+            .on("mouseout", (event) => {
+            hoverDiv.transition()
+                .style("opacity", 0);
+        });
         const nodeUpdate = node.merge(nodeEnter).transition(transition)
             .attr("transform", (d) => `translate(${d.y},${d.x})`)
             .attr("fill-opacity", 1)
@@ -301,13 +341,13 @@ function main() {
     style.appendChild(cssStyleNode);
     document.head.appendChild(style);
     const dag = {};
-    const chart1 = makeChart(processData(dag, rawData.black), "black");
-    const chart2 = makeChart(processData(dag, rawData.red), "red");
-    const chart3 = makeChart(processData(dag, rawData.white), "white");
-    const chart4 = makeChart(processData(dag, rawData.artifact), "artifact");
-    const chart5 = makeChart(processData(dag, rawData.blue), "blue");
-    const chart6 = makeChart(processData(dag, rawData.green), "green");
-    const chart7 = makeChart(processData(dag, rawData.multi), "multi");
+    processData(dag, rawData.black);
+    processData(dag, rawData.red);
+    processData(dag, rawData.white);
+    processData(dag, rawData.artifact);
+    processData(dag, rawData.blue);
+    processData(dag, rawData.green);
+    processData(dag, rawData.multi);
     const inputElem = document.createElement("input");
     computeStats(dag);
     inputElem.type = "text";
@@ -325,17 +365,12 @@ function main() {
     button.style.backgroundColor = "#4CAF50";
     button.innerText = "Generate";
     const div = document.createElement("div");
+    emptyDiv = document.createElement("div");
     div.appendChild(inputElem);
     div.appendChild(button);
+    div.appendChild(emptyDiv);
     const outdiv = document.createElement("div");
     div.appendChild(outdiv);
-    div.appendChild(chart1.node());
-    div.appendChild(chart2.node());
-    div.appendChild(chart3.node());
-    div.appendChild(chart4.node());
-    div.appendChild(chart5.node());
-    div.appendChild(chart6.node());
-    div.appendChild(chart7.node());
     document.body.appendChild(div);
     inputElem.onkeydown = (event) => {
         if (event.key != "Enter") {
@@ -415,7 +450,8 @@ function main() {
         cardSort(swData);
         for (const card of swData) {
             const elemRow = makeElement("tr", table);
-            makeElement("td", elemRow, card.name);
+            const nameRow = makeElement("td", elemRow, card.name);
+            imbueHoverImage(nameRow, getImageURL(card.name));
             makeElement("td", elemRow, card.cost);
             makeElement("td", elemRow, card.type);
             makeElement("td", elemRow, card.pt);
