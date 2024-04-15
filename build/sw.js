@@ -429,22 +429,133 @@ function addCheckBox(base, label) {
     base.appendChild(boxElem);
     return () => checkbox.checked ? label : "";
 }
-function cardSort(cards) {
-    const compare = (a, b) => {
-        const colorCountDiff = a.colors.length - b.colors.length;
-        if (colorCountDiff != 0) {
-            return colorCountDiff;
-        }
-        const colorToNum = (color) => { return "WUBRG".indexOf(color); };
-        if (a.colors.length == 1) {
-            const colorDiff = colorToNum(a.colors[0]) - colorToNum(b.colors[0]);
-            if (colorDiff != 0) {
-                return colorDiff;
+const swCards = [];
+function initalizeSwCards(dag) {
+    if (swCards.length == 0) {
+        for (const cardName in dag) {
+            const card = dag[cardName];
+            if (card.stats(Direction.Worse).cards.length == 0 && !card.isPlaceholder()) {
+                swCards.push(card);
             }
         }
-        return a.cmc - b.cmc;
-    };
-    cards.sort(compare);
+    }
+}
+function makeElement(type, parent, text) {
+    const elem = document.createElement(type);
+    elem.className = "mytable";
+    if (text) {
+        elem.textContent = text;
+    }
+    parent.appendChild(elem);
+    return elem;
+}
+;
+var TableColumn;
+(function (TableColumn) {
+    TableColumn[TableColumn["Name"] = 0] = "Name";
+    TableColumn[TableColumn["Cost"] = 1] = "Cost";
+    TableColumn[TableColumn["Degree"] = 2] = "Degree";
+    TableColumn[TableColumn["TotalWorse"] = 3] = "TotalWorse";
+})(TableColumn || (TableColumn = {}));
+const getPTString = (oracle) => {
+    if (oracle.power === undefined) {
+        return "";
+    }
+    return oracle.power + " / " + oracle.toughness;
+};
+class TableElem {
+    constructor(card, oracle) {
+        this.name = card.name;
+        this.colors = oracle.colors;
+        this.cost = oracle.mana_cost;
+        this.cmc = oracle.cmc;
+        this.type = oracle.type_line;
+        this.pt = getPTString(oracle);
+        this.degree = card.stats(Direction.Better).degree;
+        this.totalWorse = card.stats(Direction.Better).total;
+    }
+}
+class TableMaker {
+    constructor(cards, oData) {
+        this.column = TableColumn.Cost;
+        this.increasing = true;
+        this.swData = [];
+        for (const card of cards) {
+            const oracle = oData.all_cards[card.name];
+            if (!oracle) {
+                continue;
+            }
+            this.swData.push(new TableElem(card, oracle));
+        }
+    }
+    makeClickSort(elem, parent, column) {
+        elem.onclick = () => {
+            if (column === this.column) {
+                this.increasing = !this.increasing;
+            }
+            else {
+                this.increasing = true;
+                this.column = column;
+            }
+            this.renderTable(parent);
+        };
+    }
+    renderTable(parent) {
+        this.cardSort();
+        parent.replaceChildren("");
+        const table = makeElement("table", parent);
+        const hdrRow = makeElement("tr", table);
+        this.makeClickSort(makeElement("th", hdrRow, "Card"), parent, TableColumn.Name);
+        this.makeClickSort(makeElement("th", hdrRow, "Cost"), parent, TableColumn.Cost);
+        makeElement("th", hdrRow, "Type");
+        makeElement("th", hdrRow, "P / T");
+        this.makeClickSort(makeElement("th", hdrRow, "Degree"), parent, TableColumn.Degree);
+        this.makeClickSort(makeElement("th", hdrRow, "Total Worse"), parent, TableColumn.TotalWorse);
+        for (const card of this.swData) {
+            const elemRow = makeElement("tr", table);
+            const nameRow = makeElement("td", elemRow, card.name);
+            imbueHoverImage(nameRow, getImageURL(card.name));
+            makeElement("td", elemRow, card.cost);
+            makeElement("td", elemRow, card.type);
+            makeElement("td", elemRow, card.pt);
+            makeElement("td", elemRow, card.degree + "");
+            makeElement("td", elemRow, card.totalWorse + "");
+        }
+        parent.appendChild(table);
+    }
+    cardSort() {
+        const costCompare = (a, b) => {
+            const colorCountDiff = a.colors.length - b.colors.length;
+            if (colorCountDiff != 0) {
+                return colorCountDiff;
+            }
+            const colorToNum = (color) => { return "WUBRG".indexOf(color); };
+            if (a.colors.length == 1) {
+                const colorDiff = colorToNum(a.colors[0]) - colorToNum(b.colors[0]);
+                if (colorDiff != 0) {
+                    return colorDiff;
+                }
+            }
+            return (a.cmc - b.cmc) * (this.increasing ? 1 : -1);
+        };
+        const compare = ((column) => {
+            switch (column) {
+                case TableColumn.Cost:
+                    return costCompare;
+                case TableColumn.Degree:
+                    return (a, b) => {
+                        return (a.degree - b.degree) * (this.increasing ? 1 : -1);
+                    };
+                case TableColumn.TotalWorse:
+                    return (a, b) => {
+                        return (a.totalWorse - b.totalWorse) * (this.increasing ? 1 : -1);
+                    };
+                default:
+                    return costCompare;
+            }
+        })(this.column);
+        this.swData.sort(compare);
+    }
 }
 function main() {
     const style = document.createElement("style");
@@ -525,70 +636,13 @@ function main() {
         }
     };
     autocomplete(inputElem, Object.keys(dag));
-    const swCards = [];
+    let tableMaker = undefined;
     button.onclick = () => {
-        outdiv.replaceChildren("");
-        if (swCards.length == 0) {
-            for (const cardName in dag) {
-                const card = dag[cardName];
-                if (card.stats(Direction.Worse).cards.length == 0 && !card.isPlaceholder()) {
-                    swCards.push(card);
-                }
-            }
+        initalizeSwCards(dag);
+        if (tableMaker === undefined) {
+            tableMaker = new TableMaker(swCards, oracleData);
         }
-        function makeElement(type, parent, text) {
-            const elem = document.createElement(type);
-            elem.className = "mytable";
-            if (text) {
-                elem.textContent = text;
-            }
-            parent.appendChild(elem);
-            return elem;
-        }
-        ;
-        const table = makeElement("table", outdiv);
-        const hdrRow = makeElement("tr", table);
-        makeElement("th", hdrRow, "Card");
-        makeElement("th", hdrRow, "Cost");
-        makeElement("th", hdrRow, "Type");
-        makeElement("th", hdrRow, "P / T");
-        makeElement("th", hdrRow, "Degree");
-        makeElement("th", hdrRow, "Total Worse");
-        const swData = [];
-        for (const card of swCards) {
-            const oracle = oracleData.all_cards[card.name];
-            if (!oracle) {
-                continue;
-            }
-            const getPTString = (orcle) => {
-                if (oracle.power === undefined) {
-                    return "";
-                }
-                return oracle.power + " / " + oracle.toughness;
-            };
-            swData.push({
-                name: card.name,
-                colors: oracle.colors,
-                cost: oracle.mana_cost,
-                cmc: oracle.cmc,
-                type: oracle.type_line,
-                pt: getPTString(oracle),
-                degree: card.stats(Direction.Better).degree,
-                totalWorse: card.stats(Direction.Better).total,
-            });
-        }
-        cardSort(swData);
-        for (const card of swData) {
-            const elemRow = makeElement("tr", table);
-            const nameRow = makeElement("td", elemRow, card.name);
-            imbueHoverImage(nameRow, getImageURL(card.name));
-            makeElement("td", elemRow, card.cost);
-            makeElement("td", elemRow, card.type);
-            makeElement("td", elemRow, card.pt);
-            makeElement("td", elemRow, card.degree + "");
-            makeElement("td", elemRow, card.totalWorse + "");
-        }
-        outdiv.appendChild(table);
+        tableMaker.renderTable(outdiv);
     };
 }
 main();

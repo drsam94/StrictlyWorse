@@ -3,9 +3,11 @@
 // e.g /// reference style
 // So options are to put additional code in the same file or write it untyped
 // wtf is this fucking piece of shit system
+// At first the assumption was to put the json in json files -- already had to convert to json anyway
+// so probably long term should go completely to ts files and renew the reference style
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import * as rawData from '../res/data.js';
-import * as oracleData from '../res/filtered-oracle.js'
+import * as oracleData from '../res/filtered-oracle.js';
 
 /****    file hover.ts */
 
@@ -439,8 +441,8 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
     const hoverDiv = d3.select("body").append("div")
       .attr("class", "hoverImage-chart")
       .style("opacity", 0);
-    
-    
+
+
     nodeEnter.append("text")
       .attr("dy", "0.31em")
       .attr("x", (d: any) => d._children ? -6 : 6)
@@ -460,7 +462,7 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
           .style("position", "absolute")
           .style("left", (event.clientX + 10) + "px")
           .style("top", (event.clientY - 15) + "px");
-        
+
         hoverDiv.transition()
           .style("opacity", 1)
         hoverDiv.append("img")
@@ -547,22 +549,152 @@ function addCheckBox(base: HTMLElement, label: string): () => string {
   return () => checkbox.checked ? label : "";
 }
 
-function cardSort(cards: Array<any>) {
-  const compare = (a: any, b: any) => {
-    const colorCountDiff = a.colors.length - b.colors.length;
-    if (colorCountDiff != 0) {
-      return colorCountDiff;
+
+const swCards: Array<Card> = [];
+function initalizeSwCards(dag: Record<string, Card>) {
+if (swCards.length == 0) {
+  for (const cardName in dag) {
+    const card = dag[cardName];
+    if (card.stats(Direction.Worse).cards.length == 0 && !card.isPlaceholder()) {
+      swCards.push(card);
     }
-    const colorToNum = (color: string) => { return "WUBRG".indexOf(color); };
-    if (a.colors.length == 1) {
-      const colorDiff = colorToNum(a.colors[0]) - colorToNum(b.colors[0]);
-      if (colorDiff != 0) {
-        return colorDiff;
-      }
-    }
-    return a.cmc - b.cmc;
   }
-  cards.sort(compare);
+}
+}
+
+function makeElement(type: string, parent: Node, text?: string): HTMLElement {
+  const elem = document.createElement(type);
+  elem.className = "mytable";
+  if (text) {
+    elem.textContent = text;
+  }
+  parent.appendChild(elem);
+  return elem;
+};
+
+enum TableColumn {
+  Name,
+  Cost,
+  Degree,
+  TotalWorse,
+}
+
+
+const getPTString = (oracle: any): string => {
+  if (oracle.power === undefined) {
+    return "";
+  }
+  return oracle.power + " / " + oracle.toughness;
+};
+
+class TableElem {
+  public name: string;
+  public colors: Array<string>;
+  public cost: string;
+  public cmc: number;
+  public type: string;
+  public pt: string;
+  public degree: number;
+  public totalWorse: number;
+
+  constructor(card: Card, oracle: any) {
+    this.name = card.name;
+    this.colors = oracle.colors;
+    this.cost = oracle.mana_cost;
+    this.cmc = oracle.cmc;
+    this.type = oracle.type_line;
+    this.pt = getPTString(oracle);
+    this.degree = card.stats(Direction.Better).degree;
+    this.totalWorse = card.stats(Direction.Better).total;
+  }
+}
+
+class TableMaker {
+  private column: TableColumn = TableColumn.Cost;
+  private increasing: boolean = true;
+  private swData : Array<TableElem>;
+
+  constructor(cards: Array<Card>, oData: any) {
+    this.swData = [];
+    for (const card of cards) {
+      const oracle = oData.all_cards[card.name];
+      if (!oracle) {
+        continue;
+      }
+
+      this.swData.push(new TableElem(card, oracle));
+    }
+  }
+
+  private makeClickSort(elem: HTMLElement, parent: HTMLElement, column: TableColumn) {
+    elem.onclick = () => {
+      if (column === this.column) {
+        this.increasing = !this.increasing;
+      } else {
+        this.increasing = true;
+        this.column = column;
+      }
+      this.renderTable(parent);
+    }
+  }
+  public renderTable(parent: HTMLElement) {
+    this.cardSort();
+    parent.replaceChildren("");
+    const table = makeElement("table", parent);
+    const hdrRow = makeElement("tr", table);
+    this.makeClickSort(makeElement("th", hdrRow, "Card"), parent, TableColumn.Name);
+    this.makeClickSort(makeElement("th", hdrRow, "Cost"), parent, TableColumn.Cost);
+    makeElement("th", hdrRow, "Type");
+    makeElement("th", hdrRow, "P / T");
+    this.makeClickSort(makeElement("th", hdrRow, "Degree"), parent, TableColumn.Degree);
+    this.makeClickSort(makeElement("th", hdrRow, "Total Worse"), parent, TableColumn.TotalWorse);
+    for (const card of this.swData) {
+      const elemRow = makeElement("tr", table);
+      const nameRow = makeElement("td", elemRow, card.name);
+      imbueHoverImage(nameRow, getImageURL(card.name));
+      makeElement("td", elemRow, card.cost);
+      makeElement("td", elemRow, card.type);
+      makeElement("td", elemRow, card.pt);
+      makeElement("td", elemRow, card.degree + "");
+      makeElement("td", elemRow, card.totalWorse + "");
+    }
+    parent.appendChild(table);
+  }
+
+  private cardSort() {
+    const costCompare = (a: TableElem, b: TableElem) => {
+      const colorCountDiff = a.colors.length - b.colors.length;
+      if (colorCountDiff != 0) {
+        return colorCountDiff;
+      }
+      const colorToNum = (color: string) => { return "WUBRG".indexOf(color); };
+      if (a.colors.length == 1) {
+        const colorDiff = colorToNum(a.colors[0]) - colorToNum(b.colors[0]);
+        if (colorDiff != 0) {
+          return colorDiff;
+        }
+      }
+      return (a.cmc - b.cmc) * (this.increasing ? 1 : -1);
+    };
+    const compare = ((column: TableColumn) => {
+      switch(column) {
+        case TableColumn.Cost:
+          return costCompare;
+        case TableColumn.Degree:
+          return (a: TableElem, b: TableElem) => {
+            return (a.degree - b.degree) * (this.increasing ? 1 : -1);
+          }
+        case TableColumn.TotalWorse:
+          return (a: TableElem, b: TableElem) => {
+            return (a.totalWorse - b.totalWorse) * (this.increasing ? 1 : -1);
+          }
+        default:
+          return costCompare;
+      }
+    })(this.column);
+
+    this.swData.sort(compare);
+  }
 }
 
 function main(): void {
@@ -572,11 +704,11 @@ function main(): void {
   style.appendChild(cssStyleNode);
   document.head.appendChild(style);
   let cssText2 = ".autocomplete-items div:hover { background-color: #e9e9e9; }";
-  cssText2 += "\n.autocomplete-active { background-color: DodgerBlue !important; color: #ffffff; }"; 
+  cssText2 += "\n.autocomplete-active { background-color: DodgerBlue !important; color: #ffffff; }";
   cssText2 += "\n* { box-sizing: border-box; }";
   const cssStyleNode2 = document.createTextNode(cssText2);
   style.appendChild(cssStyleNode2);
-  
+
   const dag: Record<string, Card> = {};
   processData(dag, rawData.black);
   processData(dag, rawData.red);
@@ -586,8 +718,8 @@ function main(): void {
   processData(dag, rawData.green);
   processData(dag, rawData.multi);
   computeStats(dag);
-  
-  
+
+
   const wrapperDiv = document.createElement("div");
   wrapperDiv.style.position = "relative";
   wrapperDiv.style.display = "inline-block";
@@ -656,69 +788,13 @@ function main(): void {
 
   autocomplete(inputElem, Object.keys(dag));
 
-  const swCards: Array<Card> = [];
+  let tableMaker : TableMaker | undefined = undefined;
   button.onclick = () => {
-    outdiv.replaceChildren("");
-    if (swCards.length == 0) {
-      for (const cardName in dag) {
-        const card = dag[cardName];
-        if (card.stats(Direction.Worse).cards.length == 0 && !card.isPlaceholder()) {
-          swCards.push(card);
-        }
-      }
+    initalizeSwCards(dag);
+    if (tableMaker === undefined) {
+      tableMaker = new TableMaker(swCards, oracleData);
     }
-    function makeElement(type: string, parent: Node, text?: string): HTMLElement {
-      const elem = document.createElement(type);
-      elem.className = "mytable";
-      if (text) {
-        elem.textContent = text;
-      }
-      parent.appendChild(elem);
-      return elem;
-    };
-    const table = makeElement("table", outdiv);
-    const hdrRow = makeElement("tr", table);
-    makeElement("th", hdrRow, "Card");
-    makeElement("th", hdrRow, "Cost");
-    makeElement("th", hdrRow, "Type");
-    makeElement("th", hdrRow, "P / T");
-    makeElement("th", hdrRow, "Degree");
-    makeElement("th", hdrRow, "Total Worse");
-    const swData = [];
-    for (const card of swCards) {
-      const oracle = oracleData.all_cards[card.name];
-      if (!oracle) {
-        continue;
-      }
-      const getPTString = (orcle: any): string => {
-        if (oracle.power === undefined) {
-          return "";
-        }
-        return oracle.power + " / " + oracle.toughness;
-      };
-      swData.push({
-        name: card.name,
-        colors: oracle.colors,
-        cost: oracle.mana_cost,
-        cmc: oracle.cmc,
-        type: oracle.type_line,
-        pt: getPTString(oracle),
-        degree: card.stats(Direction.Better).degree,
-        totalWorse: card.stats(Direction.Better).total,
-      });
-    }
-    cardSort(swData);
-    for (const card of swData) {
-      const elemRow = makeElement("tr", table);
-      const nameRow = makeElement("td", elemRow, card.name);
-      imbueHoverImage(nameRow, getImageURL(card.name));
-      makeElement("td", elemRow, card.cost);
-      makeElement("td", elemRow, card.type);
-      makeElement("td", elemRow, card.pt);
-      makeElement("td", elemRow, card.degree + "");
-      makeElement("td", elemRow, card.totalWorse + "");
-    }
-    outdiv.appendChild(table);
+    tableMaker.renderTable(outdiv);
   };
 }
 
