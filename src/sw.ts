@@ -29,6 +29,132 @@ function imbueHoverImage(elem: HTMLElement, imgSrc: string) {
 
 /*****   end file */
 
+
+/*****   file autocomplete.ts */
+function autocomplete(inp: HTMLInputElement, arr: string[], commaSeparated?: boolean) {
+  /*the autocomplete function takes two arguments,
+  the text field element and an array of possible autocompleted values:*/
+  let currentFocus: number = -1;
+  /*execute a function when someone writes in the text field:*/
+  inp.addEventListener("input", function (e) {
+    let val = this.value;
+    /*close any already open lists of autocompleted values*/
+    closeAllLists(null);
+    if (!val) { return false; }
+    currentFocus = -1;
+    /*create a DIV element that will contain the items (values):*/
+    let a = document.createElement("DIV");
+    a.setAttribute("id", this.id + "autocomplete-list");
+    a.setAttribute("class", "autocomplete-items");
+    a.style.position = "absolute";
+    a.style.border = "1px solid #d4d4d4";
+    a.style.zIndex = "99";
+    a.style.top = "100%";
+    a.style.left = "0";
+    a.style.right = "0";
+
+    /*append the DIV element as a child of the autocomplete container:*/
+    this.parentNode!.appendChild(a);
+    /*for each item in the array...*/
+    for (const elem of arr) {
+      /*check if the item starts with the same letters as the text field value:*/
+      const baseIndex = commaSeparated ? val.lastIndexOf(',') + 1 : 0;
+      const modifiedVal = val.substring(baseIndex).trim();
+      let prefix = elem.substring(0, modifiedVal.length);
+      if (prefix.toUpperCase() == modifiedVal.toUpperCase()) {
+        /*create a DIV element for each matching element:*/
+        let b = document.createElement("div");
+        /*make the matching letters bold:*/
+        b.innerHTML += "<strong>" + prefix + "</strong>";
+        b.innerHTML += elem.substring(modifiedVal.length);
+        /*insert a input field that will hold the current array item's value:*/
+        b.innerHTML += "<input type='hidden' value='" + elem + "'>";
+        /*execute a function when someone clicks on the item value (DIV element):*/
+        b.addEventListener("click", function () {
+          /*insert the value for the autocomplete text field:*/
+          let keptBase = "";
+          if (commaSeparated) {
+            const commaI = inp.value.lastIndexOf(',');
+            keptBase = commaI == -1 ? "" : inp.value.substring(0, commaI + 1).trim() + " ";
+          }
+          inp.value = keptBase + this.getElementsByTagName("input")[0].value;
+          /*close the list of autocompleted values,
+          (or any other open lists of autocompleted values:*/
+          closeAllLists(null);
+        });
+        b.style.padding = "10px";
+        b.style.cursor = "pointer";
+        b.style.backgroundColor = "#fff";
+        b.style.borderBottom = "1px solid #d8d4d4";
+        a.appendChild(b);
+      }
+    }
+    return true;
+  });
+  /*execute a function presses a key on the keyboard:*/
+  inp.addEventListener("keydown", function (e) {
+    let fullList = document.getElementById(this.id + "autocomplete-list");
+    if (!fullList) {
+      return;
+    }
+    let x = fullList.getElementsByTagName("div");
+    if (e.key == "ArrowDown") {
+      /*If the arrow DOWN key is pressed,
+      increase the currentFocus variable:*/
+      currentFocus++;
+      /*and and make the current item more visible:*/
+      addActive(x);
+    } else if (e.key == "ArrowUp") {
+      /*If the arrow UP key is pressed,
+      decrease the currentFocus variable:*/
+      currentFocus--;
+      /*and and make the current item more visible:*/
+      addActive(x);
+    } else if (e.key == "Enter") {
+      /*If the ENTER key is pressed, prevent the form from being submitted,*/
+      e.preventDefault();
+      if (currentFocus > -1) {
+        /*and simulate a click on the "active" item:*/
+        if (x) x[currentFocus].click();
+      }
+    }
+  });
+  function addActive(x: HTMLCollectionOf<HTMLDivElement>) {
+    /*a function to classify an item as "active":*/
+    if (!x) return;
+    /*start by removing the "active" class on all items:*/
+    removeActive(x);
+    if (currentFocus >= x.length) currentFocus = 0;
+    if (currentFocus < 0) currentFocus = x.length - 1;
+    /*add class "autocomplete-active":*/
+    x[currentFocus].classList.add("autocomplete-active");
+  }
+
+  function removeActive(x: HTMLCollectionOf<HTMLDivElement>) {
+    /*a function to remove the "active" class from all autocomplete items:*/
+    for (let i = 0; i < x.length; ++i) {
+      x[i].classList.remove("autocomplete-active");
+    }
+  }
+
+  function closeAllLists(elmnt: EventTarget | null) {
+    /*close all autocomplete lists in the document,
+    except the one passed as an argument:*/
+    let x = document.getElementsByClassName("autocomplete-items");
+    for (let i = 0; i < x.length; ++i) {
+      if (elmnt != x[i] && elmnt != inp) {
+        x[i].parentNode!.removeChild(x[i]);
+      }
+    }
+  }
+
+  /*execute a function when someone clicks in the document:*/
+  document.addEventListener("click", function (e) {
+    closeAllLists(e.target);
+  });
+}
+/*****    end file */
+
 /*****   file Card.ts */
 enum Direction {
   Worse, // Cards worse than this card, indicating this card is good
@@ -159,7 +285,7 @@ function processData(dag: Record<string, Card>, inData: any) {
 function computeStats(dag: Record<string, Card>): void {
   const worseSet: Record<string, Set<string>> = {};
   const betterSet: Record<string, Set<string>> = {};
-  const getSet = (dir: Direction) =>  dir == Direction.Worse ? worseSet : betterSet;
+  const getSet = (dir: Direction) => dir == Direction.Worse ? worseSet : betterSet;
   function computeStatsRecursive(card: Card, dir: Direction) {
     const set = getSet(dir);
     if (set[card.name] === undefined) {
@@ -191,10 +317,11 @@ function computeStats(dag: Record<string, Card>): void {
 }
 function recurAddChildren(rootNode: any, childList: Array<Card>, dir: Direction) {
   for (const child of childList) {
-    const obj = { name: child.name, 
-      children: [], 
-      value: child.stats(dir).total, 
-      depth: child.stats(dir).degree 
+    const obj = {
+      name: child.name,
+      children: [],
+      value: child.stats(dir).total,
+      depth: child.stats(dir).degree
     };
     rootNode.children.push(obj);
     // console.log(obj)
@@ -210,10 +337,20 @@ function makeTree(rootNode: Card, dir: Direction) {
 }
 
 function getImageURL(name: string) {
-  console.log(name);
-  console.log(oracleData.all_cards[name])
-  return oracleData.all_cards[name]["image_uris"]["normal"];
+  const card = oracleData.all_cards[name];
+  if (card === undefined) {
+    return "";
+  }
+  const faces = card["card_faces"];
+  const face = card["image_uris"] === undefined ? faces[0] : card;
+  return face["image_uris"]["normal"];
 }
+
+function distance(a: any, b: any) {
+  const square = x => x * x;
+  return Math.sqrt( square(a.x - b.x) + square(a.y - b.y));
+}
+
 let emptyDiv = null;
 function makeChart(data: any, rootName: string, startExpanded?: boolean) {
   data["name"] = rootName;
@@ -302,8 +439,9 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
     const hoverDiv = d3.select("body").append("div")
       .attr("class", "hoverImage-chart")
       .style("opacity", 0);
-
-    const text = nodeEnter.append("text")
+    
+    
+    nodeEnter.append("text")
       .attr("dy", "0.31em")
       .attr("x", (d: any) => d._children ? -6 : 6)
       .attr("text-anchor", (d: any) => d._children ? "end" : "start")
@@ -314,14 +452,19 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
       .attr("fill", (d: any) => d.data.value > 5 ? "#900" : "#555")
       .attr("paint-order", "stroke")
       .on("mouseover", (event: MouseEvent, d: any) => {
+        const imgURL = getImageURL(d.data.name);
+        if (imgURL === "") {
+          return;
+        }
+        hoverDiv
+          .style("position", "absolute")
+          .style("left", (event.clientX + 10) + "px")
+          .style("top", (event.clientY - 15) + "px");
+        
         hoverDiv.transition()
           .style("opacity", 1)
-          .style("position", "absolute")
-          .style("left", (d3.event.pageX + 10) + "px")
-          .style("top", (d3.event.pageY - 15) + "px");
-
         hoverDiv.append("img")
-          .attr("src", getImageURL(d.data.name))
+          .attr("src", imgURL)
           .style("width", "342")
           .style("height", "476")
           .style("position", "absolute")
@@ -330,17 +473,18 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
       .on("mouseout", (event: MouseEvent) => {
         hoverDiv.transition()
           .style("opacity", 0);
+        hoverDiv.html("");
       });
-    
-    
+
+
     // Transition nodes to their new position.
-    const nodeUpdate = node.merge(nodeEnter).transition(transition)
+    node.merge(nodeEnter).transition(transition)
       .attr("transform", (d: any) => `translate(${d.y},${d.x})`)
       .attr("fill-opacity", 1)
       .attr("stroke-opacity", 1);
 
     // Transition exiting nodes to the parent's new position.
-    const nodeExit = node.exit().transition(transition).remove()
+    node.exit().transition(transition).remove()
       .attr("transform", (d: any) => `translate(${source.y},${source.x})`)
       .attr("fill-opacity", 0)
       .attr("stroke-opacity", 0);
@@ -427,7 +571,12 @@ function main(): void {
   const cssStyleNode = document.createTextNode(cssText);
   style.appendChild(cssStyleNode);
   document.head.appendChild(style);
-
+  let cssText2 = ".autocomplete-items div:hover { background-color: #e9e9e9; }";
+  cssText2 += "\n.autocomplete-active { background-color: DodgerBlue !important; color: #ffffff; }"; 
+  cssText2 += "\n* { box-sizing: border-box; }";
+  const cssStyleNode2 = document.createTextNode(cssText2);
+  style.appendChild(cssStyleNode2);
+  
   const dag: Record<string, Card> = {};
   processData(dag, rawData.black);
   processData(dag, rawData.red);
@@ -436,11 +585,18 @@ function main(): void {
   processData(dag, rawData.blue);
   processData(dag, rawData.green);
   processData(dag, rawData.multi);
+  computeStats(dag);
+  
+  
+  const wrapperDiv = document.createElement("div");
+  wrapperDiv.style.position = "relative";
+  wrapperDiv.style.display = "inline-block";
+  wrapperDiv.style.width = "300px";
   const inputElem = document.createElement("input");
 
-  computeStats(dag);
 
   inputElem.type = "text";
+  inputElem.placeholder = "Search for Card...";
   inputElem.style.border = "1px solid transparent";
   inputElem.style.backgroundColor = "#f1f1f1";
   inputElem.style.padding = "10px";
@@ -454,10 +610,11 @@ function main(): void {
   button.style.textAlign = "center";
   button.style.cursor = "pointer";
   button.style.backgroundColor = "#4CAF50";
-  button.innerText = "Generate";
+  button.innerText = "Generate Table of SW Cards";
   const div = document.createElement("div");
   emptyDiv = document.createElement("div");
-  div.appendChild(inputElem);
+  wrapperDiv.appendChild(inputElem)
+  div.appendChild(wrapperDiv);
   div.appendChild(button);
   div.appendChild(emptyDiv);
 
@@ -482,14 +639,22 @@ function main(): void {
     if (card.stats(Direction.Better).cards.length > 0) {
       const tree = makeTree(card, Direction.Better);
       const chart = makeChart(tree, card.name, true);
+      const label = document.createElement("p");
+      label.textContent = card.name + " is worse than...";
+      outdiv.appendChild(label);
       outdiv.appendChild(chart.node());
     }
     if (card.stats(Direction.Worse).cards.length > 0) {
       const tree = makeTree(card, Direction.Worse);
       const chart = makeChart(tree, card.name, true);
+      const label = document.createElement("p");
+      label.textContent = card.name + " is better than...";
+      outdiv.appendChild(label);
       outdiv.appendChild(chart.node());
     }
   };
+
+  autocomplete(inputElem, Object.keys(dag));
 
   const swCards: Array<Card> = [];
   button.onclick = () => {
@@ -532,14 +697,14 @@ function main(): void {
         return oracle.power + " / " + oracle.toughness;
       };
       swData.push({
-        name : card.name,
-        colors : oracle.colors,
-        cost : oracle.mana_cost,
-        cmc : oracle.cmc,
-        type : oracle.type_line,
-        pt : getPTString(oracle),
-        degree : card.stats(Direction.Better).degree,
-        totalWorse : card.stats(Direction.Better).total,
+        name: card.name,
+        colors: oracle.colors,
+        cost: oracle.mana_cost,
+        cmc: oracle.cmc,
+        type: oracle.type_line,
+        pt: getPTString(oracle),
+        degree: card.stats(Direction.Better).degree,
+        totalWorse: card.stats(Direction.Better).total,
       });
     }
     cardSort(swData);
@@ -550,8 +715,8 @@ function main(): void {
       makeElement("td", elemRow, card.cost);
       makeElement("td", elemRow, card.type);
       makeElement("td", elemRow, card.pt);
-      makeElement("td", elemRow, card.degree+"");
-      makeElement("td", elemRow, card.totalWorse+"");
+      makeElement("td", elemRow, card.degree + "");
+      makeElement("td", elemRow, card.totalWorse + "");
     }
     outdiv.appendChild(table);
   };

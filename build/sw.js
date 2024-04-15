@@ -17,6 +17,101 @@ function imbueHoverImage(elem, imgSrc) {
     elem.onmouseover = () => { showImage(elem, imgSrc); };
     elem.onmouseout = () => { hideImage(elem); };
 }
+function autocomplete(inp, arr, commaSeparated) {
+    let currentFocus = -1;
+    inp.addEventListener("input", function (e) {
+        let val = this.value;
+        closeAllLists(null);
+        if (!val) {
+            return false;
+        }
+        currentFocus = -1;
+        let a = document.createElement("DIV");
+        a.setAttribute("id", this.id + "autocomplete-list");
+        a.setAttribute("class", "autocomplete-items");
+        a.style.position = "absolute";
+        a.style.border = "1px solid #d4d4d4";
+        a.style.zIndex = "99";
+        a.style.top = "100%";
+        a.style.left = "0";
+        a.style.right = "0";
+        this.parentNode.appendChild(a);
+        for (const elem of arr) {
+            const baseIndex = commaSeparated ? val.lastIndexOf(',') + 1 : 0;
+            const modifiedVal = val.substring(baseIndex).trim();
+            let prefix = elem.substring(0, modifiedVal.length);
+            if (prefix.toUpperCase() == modifiedVal.toUpperCase()) {
+                let b = document.createElement("div");
+                b.innerHTML += "<strong>" + prefix + "</strong>";
+                b.innerHTML += elem.substring(modifiedVal.length);
+                b.innerHTML += "<input type='hidden' value='" + elem + "'>";
+                b.addEventListener("click", function () {
+                    let keptBase = "";
+                    if (commaSeparated) {
+                        const commaI = inp.value.lastIndexOf(',');
+                        keptBase = commaI == -1 ? "" : inp.value.substring(0, commaI + 1).trim() + " ";
+                    }
+                    inp.value = keptBase + this.getElementsByTagName("input")[0].value;
+                    closeAllLists(null);
+                });
+                b.style.padding = "10px";
+                b.style.cursor = "pointer";
+                b.style.backgroundColor = "#fff";
+                b.style.borderBottom = "1px solid #d8d4d4";
+                a.appendChild(b);
+            }
+        }
+        return true;
+    });
+    inp.addEventListener("keydown", function (e) {
+        let fullList = document.getElementById(this.id + "autocomplete-list");
+        if (!fullList) {
+            return;
+        }
+        let x = fullList.getElementsByTagName("div");
+        if (e.key == "ArrowDown") {
+            currentFocus++;
+            addActive(x);
+        }
+        else if (e.key == "ArrowUp") {
+            currentFocus--;
+            addActive(x);
+        }
+        else if (e.key == "Enter") {
+            e.preventDefault();
+            if (currentFocus > -1) {
+                if (x)
+                    x[currentFocus].click();
+            }
+        }
+    });
+    function addActive(x) {
+        if (!x)
+            return;
+        removeActive(x);
+        if (currentFocus >= x.length)
+            currentFocus = 0;
+        if (currentFocus < 0)
+            currentFocus = x.length - 1;
+        x[currentFocus].classList.add("autocomplete-active");
+    }
+    function removeActive(x) {
+        for (let i = 0; i < x.length; ++i) {
+            x[i].classList.remove("autocomplete-active");
+        }
+    }
+    function closeAllLists(elmnt) {
+        let x = document.getElementsByClassName("autocomplete-items");
+        for (let i = 0; i < x.length; ++i) {
+            if (elmnt != x[i] && elmnt != inp) {
+                x[i].parentNode.removeChild(x[i]);
+            }
+        }
+    }
+    document.addEventListener("click", function (e) {
+        closeAllLists(e.target);
+    });
+}
 var Direction;
 (function (Direction) {
     Direction[Direction["Worse"] = 0] = "Worse";
@@ -152,7 +247,8 @@ function computeStats(dag) {
 }
 function recurAddChildren(rootNode, childList, dir) {
     for (const child of childList) {
-        const obj = { name: child.name,
+        const obj = {
+            name: child.name,
             children: [],
             value: child.stats(dir).total,
             depth: child.stats(dir).degree
@@ -167,9 +263,17 @@ function makeTree(rootNode, dir) {
     return data;
 }
 function getImageURL(name) {
-    console.log(name);
-    console.log(oracleData.all_cards[name]);
-    return oracleData.all_cards[name]["image_uris"]["normal"];
+    const card = oracleData.all_cards[name];
+    if (card === undefined) {
+        return "";
+    }
+    const faces = card["card_faces"];
+    const face = card["image_uris"] === undefined ? faces[0] : card;
+    return face["image_uris"]["normal"];
+}
+function distance(a, b) {
+    const square = x => x * x;
+    return Math.sqrt(square(a.x - b.x) + square(a.y - b.y));
 }
 let emptyDiv = null;
 function makeChart(data, rootName, startExpanded) {
@@ -242,7 +346,7 @@ function makeChart(data, rootName, startExpanded) {
         const hoverDiv = d3.select("body").append("div")
             .attr("class", "hoverImage-chart")
             .style("opacity", 0);
-        const text = nodeEnter.append("text")
+        nodeEnter.append("text")
             .attr("dy", "0.31em")
             .attr("x", (d) => d._children ? -6 : 6)
             .attr("text-anchor", (d) => d._children ? "end" : "start")
@@ -253,25 +357,33 @@ function makeChart(data, rootName, startExpanded) {
             .attr("fill", (d) => d.data.value > 5 ? "#900" : "#555")
             .attr("paint-order", "stroke")
             .on("mouseover", (event, d) => {
-            console.log(hoverDiv);
+            const imgURL = getImageURL(d.data.name);
+            if (imgURL === "") {
+                return;
+            }
+            hoverDiv
+                .style("position", "absolute")
+                .style("left", (event.clientX + 10) + "px")
+                .style("top", (event.clientY - 15) + "px");
             hoverDiv.transition()
                 .style("opacity", 1);
             hoverDiv.append("img")
-                .attr("src", getImageURL(d.data.name))
-                .style("position", "absolute")
-                .style("zIndex", "1")
+                .attr("src", imgURL)
                 .style("width", "342")
-                .style("height", "476");
+                .style("height", "476")
+                .style("position", "absolute")
+                .style("zIndex", "1");
         })
             .on("mouseout", (event) => {
             hoverDiv.transition()
                 .style("opacity", 0);
+            hoverDiv.html("");
         });
-        const nodeUpdate = node.merge(nodeEnter).transition(transition)
+        node.merge(nodeEnter).transition(transition)
             .attr("transform", (d) => `translate(${d.y},${d.x})`)
             .attr("fill-opacity", 1)
             .attr("stroke-opacity", 1);
-        const nodeExit = node.exit().transition(transition).remove()
+        node.exit().transition(transition).remove()
             .attr("transform", (d) => `translate(${source.y},${source.x})`)
             .attr("fill-opacity", 0)
             .attr("stroke-opacity", 0);
@@ -340,6 +452,11 @@ function main() {
     const cssStyleNode = document.createTextNode(cssText);
     style.appendChild(cssStyleNode);
     document.head.appendChild(style);
+    let cssText2 = ".autocomplete-items div:hover { background-color: #e9e9e9; }";
+    cssText2 += "\n.autocomplete-active { background-color: DodgerBlue !important; color: #ffffff; }";
+    cssText2 += "\n* { box-sizing: border-box; }";
+    const cssStyleNode2 = document.createTextNode(cssText2);
+    style.appendChild(cssStyleNode2);
     const dag = {};
     processData(dag, rawData.black);
     processData(dag, rawData.red);
@@ -348,9 +465,14 @@ function main() {
     processData(dag, rawData.blue);
     processData(dag, rawData.green);
     processData(dag, rawData.multi);
-    const inputElem = document.createElement("input");
     computeStats(dag);
+    const wrapperDiv = document.createElement("div");
+    wrapperDiv.style.position = "relative";
+    wrapperDiv.style.display = "inline-block";
+    wrapperDiv.style.width = "300px";
+    const inputElem = document.createElement("input");
     inputElem.type = "text";
+    inputElem.placeholder = "Search for Card...";
     inputElem.style.border = "1px solid transparent";
     inputElem.style.backgroundColor = "#f1f1f1";
     inputElem.style.padding = "10px";
@@ -363,10 +485,11 @@ function main() {
     button.style.textAlign = "center";
     button.style.cursor = "pointer";
     button.style.backgroundColor = "#4CAF50";
-    button.innerText = "Generate";
+    button.innerText = "Generate Table of SW Cards";
     const div = document.createElement("div");
     emptyDiv = document.createElement("div");
-    div.appendChild(inputElem);
+    wrapperDiv.appendChild(inputElem);
+    div.appendChild(wrapperDiv);
     div.appendChild(button);
     div.appendChild(emptyDiv);
     const outdiv = document.createElement("div");
@@ -387,14 +510,21 @@ function main() {
         if (card.stats(Direction.Better).cards.length > 0) {
             const tree = makeTree(card, Direction.Better);
             const chart = makeChart(tree, card.name, true);
+            const label = document.createElement("p");
+            label.textContent = card.name + " is worse than...";
+            outdiv.appendChild(label);
             outdiv.appendChild(chart.node());
         }
         if (card.stats(Direction.Worse).cards.length > 0) {
             const tree = makeTree(card, Direction.Worse);
             const chart = makeChart(tree, card.name, true);
+            const label = document.createElement("p");
+            label.textContent = card.name + " is better than...";
+            outdiv.appendChild(label);
             outdiv.appendChild(chart.node());
         }
     };
+    autocomplete(inputElem, Object.keys(dag));
     const swCards = [];
     button.onclick = () => {
         outdiv.replaceChildren("");

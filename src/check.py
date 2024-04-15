@@ -23,7 +23,7 @@ if __name__ == "__main__":
     sf_file = 'res/oracle-cards.json' if len(sys.argv) < 3 else sys.argv[2]
     sw = parse_sw(sw_file)
     sf = parse_sf(sf_file)
-    official_names = {obj["name"] : obj for obj in sf}
+    official_names = {obj["name"] : obj for obj in sf if obj['layout'] != 'token'}
     sw_names = set()
     for elem in sw:
         try:
