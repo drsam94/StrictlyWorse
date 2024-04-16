@@ -2687,6 +2687,9 @@ export const white = [
 ];
 
 export const blue = [
+["2UU 3/3 Flying", "Stoic Sphinx"],
+["Long-Finned Skywhale", "Stoic Sphinx"],
+["Celestial Messenger", "Stoic Sphinx"],
 ["Surrakar Banisher", "Peerless Ropemaster"],
 ["Totally Lost", "Spin into Myth"],
 ["Totally Lost", "Vanishment"],
@@ -3588,6 +3591,7 @@ export const blue = [
 ["Cancel", "Sinister Sabotage"],
 ["Spell Blast", "Spell Burst"],
 ["Inspiration", "Soul Read"],
+["Inspiration", "Metamorphic Blast"],
 ["Cancel", "Spell Snuff"],
 ["Twincast", "Split Decision"],
 ["Statute of Denial", "Dismiss"],
@@ -3627,6 +3631,7 @@ export const blue = [
 ["Touch of Brilliance", "Counsel of the Soratami"],
 ["Counsel of the Soratami", "Divination", "="],
 ["Counsel of the Soratami", "Distorted Curiosity"],
+["Counsel of the Soratami", "Seize the Secrets"],
 ["Distorted Curiosity", "Ancestral Recall"],
 ["Stroke of Genius", "Drown in Dreams"],
 ["Dream Cache", "Ancestral Recall"],

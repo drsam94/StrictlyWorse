@@ -1,7 +1,7 @@
 const pageSource = `
 <h1> Philosophy </h1>
 <p>
-This page documents magic cards that are <b>Strictly Worse</b> than other magic cards. The term <b>Strictly Worse</b> is not really a technical term in magic, and ultimately there is just about always some imaginable scenario where you might want a certain card over another. It might be obvious that [[Ancestrall Recall]] is better than [[Intuition]] or that [[Jade Avenger]] is better than [[Grizzly Bears]], but there are corner cases, and I go into those here.
+This page documents magic cards that are <b>Strictly Worse</b> than other magic cards. The term <b>Strictly Worse</b> is not really a technical term in magic, and ultimately there is just about always some imaginable scenario where you might want a certain card over another. It might be obvious that [[Ancestrall Recall]] is better than [[Inspiration]] or that [[Jade Avenger]] is better than [[Grizzly Bears]], but there are corner cases, and I go into those here.
 </p>
 <h2> Less Mana is Better </h2>
 <p>
