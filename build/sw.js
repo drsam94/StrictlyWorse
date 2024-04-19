@@ -1,13 +1,15 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import * as rawData from '../res/data.js';
 import * as oracleData from '../res/filtered-oracle.js';
+const CARD_HEIGHT = "476";
+const CARD_WIDTH = "342";
 function showImage(elem, imgSrc) {
     const popImage = new Image();
     popImage.src = imgSrc;
     popImage.style.position = "absolute";
     popImage.style.zIndex = "1";
-    popImage.style.width = "342";
-    popImage.style.height = "476";
+    popImage.style.width = CARD_WIDTH;
+    popImage.style.height = CARD_HEIGHT;
     elem.appendChild(popImage);
 }
 function hideImage(elem) {
@@ -271,11 +273,6 @@ function getImageURL(name) {
     const face = card["image_uris"] === undefined ? faces[0] : card;
     return face["image_uris"]["normal"];
 }
-function distance(a, b) {
-    const square = x => x * x;
-    return Math.sqrt(square(a.x - b.x) + square(a.y - b.y));
-}
-let emptyDiv = null;
 function makeChart(data, rootName, startExpanded) {
     data["name"] = rootName;
     console.log(data);
@@ -369,8 +366,8 @@ function makeChart(data, rootName, startExpanded) {
                 .style("opacity", 1);
             hoverDiv.append("img")
                 .attr("src", imgURL)
-                .style("width", "342")
-                .style("height", "476")
+                .style("width", CARD_WIDTH)
+                .style("height", CARD_HEIGHT)
                 .style("position", "absolute")
                 .style("zIndex", "1");
         })
@@ -589,6 +586,7 @@ function main() {
     inputElem.style.padding = "10px";
     inputElem.style.fontSize = "16px";
     inputElem.style.width = "100%";
+    wrapperDiv.appendChild(inputElem);
     const button = document.createElement("button");
     button.type = "button";
     button.style.display = "block";
@@ -598,14 +596,14 @@ function main() {
     button.style.backgroundColor = "#4CAF50";
     button.innerText = "Generate Table of SW Cards";
     const div = document.createElement("div");
-    emptyDiv = document.createElement("div");
-    wrapperDiv.appendChild(inputElem);
     div.appendChild(wrapperDiv);
     div.appendChild(button);
-    div.appendChild(emptyDiv);
     const outdiv = document.createElement("div");
     div.appendChild(outdiv);
     document.body.appendChild(div);
+    const trailerDiv = document.createElement("div");
+    trailerDiv.style.height = CARD_HEIGHT;
+    document.body.appendChild(trailerDiv);
     inputElem.onkeydown = (event) => {
         if (event.key != "Enter") {
             return;

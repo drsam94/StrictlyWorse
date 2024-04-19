@@ -11,13 +11,15 @@ import * as oracleData from '../res/filtered-oracle.js';
 
 /****    file hover.ts */
 
+const CARD_HEIGHT = "476";
+const CARD_WIDTH = "342";
 function showImage(elem: HTMLElement, imgSrc: string) {
   const popImage = new Image();
   popImage.src = imgSrc;
   popImage.style.position = "absolute";
   popImage.style.zIndex = "1";
-  popImage.style.width = "342";
-  popImage.style.height = "476";
+  popImage.style.width = CARD_WIDTH;
+  popImage.style.height = CARD_HEIGHT;
   elem.appendChild(popImage);
 }
 function hideImage(elem: HTMLElement) {
@@ -348,12 +350,7 @@ function getImageURL(name: string) {
   return face["image_uris"]["normal"];
 }
 
-function distance(a: any, b: any) {
-  const square = x => x * x;
-  return Math.sqrt( square(a.x - b.x) + square(a.y - b.y));
-}
 
-let emptyDiv = null;
 function makeChart(data: any, rootName: string, startExpanded?: boolean) {
   data["name"] = rootName;
   console.log(data);
@@ -467,8 +464,8 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
           .style("opacity", 1)
         hoverDiv.append("img")
           .attr("src", imgURL)
-          .style("width", "342")
-          .style("height", "476")
+          .style("width", CARD_WIDTH)
+          .style("height", CARD_HEIGHT)
           .style("position", "absolute")
           .style("zIndex", "1");
       })
@@ -734,6 +731,7 @@ function main(): void {
   inputElem.style.padding = "10px";
   inputElem.style.fontSize = "16px";
   inputElem.style.width = "100%";
+  wrapperDiv.appendChild(inputElem);
 
   const button = document.createElement("button");
   button.type = "button";
@@ -744,16 +742,19 @@ function main(): void {
   button.style.backgroundColor = "#4CAF50";
   button.innerText = "Generate Table of SW Cards";
   const div = document.createElement("div");
-  emptyDiv = document.createElement("div");
-  wrapperDiv.appendChild(inputElem)
+  
   div.appendChild(wrapperDiv);
   div.appendChild(button);
-  div.appendChild(emptyDiv);
-
+  
   const outdiv = document.createElement("div");
   div.appendChild(outdiv);
   document.body.appendChild(div);
 
+  // A div at the bottom that ensures the height of the page is enough to accomodate card mouseovers
+  const trailerDiv = document.createElement("div");
+  trailerDiv.style.height = CARD_HEIGHT; 
+
+  document.body.appendChild(trailerDiv);
   inputElem.onkeydown = (event) => {
     if (event.key != "Enter") {
       return;
