@@ -604,7 +604,8 @@ function main() {
     const trailerDiv = document.createElement("div");
     trailerDiv.style.height = CARD_HEIGHT;
     document.body.appendChild(trailerDiv);
-    inputElem.onkeydown = (event) => {
+    autocomplete(inputElem, Object.keys(dag));
+    inputElem.addEventListener("keydown", (event) => {
         if (event.key != "Enter") {
             return;
         }
@@ -632,8 +633,7 @@ function main() {
             outdiv.appendChild(label);
             outdiv.appendChild(chart.node());
         }
-    };
-    autocomplete(inputElem, Object.keys(dag));
+    });
     let tableMaker = undefined;
     button.onclick = () => {
         initalizeSwCards(dag);

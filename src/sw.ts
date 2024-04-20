@@ -742,20 +742,22 @@ function main(): void {
   button.style.backgroundColor = "#4CAF50";
   button.innerText = "Generate Table of SW Cards";
   const div = document.createElement("div");
-  
+
   div.appendChild(wrapperDiv);
   div.appendChild(button);
-  
+
   const outdiv = document.createElement("div");
   div.appendChild(outdiv);
   document.body.appendChild(div);
 
   // A div at the bottom that ensures the height of the page is enough to accomodate card mouseovers
   const trailerDiv = document.createElement("div");
-  trailerDiv.style.height = CARD_HEIGHT; 
+  trailerDiv.style.height = CARD_HEIGHT;
 
   document.body.appendChild(trailerDiv);
-  inputElem.onkeydown = (event) => {
+
+  autocomplete(inputElem, Object.keys(dag));
+  inputElem.addEventListener("keydown", (event: any) => {
     if (event.key != "Enter") {
       return;
     }
@@ -785,9 +787,8 @@ function main(): void {
       outdiv.appendChild(label);
       outdiv.appendChild(chart.node());
     }
-  };
+  });
 
-  autocomplete(inputElem, Object.keys(dag));
 
   let tableMaker : TableMaker | undefined = undefined;
   button.onclick = () => {
