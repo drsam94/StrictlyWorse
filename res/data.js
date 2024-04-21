@@ -1,4 +1,8 @@
 export const black = [
+["Black Dragon", "Overseer of the Damned"],
+["Black Dragon", "Patron of the Vein"],
+["Bone Harvest", "Footbottom Feast"],
+["Footbottom Feast", "Gravepurge", "="],
 ["Hidden Horror", "Mercenary Knight"],
 ["Headstone", "Cremate"],
 ["Ostracize", "Divest"],
@@ -748,6 +752,8 @@ export const black = [
 ];
 
 export const red = [
+["Blazing Volley", "Tectonic Hazard"],
+["Tectonic Hazard", "End the Festivities"],
 ["Gray Ogre", "Vulshok Heartstroker"],
 ["Vulshok Heartstroker", "Daybreak Combatants"],
 ["Sunder from Within", "Demolish"],
@@ -2834,6 +2840,8 @@ export const white = [
 ];
 
 export const blue = [
+["Lu Su, Wu Advisor", "Sea Gate Loremaster"],
+["Talas Researcher", "Sea Gate Loremaster"],
 ["Infuse", "Jolt"],
 ["Envervate", "Jolt"],
 ["Impede Momentum", "Freeze in Place"],
@@ -2968,6 +2976,8 @@ export const blue = [
 ["Spectral Cloak", "Mystic Veil"],
 ["Spectral Cloak", "Diplomatic Immunity"],
 ["Fowl Play", "Ichthyomorphosis"],
+["Reduce in Stature", "Ichthyomorphosis"],
+["Illusory Wrappings", "Reduce in Stature", "="],
 ["Fowl Play", "Frogify"],
 ["Frogify", "Eaten by Piranhas"],
 ["Frogify", "Kasmina's Transmutation", "="],
@@ -5377,6 +5387,8 @@ export const green = [
 ];
 
 export const multi = [
+["Inviolability", "Chromatic Armor"],
+
 ["Urborg Drake", "Tegwyll, Duke of Splendor"],
 ["Urborg Drake", "Oko's Accomplices"],
 ["Vicious Kavu", "Frenzied Raptor"],
@@ -5521,6 +5533,7 @@ export const multi = [
 ];
 
 export const artifact = [
+["Staff of Zegon", "Horn of Deafening"],
 ["Bronze Sword", "Vanquisher's Axe"],
 ["Vanquisher's Axe", "Bonesplitter"],
 ["Vanquisher's Axe", "Darksteel Axe"],
