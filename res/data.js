@@ -1,4 +1,5 @@
 export const black = [
+["Hidden Horror", "Mercenary Knight"],
 ["Headstone", "Cremate"],
 ["Ostracize", "Divest"],
 ["Shattered Dreams", "Divest"],
@@ -747,6 +748,8 @@ export const black = [
 ];
 
 export const red = [
+["Gray Ogre", "Vulshok Heartstroker"],
+["Vulshok Heartstroker", "Daybreak Combatants"],
 ["Sunder from Within", "Demolish"],
 ["Sunder from Within", "Icefall"],
 ["Sunder from Within", "Pillage"],
@@ -1578,7 +1581,7 @@ export const red = [
 ["Minotaur Warrior", "Reckless Stormseeker // Storm-Charged Slasher"],
 ["Minotaur Warrior", "Redcap Thief"],
 ["Minotaur Warrior", "Salivating Gremlins"],
-["Minotaur Warrior", "Skophos Reaver"],
+["Brazen Wolves", "Skophos Reaver"],
 ["Minotaur Warrior", "Smelt-Ward Minotaur"],
 ["Minotaur Warrior", "Spellrune Painter // Spellrune Howler"],
 ["Minotaur Warrior", "Spinehorn Minotaur"],
@@ -2831,8 +2834,16 @@ export const white = [
 ];
 
 export const blue = [
+["Infuse", "Jolt"],
+["Envervate", "Jolt"],
+["Impede Momentum", "Freeze in Place"],
+["Crippling Chill", "Chill of the Grave"],
+["Crippling Chill", "Grip of the Roil"],
 ["Zephid", "Sphinx of Jwar Isle"],
-
+["Decision Paralysis", "Frost Breath"],
+["Decision Paralysis", "Out Cold"],
+["Frost Breath", "Chilling Grasp"],
+["Twiddle", "Dream's Grip"],
 ["Steelgaze Griffin", "4U 4/4 Flying"],
 ["Ringwarden Owl", "Soulblade Djinn"],
 ["Air Elemental", "Djinn of Wishes"],
@@ -3455,6 +3466,7 @@ export const blue = [
 ["Coral Commando", "Naga Eternal", "="],
 ["Coral Commando", "2U 3/3"],
 ["Blind Phantasm", "2U 3/3"],
+["Blind Phantasm", "Cosima, God of the Voyage // The Omenkeel"],
 ["2U 3/3", "Endless One"],
 ["Armored Whirl Turtle", "Akal Pakal, First Among Equals"],
 ["Ancient Crab", "Akal Pakal, First Among Equals"],
@@ -3513,6 +3525,7 @@ export const blue = [
 ["Horned Turtle", "Component Collector"],
 ["Blind Phantasm", "Crackling Triton"],
 ["Blind Phantasm", "Covert Technician"],
+["Horned Turtle", "Covert Technician"],
 ["Horned Turtle", "Deceiver Exarch"],
 ["Blind Phantasm", "Detective of the Month"],
 ["Devouring Deep", "Rootwater Commando"],
@@ -3559,6 +3572,8 @@ export const blue = [
 ["Blind Phantasm", "Imoen, Mystic Trickster"],
 ["Horned Turtle", "Ioreth of the Healing House"],
 ["Blind Phantasm", "James, Wandering Dad // Follow Him"],
+["Horned Turtle", "James, Wandering Dad // Follow Him"],
+
 ["Blind Phantasm", "Janjeet Sentry"],
 ["Blind Phantasm", "Jeskai Infiltrator"],
 ["Coral Commando", "Martha Jones"],
@@ -3607,6 +3622,8 @@ export const blue = [
 ["Blind Phantasm", "Wingshield Agent"],
 ["Oko's Accomplices", "Skystrike Officer"],
 ["Oko's Accomplices", "Geyser Drake"],
+["Oko's Accomplices", "Chrome Host Seedshark"],
+["Horned Turtle", "Chrome Host Seedshark"],
 ["Wind Drake", "Animating Faerie // Bring to Life"],
 ["Wind Drake", "Aven Eternal"],
 ["Wind Drake", "Aven Wind Mage"],
@@ -3764,7 +3781,8 @@ export const blue = [
 ["Siren of the Fanged Coast", "Air Elemental"],
 ["Ancient Carp", "Wishcoin Crab"],
 ["Armored Cancrix", "Ancient Carp", "="],
-
+["Blind Phantasm", "Merfolk Cave-Diver"],
+["Horned Turtle", "Merfolk Cave-Diver"],
 ["Cancel", "Admiral's Order"],
 ["Cancel", "Counterspell"],
 ["Counterspell", "Mana Drain"],
@@ -3942,6 +3960,7 @@ export const blue = [
 ["Drown in Shapelessness", "Fumble"],
 ["Drown in Shapelessness", "Jilt"],
 ["Drown in Shapelessness", "Just the Wind"],
+["Drown in Shapelessness", "Brackish Blunder"],
 ["Champion's Victory", "Ephara's Dispersal"],
 ["Disperse", "Expel from Orazca"],
 ["Eye of Nowhere", "Boomerang"],
@@ -4006,6 +4025,15 @@ export const blue = [
 ];
 
 export const green = [
+["Battlegrowth", "Arbor Armament"],
+["Silk Net", "Arbor Armament"],
+["Battlegrowth", "Burst of Strength"],
+["Battlegrowth", "Hunger of the Howlpack"],
+["Battlegrowth", "Nature's Panoply"],
+["Battlegrowth", "Snakeskin Veil"],
+["Ranger's Guile", "Snakeskin Veil"],
+["Battlegrowth", "Vastwood Fortification // Vastwood Thicket"],
+["Stony Strength", "Burst of Strength"],
 ["Elvish Warrior", "Jermane, Pride of the Circus"],
 ["Elvish Warrior", "Scaleguard Sentinels"],
 ["Molimo, Maro-Sorcerer", "Cultivator Colossus"],
@@ -5349,6 +5377,11 @@ export const green = [
 ];
 
 export const multi = [
+["Urborg Drake", "Tegwyll, Duke of Splendor"],
+["Urborg Drake", "Oko's Accomplices"],
+["Vicious Kavu", "Frenzied Raptor"],
+["Vicious Kavu", "Rowan, Scion of War"],
+["Vicious Kavu", "Brazen Wolves"],
 ["Altar of Bone", "Eladamri's Call"],
 ["Horned Cheetah", "Mesa Unicorn"],
 ["Horned Cheetah", "Arcus Acolyte"],
