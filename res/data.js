@@ -1,4 +1,8 @@
 export const black = [
+["Black Dragon", "Overseer of the Damned"],
+["Black Dragon", "Patron of the Vein"],
+["Bone Harvest", "Footbottom Feast"],
+["Footbottom Feast", "Gravepurge", "="],
 ["Headstone", "Cremate"],
 ["Ostracize", "Divest"],
 ["Shattered Dreams", "Divest"],
@@ -747,6 +751,8 @@ export const black = [
 ];
 
 export const red = [
+["Blazing Volley", "Tectonic Hazard"],
+["Tectonic Hazard", "End the Festivities"],
 ["Sunder from Within", "Demolish"],
 ["Sunder from Within", "Icefall"],
 ["Sunder from Within", "Pillage"],
@@ -2831,6 +2837,8 @@ export const white = [
 ];
 
 export const blue = [
+["Lu Su, Wu Advisor", "Sea Gate Loremaster"],
+["Talas Researcher", "Sea Gate Loremaster"],
 ["Zephid", "Sphinx of Jwar Isle"],
 
 ["Steelgaze Griffin", "4U 4/4 Flying"],
@@ -2957,6 +2965,8 @@ export const blue = [
 ["Spectral Cloak", "Mystic Veil"],
 ["Spectral Cloak", "Diplomatic Immunity"],
 ["Fowl Play", "Ichthyomorphosis"],
+["Reduce in Stature", "Ichthyomorphosis"],
+["Illusory Wrappings", "Reduce in Stature", "="],
 ["Fowl Play", "Frogify"],
 ["Frogify", "Eaten by Piranhas"],
 ["Frogify", "Kasmina's Transmutation", "="],
@@ -5349,6 +5359,8 @@ export const green = [
 ];
 
 export const multi = [
+["Inviolability", "Chromatic Armor"],
+
 ["Altar of Bone", "Eladamri's Call"],
 ["Horned Cheetah", "Mesa Unicorn"],
 ["Horned Cheetah", "Arcus Acolyte"],
@@ -5488,6 +5500,7 @@ export const multi = [
 ];
 
 export const artifact = [
+["Staff of Zegon", "Horn of Deafening"],
 ["Bronze Sword", "Vanquisher's Axe"],
 ["Vanquisher's Axe", "Bonesplitter"],
 ["Vanquisher's Axe", "Darksteel Axe"],
