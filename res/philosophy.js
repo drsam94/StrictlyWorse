@@ -21,6 +21,106 @@ Lastly the card types themselves. While [[Personal Tutor]] can't find [[Lightnin
 </p>
 
 <h2> Two Player Games </h2>
+All cards are assessed here on the basis of two-player games of magic. Some cards are built for multiplayer in such a way that they end up quite bad when assessed for two-player magic. One example is [[Mass Mutiny]] is heavily outclassed by all other [[Threaten]] style effects. Other cards that scale with opponents will all be assessed here entirely on the basis of having a single opponent.
+
+<h2> Rules Sets </h2>
+All cards are assessed based on being played in a game with fundamentally standard magic rules. This extends the two-player notion, and for example means that neither player has a Commander, and thus cards that reference commanders, like [[Flamekin Herald]] have meaningless abilities. Some rules variants are allowed, namely that cards could be played in either Constructed or Limited formats. Despite the fact I built this data mostly to drive cube-building, I do not take the preconditions of cube into consideration (e.g these cards may be played in non-singelton formats). I do take "funny" cards (i.e silver-boarded or acorn cards) into consideration, when they can be fairly assessed in comparison to another card. Lastly, ante rules are not in affect. Conspiracy cards with draft effects will be assessed purely based on their gameplay abilities assuming they appeared in your deck without being drafted (so for example [[Lore Seeker]] is just a 2/2). [[Regicide]] is a legal card to play in Legacy, but it would do nothing.
+
+<h2> Removed Cards </h2>
+For the most part, I want to consider all magic cards "in the pool." Some cards are really bad, and it could be tempting to for example say that we will not consider "Global Series Jiang Yanggu & Mu Yanling" because of how many truly awful cards in printed, adding new levels of awful for strictly worseness (why did they have to print [[Breath of Fire]] ?). However, due to the above notes on game modes, there are some cards I think do just have to be removed from the assessment pool. These come in a couple flavors, some of these cards would have to be assessed as literally blank cards based on my rules above. I also left in some Conspiracy cards, mostly because they were vanilla sizes that were interesting to compare, but [[Spire Phantasm]] being strictly worse then [[Snapping Drake]] would create an issue if I put Spire Phantasm in my strictly worse cube, as all of a sudden it wouldn't actually be worse than the drake in a draft.
+<h3> Commander Cards </h3>
+<ul>
+<li>[[Acolyte of Bahamut]]</li>
+<li>[[Agent of the Iron Throne]]</li>
+<li>[[Agent of the Shadow Thieves]]</li>
+<li>[[Arcane Signet]]</li>
+<li>[[Biowaste Blob]]</li>
+<li>[[Cactus Preserve]]</li>
+<li>[[Candlekeep Sage]]</li>
+<li>[[Captain Vargus Wrath]]</li>
+<li>[[Clan Crafter]]</li>
+<li>[[Cloakwood Hermit]]</li>
+<li>[[Cloudkill]]</li>
+<li>[[Command Beacon]]</li>
+<li>[[Commander's Insignia]]</li>
+<li>[[Commander's Sphere]]</li>
+<li>[[Command Tower]]</li>
+<li>[[Convergence of Dominion]]</li>
+<li>[[Criminal Past]]</li>
+<li>[[Cultist of the Absolute]]</li>
+<li>[[Dragon Cultist]]</li>
+<li>[[Dungeon Delver]]</li>
+<li>[[Far Traveler]]</li>
+<li>[[Feywild Visitor]]</li>
+<li>[[Flaming Fist]]</li>
+<li>[[Folk Hero]]</li>
+<li>[[Font of Magic]]</li>
+<li>[[Forge of Heroes]]</li>
+<li>[[Fury Storm]]</li>
+<li>[[Gray Harbor Merfolk]]</li>
+<li>[[Guardian Augmenter]]</li>
+<li>[[Guild Artisan]]</li>
+<li>[[Hardy Outlander]]</li>
+<li>[[Haunted One]]</li>
+<li>[[Imposing Grandeur]]</li>
+<li>[[Inspiring Leader]]</li>
+<li>[[Jeweled Lotus]]</li>
+<li>[[Keleth, Sunmane Familiar]]</li>
+<li>[[Kediss, Emberclaw Familiar]]</li>
+<li>[[Leadership Vaccum]]</li>
+<li>[[Majestic Genesis]]</li>
+<li>[[Master Chef]]</li>
+<li>[[Myth Unbound]]</li>
+<li>[[Netherborn Altar]]</li>
+<li>[[Noble Heritage]]</li>
+<li>[[Opal Palace]]</li>
+<li>[[Passionate Archaeologist]]</li>
+<li>[[Path of Ancestry]]</li>
+<li>[[Popular Entertainer]]</li>
+<li>[[Raised by Giants]]</li>
+<li>[[Road of Return]]</li>
+<li>[[Sanctum of Eternity]]</li>
+<li>[[Scion of Halaster]]</li>
+<li>[[Shameless Charlatan]]</li>
+<li>[[Skull Storm]]</li>
+<li>[[Stinging Study]]</li>
+<li>[[Street Urchin]]</li>
+<li>[[Stumpsquall Hydra]]</li>
+<li>[[Sword Coast Sailor]]</li>
+<li>[[Tangleweave Armor]]</li>
+<li>[[Tavern Brawler]]</li>
+<li>[[Tome of Legends]]</li>
+<li>[[Veteran Soldier]]</li>
+<li>[[War Room]]</li>
+<li>[[Witch's Clinic]]</li>
+</ul>
+Conspiracy Draft Cards
+<ul>
+<li>[[Caller of the Untamed]]</li>
+<li>[[Cogwork Grinder]]</li>
+<li>[[Garbage Fire]]</li>
+<li>[[Lurking Automaton]]</li>
+<li>[[Noble Banneret]]</li>
+<li>[[Paliano, the High City]]</li>
+<li>[[Pyretic Hunter]]</li>
+<li>[[Regicide]]</li>
+<li>[[Smuggler Captain]]</li>
+<li>[[Spire Phantasm]]</li>
+<li>[[Arcane Savant]]</li>
+
+</ul>
+Ante Cards
+<ul>
+<li>[[Amulut of Quoz]]</li>
+<li>[[Bronze Tablet]]</li>
+<li>[[Contract from Below]]</li>
+<li>[[Darkpact]]</li>
+<li>[[Demonic Attorney]]</li>
+<li>[[Jeweled Bird]]</li>
+<li>[[Rebirth]]</li>
+<li>[[Tempest Efreet]]</li>
+<li>[[Timmerian Fiends]]</li>
+</ul>
 <h2> Competent Opponent </h2>
 
 
