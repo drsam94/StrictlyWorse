@@ -427,13 +427,13 @@ function addCheckBox(base, label) {
     base.appendChild(boxElem);
     return () => checkbox.checked ? label : "";
 }
-const swCards = [];
-function initalizeSwCards(dag) {
-    if (swCards.length == 0) {
+const maximalCards = [[], []];
+function initializeMaximalCards(dag, toInit, dir) {
+    if (toInit.length == 0) {
         for (const cardName in dag) {
             const card = dag[cardName];
-            if (card.stats(Direction.Worse).cards.length == 0 && !card.isPlaceholder()) {
-                swCards.push(card);
+            if (card.stats(dir).cards.length == 0 && !card.isPlaceholder()) {
+                toInit.push(card);
             }
         }
     }
@@ -462,19 +462,20 @@ const getPTString = (oracle) => {
     return oracle.power + " / " + oracle.toughness;
 };
 class TableElem {
-    constructor(card, oracle) {
+    constructor(card, oracle, dir) {
+        const oDir = dir == Direction.Better ? Direction.Worse : Direction.Better;
         this.name = card.name;
         this.colors = oracle.colors;
         this.cost = oracle.mana_cost;
         this.cmc = oracle.cmc;
         this.type = oracle.type_line;
         this.pt = getPTString(oracle);
-        this.degree = card.stats(Direction.Better).degree;
-        this.totalWorse = card.stats(Direction.Better).total;
+        this.degree = card.stats(oDir).degree;
+        this.totalWorse = card.stats(oDir).total;
     }
 }
 class TableMaker {
-    constructor(cards, oData, dg) {
+    constructor(cards, oData, dg, dir) {
         this.column = TableColumn.Cost;
         this.increasing = true;
         this.swData = [];
@@ -483,9 +484,10 @@ class TableMaker {
             if (!oracle) {
                 continue;
             }
-            this.swData.push(new TableElem(card, oracle));
+            this.swData.push(new TableElem(card, oracle, dir));
         }
         this.dag = dg;
+        this.dir = dir;
     }
     makeClickSort(elem, parent, column) {
         elem.onclick = () => {
@@ -509,7 +511,7 @@ class TableMaker {
         makeElement("th", hdrRow, "Type");
         makeElement("th", hdrRow, "P / T");
         this.makeClickSort(makeElement("th", hdrRow, "Degree"), parent, TableColumn.Degree);
-        this.makeClickSort(makeElement("th", hdrRow, "Total Worse"), parent, TableColumn.TotalWorse);
+        this.makeClickSort(makeElement("th", hdrRow, "Total " + (this.dir == Direction.Worse ? "Worse" : "Better")), parent, TableColumn.TotalWorse);
         for (const card of this.swData) {
             const elemRow = makeElement("tr", table);
             const nameRow = makeElement("td", elemRow, card.name);
@@ -527,12 +529,13 @@ class TableMaker {
     }
     cardSort() {
         const costCompare = (a, b) => {
-            const colorCountDiff = a.colors.length - b.colors.length;
+            const colors = (c) => c.colors ? c.colors.length : 2;
+            const colorCountDiff = colors(a) - colors(b);
             if (colorCountDiff != 0) {
                 return colorCountDiff;
             }
             const colorToNum = (color) => { return "WUBRG".indexOf(color); };
-            if (a.colors.length == 1) {
+            if (a.colors && b.colors && a.colors.length == 1) {
                 const colorDiff = colorToNum(a.colors[0]) - colorToNum(b.colors[0]);
                 if (colorDiff != 0) {
                     return colorDiff;
@@ -626,6 +629,14 @@ function main() {
     button.style.cursor = "pointer";
     button.style.backgroundColor = "#4CAF50";
     button.innerText = "Generate Table of SW Cards";
+    const button15 = document.createElement("button");
+    button15.type = "button";
+    button15.style.display = "block";
+    button15.style.border = "none";
+    button15.style.textAlign = "center";
+    button15.style.cursor = "pointer";
+    button15.style.backgroundColor = "#4C50AF";
+    button15.innerText = "Generate Table of Best Cards";
     const button2 = document.createElement("button");
     button2.type = "button";
     button2.style.display = "block";
@@ -637,6 +648,7 @@ function main() {
     const div = document.createElement("div");
     div.appendChild(wrapperDiv);
     div.appendChild(button);
+    div.appendChild(button15);
     div.appendChild(button2);
     const outdiv = document.createElement("div");
     div.appendChild(outdiv);
@@ -651,14 +663,16 @@ function main() {
         }
         displayCharts(outdiv, dag, inputElem.value);
     });
-    let tableMaker = undefined;
-    button.onclick = () => {
-        initalizeSwCards(dag);
-        if (tableMaker === undefined) {
-            tableMaker = new TableMaker(swCards, oracleData, dag);
+    const tableMakers = [undefined, undefined];
+    const renderTable = (dir) => {
+        initializeMaximalCards(dag, maximalCards[dir], dir);
+        if (tableMakers[dir] === undefined) {
+            tableMakers[dir] = new TableMaker(maximalCards[dir], oracleData, dag, dir);
         }
-        tableMaker.renderTable(outdiv);
+        tableMakers[dir]?.renderTable(outdiv);
     };
+    button.onclick = () => renderTable(Direction.Worse);
+    button15.onclick = () => renderTable(Direction.Better);
     let philText = "";
     button2.onclick = () => {
         if (philText === "") {
