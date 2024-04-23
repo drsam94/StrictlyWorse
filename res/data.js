@@ -2991,6 +2991,7 @@ export const white = [
 ];
 
 export const blue = [
+["Storm Crow", "Hovermyr"],
 ["Tidal Surge", "Downpour"],
 ["Shell Shield", "Dive Down"],
 ["Glint", "Shell Shield"],
@@ -3528,7 +3529,6 @@ export const blue = [
 ["Coral Eel", "Escaped Experiment"],
 ["Plated Seastrider", "Fae of Wishes // Granted"],
 ["1U 2/1 Flying", "Faerie Mastermind"],
-["1U 2/1 Flying", "Faerie Vandal"],
 ["Coral Eel", "Focused Funambulist"],
 ["Coral Eel", "Furtive Homunculus"],
 ["Sea Eagle", "Giant Albatross"],
@@ -4197,6 +4197,18 @@ export const blue = [
 export const green = [
 ["Tempt with Discovery", "Reap and Sow"],
 ["Tempt with Discovery", "Pir's Whim"],
+["Lay of the Land", "Attune with Aether"],
+["Lay of the Land", "Analyze the Pollen"],
+["Lay of the Land", "Bushwhack"],
+["Prey Upon", "Bushwhack"],
+["Lay of the Land", "Brave the Wilds"],
+["Lay of the Land", "Caravan Vigil"],
+["Lay of the Land", "Dig Up"],
+["Lay of the Land", "Many Partings"],
+["Lay of the Land", "Open the Gates"],
+["Lay of the Land", "Reclaim the Wastes"],
+["Lay of the Land", "Thirsting Roots"],
+["Lay of the Land", "Traverse the Ulvenwald"],
 ["Voice of Many", "Sarulf's Packmate"],
 ["Battlegrowth", "Arbor Armament"],
 ["Silk Net", "Arbor Armament"],
@@ -5552,6 +5564,8 @@ export const green = [
 ];
 
 export const multi = [
+["Rites of Reaping", "Cankerous Thirst"],
+["Strangling Spores", "Cankerous Thirst"],
 ["Inviolability", "Chromatic Armor"],
 ["Ordruun Veteran", "Bruse Tarl, Boorish Herder"],
 ["Ordruun Veteran", "Chaos Terminator Lord"],
@@ -5700,6 +5714,24 @@ export const multi = [
 ];
 
 export const artifact = [
+["Sleek Schooner", "Getaway Car"],
+["Sleek Schooner", "Brute Suit"],
+["Sky Skiff", "Smuggler's Copter"],
+["Jousting Lance","No-Dachi"],
+["Jousting Lance", "Ace's Baseball Bat"],
+["Flamecast Wheel", "Silent Dart"],
+["Silent Dart", "Scalding Cauldron"],
+["Silent Dart", "Springjaw Trap"],
+["Scalding Cauldron", "Silver Bolt"],
+["Flamecast Wheel", "Spiked Pit Trap"],
+["Vial of Dragonfire", "Aeolipile"],
+["Flamecast Wheel", "Ominous Parcel"],
+["Tyrant's Machine", "Crown of Empires"],
+["Tyrant's Machine", "Trip Noose"],
+["Trip Noose", "Pacification Array"],
+["Touchstone", "Relic Barrier"],
+["Voltaic Key", "Manifold Key"],
+["The Hive", "Whirlermaker"],
 ["Staff of Zegon", "Horn of Deafening"],
 ["Bronze Sword", "Vanquisher's Axe"],
 ["Vanquisher's Axe", "Bonesplitter"],
@@ -5947,11 +5979,9 @@ export const artifact = [
 ["Bay Falcon", "Hovermyr"],
 ["Flying Men", "Hope of Ghirapur"],
 ["Sea Eagle", "Pili-Pala"],
-["Flying Men", "Zabaz, the Glimmerwasp"],
 ["Flying Men", "Cogmentor"],
 ["Brass Gnat", "Hope of Ghirapur"],
 ["Brass Gnat", "Cogmentor"],
-["Arcbound Stinger", "Zabaz, the Glimmerwasp"],
 ["Arcbound Worker", "Zabaz, the Glimmerwasp"],
 ["Arcbound Worker", "Iron Apprentice"],
 ["Metallic Sliver", "Arcbound Worker"],

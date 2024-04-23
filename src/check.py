@@ -18,6 +18,15 @@ def parse_sf(file: str):
 def is_placeholder(name: str) -> bool:
     return name in ["MORPH"] or ('/' in name and '//' not in name) or (name[0].isdigit())
 
+def get_text_names() -> set[str]:
+    import re
+    text_file = 'res/philosophy.js'
+    r = re.compile(r'\[\[([^\[\]]*)\]\]')
+    names = set()
+    for match in r.finditer(open(text_file).read()):
+        names.add(match.group(1))
+    return names
+
 if __name__ == "__main__":
     sw_file = 'res/data.js' if len(sys.argv) < 2 else sys.argv[1]
     sf_file = 'res/oracle-cards.json' if len(sys.argv) < 3 else sys.argv[2]
@@ -33,6 +42,7 @@ if __name__ == "__main__":
             print(elem)
             raise e
 
+    sw_names = sw_names.union(get_text_names())    
     error_names = sw_names - set(official_names.keys())
     error_names = [name for name in error_names if not is_placeholder(name)]
     if len(error_names) > 0:

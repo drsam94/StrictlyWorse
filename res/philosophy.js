@@ -1,11 +1,11 @@
-const pageSource = `
+export const pageSource = `
 <h1> Philosophy </h1>
 <p>
-This page documents magic cards that are <b>Strictly Worse</b> than other magic cards. The term <b>Strictly Worse</b> is not really a technical term in magic, and ultimately there is just about always some imaginable scenario where you might want a certain card over another. It might be obvious that [[Ancestrall Recall]] is better than [[Inspiration]] or that [[Jade Avenger]] is better than [[Grizzly Bears]], but there are corner cases, and I go into those here.
+This page documents magic cards that are <b>Strictly Worse</b> than other magic cards. The term <b>Strictly Worse</b> is not really a technical term in magic, and ultimately there is just about always some imaginable scenario where you might want a certain card over another. It might be obvious that [[Ancestral Recall]] is better than [[Inspiration]] or that [[Jade Avenger]] is better than [[Grizzly Bears]], but there are corner cases, and I go into those here.
 </p>
 <h2> Less Mana is Better </h2>
 <p>
-For the purposes of this exercise, a card that costs less mana and does the same thing is always better than a card that costs more mana. For example, [[Unsommon]] is better than [[Drown in Shapelessness]] because it does the same thing for less mana. Of course, there are cases in magic where the more expensive card would be better -- for example your [[Manaplasm]] will grow larger if you play the more expensive spell, or [[Scornful Egotist]] will grow larger with [[Accelerated Mutation]] than [[Gudul Lurker]]. The latter example was the entire theme of the Scourge set, so this isn't necessarily a fully ridiculous case in real magic, but this project just wouldn't work without this.
+For the purposes of this exercise, a card that costs less mana and does the same thing is always better than a card that costs more mana. For example, [[Unsummon]] is better than [[Drown in Shapelessness]] because it does the same thing for less mana. Of course, there are cases in magic where the more expensive card would be better -- for example your [[Manaplasm]] will grow larger if you play the more expensive spell, or [[Scornful Egotist]] will grow larger with [[Accelerated Mutation]] than [[Gudul Lurker]]. The latter example was the entire theme of the Scourge set, so this isn't necessarily a fully ridiculous case in real magic, but this project just wouldn't work without this.
 </p>
 <h2> Less Restrictive Mana is Better </h2>
 <p>
@@ -13,7 +13,7 @@ Due to the mechanics of Chroma and Devotion, one could argue for playing [[Sword
 </p>
 <h2> Types, Subtypes, and Supertypes (mostly) don't matter </h2>
 <p>
-This one is perhaps a bit more controvertial, but doing this as a blanket rule leads to simpler evaluation. To start with probably the simplest example, we consider creature subtypes to be incomparable, with it not being worse to have one creature type or another. Sure, in many cases you might want [[Mons's Goblin Raiders]] over [[Dwarven Trader]] because one interacts with Goblin support like [[Goblin King]], but maybe you are comboing with [[Dwarven Pony]]. And even if you don't have the pony, you might want to dodge [[Tividar of Thorn]]. So, creature types are ignored for purposes of card comparison. The only subtypes I have considered advantageous are land subtypes, despite there being some hate for basic land types, this is almost always an advantage, and e.g being a Gate is almost entirely upside (there are no explicit ways to punish your opponent for playing a gate, but maybe your opponent is playing [[Maze's End]] and [[Annex]]...).
+This one is perhaps a bit more controvertial, but doing this as a blanket rule leads to simpler evaluation. To start with probably the simplest example, we consider creature subtypes to be incomparable, with it not being worse to have one creature type or another. Sure, in many cases you might want [[Mons's Goblin Raiders]] over [[Dwarven Trader]] because one interacts with Goblin support like [[Goblin King]], but maybe you are comboing with [[Dwarven Pony]]. And even if you don't have the pony, you might want to dodge [[Tivadar of Thorn]]. So, creature types are ignored for purposes of card comparison. The only subtypes I have considered advantageous are land subtypes, despite there being some hate for basic land types, this is almost always an advantage, and e.g being a Gate is almost entirely upside (there are no explicit ways to punish your opponent for playing a gate, but maybe your opponent is playing [[Maze's End]] and [[Annex]]...).
 
 Perhaps a bit more controvertial is ignoring <i>supertypes</i>. The important one here is Legendary. So, for example, I consider in this data [[Isamaru, Hound of Konda]] to be better than [[Savannah Lions]], despite the fact that Isamaru is worse to have multiples of in an opening hand in a white weenie deck. So many modern creatures are legendary that it just isn't particularly interesting to restrict comparability by this. Other supertypes like Snow are also ignored. World too, and yes, that does come up. I do not consider Basic lands comparable with other cards, however.
 
@@ -67,7 +67,7 @@ For the most part, I want to consider all magic cards "in the pool." Some cards 
 <li>[[Jeweled Lotus]]</li>
 <li>[[Keleth, Sunmane Familiar]]</li>
 <li>[[Kediss, Emberclaw Familiar]]</li>
-<li>[[Leadership Vaccum]]</li>
+<li>[[Leadership Vacuum]]</li>
 <li>[[Majestic Genesis]]</li>
 <li>[[Master Chef]]</li>
 <li>[[Myth Unbound]]</li>
@@ -111,7 +111,7 @@ Conspiracy Draft Cards
 </ul>
 Ante Cards
 <ul>
-<li>[[Amulut of Quoz]]</li>
+<li>[[Amulet of Quoz]]</li>
 <li>[[Bronze Tablet]]</li>
 <li>[[Contract from Below]]</li>
 <li>[[Darkpact]]</li>

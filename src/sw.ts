@@ -8,7 +8,7 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import * as rawData from '../res/data.js';
 import * as oracleData from '../res/filtered-oracle.js';
-
+import * as philosophy from '../res/philosophy.js';
 /****    file hover.ts */
 
 const CARD_HEIGHT = "476";
@@ -549,14 +549,14 @@ function addCheckBox(base: HTMLElement, label: string): () => string {
 
 const swCards: Array<Card> = [];
 function initalizeSwCards(dag: Record<string, Card>) {
-if (swCards.length == 0) {
-  for (const cardName in dag) {
-    const card = dag[cardName];
-    if (card.stats(Direction.Worse).cards.length == 0 && !card.isPlaceholder()) {
-      swCards.push(card);
+  if (swCards.length == 0) {
+    for (const cardName in dag) {
+      const card = dag[cardName];
+      if (card.stats(Direction.Worse).cards.length == 0 && !card.isPlaceholder()) {
+        swCards.push(card);
+      }
     }
   }
-}
 }
 
 function makeElement(type: string, parent: Node, text?: string): HTMLElement {
@@ -609,9 +609,9 @@ class TableElem {
 class TableMaker {
   private column: TableColumn = TableColumn.Cost;
   private increasing: boolean = true;
-  private swData : Array<TableElem>;
-
-  constructor(cards: Array<Card>, oData: any) {
+  private swData: Array<TableElem>;
+  private dag: Record<string, Card>;
+  constructor(cards: Array<Card>, oData: any, dg: Record<string, Card>) {
     this.swData = [];
     for (const card of cards) {
       const oracle = oData.all_cards[card.name];
@@ -621,6 +621,7 @@ class TableMaker {
 
       this.swData.push(new TableElem(card, oracle));
     }
+    this.dag = dg;
   }
 
   private makeClickSort(elem: HTMLElement, parent: HTMLElement, column: TableColumn) {
@@ -649,6 +650,9 @@ class TableMaker {
       const elemRow = makeElement("tr", table);
       const nameRow = makeElement("td", elemRow, card.name);
       imbueHoverImage(nameRow, getImageURL(card.name));
+      nameRow.onclick = () => {
+        displayCharts(parent, this.dag, card.name);
+      }
       makeElement("td", elemRow, card.cost);
       makeElement("td", elemRow, card.type);
       makeElement("td", elemRow, card.pt);
@@ -674,7 +678,7 @@ class TableMaker {
       return (a.cmc - b.cmc) * (this.increasing ? 1 : -1);
     };
     const compare = ((column: TableColumn) => {
-      switch(column) {
+      switch (column) {
         case TableColumn.Cost:
           return costCompare;
         case TableColumn.Degree:
@@ -692,6 +696,35 @@ class TableMaker {
 
     this.swData.sort(compare);
   }
+}
+
+function displayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: string): void {
+outdiv.replaceChildren("");
+
+const card = dag[name];
+if (!card) {
+  const text = document.createElement("p");
+  text.textContent = name + " Not Found";
+  outdiv.appendChild(text);
+  return;
+}
+
+if (card.stats(Direction.Better).cards.length > 0) {
+  const tree = makeTree(card, Direction.Better);
+  const chart = makeChart(tree, card.name, true);
+  const label = document.createElement("p");
+  label.textContent = card.name + " is worse than...";
+  outdiv.appendChild(label);
+  outdiv.appendChild(chart.node());
+}
+if (card.stats(Direction.Worse).cards.length > 0) {
+  const tree = makeTree(card, Direction.Worse);
+  const chart = makeChart(tree, card.name, true);
+  const label = document.createElement("p");
+  label.textContent = card.name + " is better than...";
+  outdiv.appendChild(label);
+  outdiv.appendChild(chart.node());
+}
 }
 
 function main(): void {
@@ -741,10 +774,21 @@ function main(): void {
   button.style.cursor = "pointer";
   button.style.backgroundColor = "#4CAF50";
   button.innerText = "Generate Table of SW Cards";
+
+  const button2 = document.createElement("button");
+  button2.type = "button";
+  button2.style.display = "block";
+  button2.style.border = "none";
+  button.style.textAlign = "center";
+  button2.style.cursor = "pointer";
+  button2.style.backgroundColor = "#AF504C";
+  button2.innerText = "Find Out More";
+
   const div = document.createElement("div");
 
   div.appendChild(wrapperDiv);
   div.appendChild(button);
+  div.appendChild(button2);
 
   const outdiv = document.createElement("div");
   div.appendChild(outdiv);
@@ -761,42 +805,32 @@ function main(): void {
     if (event.key != "Enter") {
       return;
     }
-    outdiv.replaceChildren("");
-
-    const card = dag[inputElem.value];
-    if (!card) {
-      const text = document.createElement("p");
-      text.textContent = inputElem.value + " Not Found";
-      outdiv.appendChild(text);
-      return;
-    }
-
-    if (card.stats(Direction.Better).cards.length > 0) {
-      const tree = makeTree(card, Direction.Better);
-      const chart = makeChart(tree, card.name, true);
-      const label = document.createElement("p");
-      label.textContent = card.name + " is worse than...";
-      outdiv.appendChild(label);
-      outdiv.appendChild(chart.node());
-    }
-    if (card.stats(Direction.Worse).cards.length > 0) {
-      const tree = makeTree(card, Direction.Worse);
-      const chart = makeChart(tree, card.name, true);
-      const label = document.createElement("p");
-      label.textContent = card.name + " is better than...";
-      outdiv.appendChild(label);
-      outdiv.appendChild(chart.node());
-    }
+    displayCharts(outdiv, dag, inputElem.value);
   });
 
 
-  let tableMaker : TableMaker | undefined = undefined;
+  let tableMaker: TableMaker | undefined = undefined;
   button.onclick = () => {
     initalizeSwCards(dag);
     if (tableMaker === undefined) {
-      tableMaker = new TableMaker(swCards, oracleData);
+      tableMaker = new TableMaker(swCards, oracleData, dag);
     }
     tableMaker.renderTable(outdiv);
+  };
+
+  let philText = "";
+  button2.onclick = () => {
+    if (philText === "") {
+      philText = philosophy.pageSource;
+      const re = /\[\[([^\[\]]*)\]\]/g;
+      philText = philText.replace(re,
+        "<a class='cardlink'>$1</a>");
+    }
+    outdiv.replaceChildren("");
+    outdiv.innerHTML = philText;
+    for (const obj of document.getElementsByClassName("cardlink")) {
+      imbueHoverImage(obj, getImageURL(obj.textContent));
+    }
   };
 }
 

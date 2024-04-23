@@ -1,6 +1,7 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import * as rawData from '../res/data.js';
 import * as oracleData from '../res/filtered-oracle.js';
+import * as philosophy from '../res/philosophy.js';
 const CARD_HEIGHT = "476";
 const CARD_WIDTH = "342";
 function showImage(elem, imgSrc) {
@@ -473,7 +474,7 @@ class TableElem {
     }
 }
 class TableMaker {
-    constructor(cards, oData) {
+    constructor(cards, oData, dg) {
         this.column = TableColumn.Cost;
         this.increasing = true;
         this.swData = [];
@@ -484,6 +485,7 @@ class TableMaker {
             }
             this.swData.push(new TableElem(card, oracle));
         }
+        this.dag = dg;
     }
     makeClickSort(elem, parent, column) {
         elem.onclick = () => {
@@ -512,6 +514,9 @@ class TableMaker {
             const elemRow = makeElement("tr", table);
             const nameRow = makeElement("td", elemRow, card.name);
             imbueHoverImage(nameRow, getImageURL(card.name));
+            nameRow.onclick = () => {
+                displayCharts(parent, this.dag, card.name);
+            };
             makeElement("td", elemRow, card.cost);
             makeElement("td", elemRow, card.type);
             makeElement("td", elemRow, card.pt);
@@ -552,6 +557,32 @@ class TableMaker {
             }
         })(this.column);
         this.swData.sort(compare);
+    }
+}
+function displayCharts(outdiv, dag, name) {
+    outdiv.replaceChildren("");
+    const card = dag[name];
+    if (!card) {
+        const text = document.createElement("p");
+        text.textContent = name + " Not Found";
+        outdiv.appendChild(text);
+        return;
+    }
+    if (card.stats(Direction.Better).cards.length > 0) {
+        const tree = makeTree(card, Direction.Better);
+        const chart = makeChart(tree, card.name, true);
+        const label = document.createElement("p");
+        label.textContent = card.name + " is worse than...";
+        outdiv.appendChild(label);
+        outdiv.appendChild(chart.node());
+    }
+    if (card.stats(Direction.Worse).cards.length > 0) {
+        const tree = makeTree(card, Direction.Worse);
+        const chart = makeChart(tree, card.name, true);
+        const label = document.createElement("p");
+        label.textContent = card.name + " is better than...";
+        outdiv.appendChild(label);
+        outdiv.appendChild(chart.node());
     }
 }
 function main() {
@@ -595,9 +626,18 @@ function main() {
     button.style.cursor = "pointer";
     button.style.backgroundColor = "#4CAF50";
     button.innerText = "Generate Table of SW Cards";
+    const button2 = document.createElement("button");
+    button2.type = "button";
+    button2.style.display = "block";
+    button2.style.border = "none";
+    button.style.textAlign = "center";
+    button2.style.cursor = "pointer";
+    button2.style.backgroundColor = "#AF504C";
+    button2.innerText = "Find Out More";
     const div = document.createElement("div");
     div.appendChild(wrapperDiv);
     div.appendChild(button);
+    div.appendChild(button2);
     const outdiv = document.createElement("div");
     div.appendChild(outdiv);
     document.body.appendChild(div);
@@ -609,38 +649,28 @@ function main() {
         if (event.key != "Enter") {
             return;
         }
-        outdiv.replaceChildren("");
-        const card = dag[inputElem.value];
-        if (!card) {
-            const text = document.createElement("p");
-            text.textContent = inputElem.value + " Not Found";
-            outdiv.appendChild(text);
-            return;
-        }
-        if (card.stats(Direction.Better).cards.length > 0) {
-            const tree = makeTree(card, Direction.Better);
-            const chart = makeChart(tree, card.name, true);
-            const label = document.createElement("p");
-            label.textContent = card.name + " is worse than...";
-            outdiv.appendChild(label);
-            outdiv.appendChild(chart.node());
-        }
-        if (card.stats(Direction.Worse).cards.length > 0) {
-            const tree = makeTree(card, Direction.Worse);
-            const chart = makeChart(tree, card.name, true);
-            const label = document.createElement("p");
-            label.textContent = card.name + " is better than...";
-            outdiv.appendChild(label);
-            outdiv.appendChild(chart.node());
-        }
+        displayCharts(outdiv, dag, inputElem.value);
     });
     let tableMaker = undefined;
     button.onclick = () => {
         initalizeSwCards(dag);
         if (tableMaker === undefined) {
-            tableMaker = new TableMaker(swCards, oracleData);
+            tableMaker = new TableMaker(swCards, oracleData, dag);
         }
         tableMaker.renderTable(outdiv);
+    };
+    let philText = "";
+    button2.onclick = () => {
+        if (philText === "") {
+            philText = philosophy.pageSource;
+            const re = /\[\[([^\[\]]*)\]\]/g;
+            philText = philText.replace(re, "<a class='cardlink'>$1</a>");
+        }
+        outdiv.replaceChildren("");
+        outdiv.innerHTML = philText;
+        for (const obj of document.getElementsByClassName("cardlink")) {
+            imbueHoverImage(obj, getImageURL(obj.textContent));
+        }
     };
 }
 main();
