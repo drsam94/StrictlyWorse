@@ -547,7 +547,7 @@ function addCheckBox(base: HTMLElement, label: string): () => string {
 }
 
 
-const maximalCards: Record<Direction, Array<Card>> = [[],[]];
+const maximalCards: Record<Direction, Array<Card>> = [[], []];
 function initializeMaximalCards(dag: Record<string, Card>, toInit: Array<Card>, dir: Direction) {
   if (toInit.length == 0) {
     for (const cardName in dag) {
@@ -705,35 +705,54 @@ class TableMaker {
 }
 
 function displayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: string): void {
-outdiv.replaceChildren("");
+  outdiv.replaceChildren("");
 
-const card = dag[name];
-if (!card) {
-  const text = document.createElement("p");
-  text.textContent = name + " Not Found";
-  outdiv.appendChild(text);
-  return;
+  const card = dag[name];
+  if (!card) {
+    const text = document.createElement("p");
+    text.textContent = name + " Not Found";
+    outdiv.appendChild(text);
+    return;
+  }
+
+  if (card.stats(Direction.Better).cards.length > 0) {
+    const tree = makeTree(card, Direction.Better);
+    const chart = makeChart(tree, card.name, true);
+    const label = document.createElement("p");
+    label.textContent = card.name + " is worse than...";
+    outdiv.appendChild(label);
+    outdiv.appendChild(chart.node());
+  }
+  if (card.stats(Direction.Worse).cards.length > 0) {
+    const tree = makeTree(card, Direction.Worse);
+    const chart = makeChart(tree, card.name, true);
+    const label = document.createElement("p");
+    label.textContent = card.name + " is better than...";
+    outdiv.appendChild(label);
+    outdiv.appendChild(chart.node());
+  }
 }
 
-if (card.stats(Direction.Better).cards.length > 0) {
-  const tree = makeTree(card, Direction.Better);
-  const chart = makeChart(tree, card.name, true);
-  const label = document.createElement("p");
-  label.textContent = card.name + " is worse than...";
-  outdiv.appendChild(label);
-  outdiv.appendChild(chart.node());
-}
-if (card.stats(Direction.Worse).cards.length > 0) {
-  const tree = makeTree(card, Direction.Worse);
-  const chart = makeChart(tree, card.name, true);
-  const label = document.createElement("p");
-  label.textContent = card.name + " is better than...";
-  outdiv.appendChild(label);
-  outdiv.appendChild(chart.node());
-}
-}
+class Timer {
+  private currentMs: number;
+
+  constructor() {
+    this.currentMs = performance.now();
+  }
+
+  public reset(): void {
+    this.currentMs = performance.now();
+  }
+  public checkpoint(desc: string): void {
+    const now = performance.now();
+    const delta = now - this.currentMs;
+    console.log(desc + ": " + delta + "ms");
+    this.currentMs = now;
+  }
+};
 
 function main(): void {
+  const timer = new Timer();
   const style = document.createElement("style");
   let cssText = ".mytable { border: 1px solid black; }";
   const cssStyleNode = document.createTextNode(cssText);
@@ -753,8 +772,10 @@ function main(): void {
   processData(dag, rawData.blue);
   processData(dag, rawData.green);
   processData(dag, rawData.multi);
-  computeStats(dag);
 
+  timer.checkpoint("Initial Data Ingest");
+  computeStats(dag);
+  timer.checkpoint("Stats Computation");
 
   const wrapperDiv = document.createElement("div");
   wrapperDiv.style.position = "relative";
@@ -815,8 +836,9 @@ function main(): void {
   trailerDiv.style.height = CARD_HEIGHT;
 
   document.body.appendChild(trailerDiv);
-
+  timer.checkpoint("Button Init");
   autocomplete(inputElem, Object.keys(dag));
+  timer.checkpoint("Autocomplete Computation");
   inputElem.addEventListener("keydown", (event: any) => {
     if (event.key != "Enter") {
       return;
@@ -827,12 +849,15 @@ function main(): void {
 
   const tableMakers: Record<Direction, TableMaker | undefined> = [undefined, undefined];
   const renderTable = (dir: Direction) => {
+    timer.reset()
     initializeMaximalCards(dag, maximalCards[dir], dir);
     if (tableMakers[dir] === undefined) {
       tableMakers[dir] = new TableMaker(maximalCards[dir], oracleData, dag, dir);
     }
     tableMakers[dir]?.renderTable(outdiv);
+    timer.checkpoint("Render Table");
   };
+
   button.onclick = () => renderTable(Direction.Worse);
   button15.onclick = () => renderTable(Direction.Better);
   let philText = "";

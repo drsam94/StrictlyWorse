@@ -588,7 +588,23 @@ function displayCharts(outdiv, dag, name) {
         outdiv.appendChild(chart.node());
     }
 }
+class Timer {
+    constructor() {
+        this.currentMs = performance.now();
+    }
+    reset() {
+        this.currentMs = performance.now();
+    }
+    checkpoint(desc) {
+        const now = performance.now();
+        const delta = now - this.currentMs;
+        console.log(desc + ": " + delta + "ms");
+        this.currentMs = now;
+    }
+}
+;
 function main() {
+    const timer = new Timer();
     const style = document.createElement("style");
     let cssText = ".mytable { border: 1px solid black; }";
     const cssStyleNode = document.createTextNode(cssText);
@@ -607,7 +623,9 @@ function main() {
     processData(dag, rawData.blue);
     processData(dag, rawData.green);
     processData(dag, rawData.multi);
+    timer.checkpoint("Initial Data Ingest");
     computeStats(dag);
+    timer.checkpoint("Stats Computation");
     const wrapperDiv = document.createElement("div");
     wrapperDiv.style.position = "relative";
     wrapperDiv.style.display = "inline-block";
@@ -656,7 +674,9 @@ function main() {
     const trailerDiv = document.createElement("div");
     trailerDiv.style.height = CARD_HEIGHT;
     document.body.appendChild(trailerDiv);
+    timer.checkpoint("Button Init");
     autocomplete(inputElem, Object.keys(dag));
+    timer.checkpoint("Autocomplete Computation");
     inputElem.addEventListener("keydown", (event) => {
         if (event.key != "Enter") {
             return;
@@ -665,11 +685,13 @@ function main() {
     });
     const tableMakers = [undefined, undefined];
     const renderTable = (dir) => {
+        timer.reset();
         initializeMaximalCards(dag, maximalCards[dir], dir);
         if (tableMakers[dir] === undefined) {
             tableMakers[dir] = new TableMaker(maximalCards[dir], oracleData, dag, dir);
         }
         tableMakers[dir]?.renderTable(outdiv);
+        timer.checkpoint("Render Table");
     };
     button.onclick = () => renderTable(Direction.Worse);
     button15.onclick = () => renderTable(Direction.Better);
