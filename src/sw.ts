@@ -224,13 +224,14 @@ function processData(dag: Record<string, Card>, inData: any) {
   const top_level = [];
   for (const elem of inData) {
     // console.log(elem);
-    if (elem.length != 2) {
-      continue;
-    }
     const worse = elem[0];
     const better = elem[1];
     const worseNode = initNode(dag, worse);
     const betterNode = initNode(dag, better);
+    if (elem.length === 3) {
+      dag[better] = worseNode;
+      continue;
+    }
     worseNode.stats(Direction.Better).cards.push(betterNode);
     const betterCards = betterNode.stats(Direction.Worse).cards;
     betterCards.push(worseNode);
@@ -547,11 +548,15 @@ function addCheckBox(base: HTMLElement, label: string): () => string {
 }
 
 
-const maximalCards: Record<Direction, Array<Card>> = [[],[]];
+const maximalCards: Record<Direction, Array<Card>> = [[], []];
 function initializeMaximalCards(dag: Record<string, Card>, toInit: Array<Card>, dir: Direction) {
   if (toInit.length == 0) {
     for (const cardName in dag) {
       const card = dag[cardName];
+      if (card.name !== cardName) {
+        // Skip alias nodes
+        continue;
+      }
       if (card.stats(dir).cards.length == 0 && !card.isPlaceholder()) {
         toInit.push(card);
       }
@@ -705,32 +710,42 @@ class TableMaker {
 }
 
 function displayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: string): void {
-outdiv.replaceChildren("");
+  outdiv.replaceChildren("");
 
-const card = dag[name];
-if (!card) {
-  const text = document.createElement("p");
-  text.textContent = name + " Not Found";
-  outdiv.appendChild(text);
-  return;
+  const card = dag[name];
+  if (!card) {
+    const text = document.createElement("p");
+    text.textContent = name + " Not Found";
+    outdiv.appendChild(text);
+    return;
+  }
+
+  for (const dir of [Direction.Better, Direction.Worse]) {
+
+    if (card.stats(dir).cards.length > 0) {
+      const tree = makeTree(card, dir);
+      const chart = makeChart(tree, card.name, true);
+      const label = document.createElement("p");
+      let nameStr = "[[" + name + "]]";
+      if (card.name !== name) {
+        nameStr += " (Equivalent to [[" + card.name + "]])";
+      }
+      const textContent = nameStr + " is " + (dir == Direction.Better ? "worse" : "better") + " than...";
+      outdiv.appendChild(label);
+      displayTextWithCardLinks(label, textContent);
+      outdiv.appendChild(chart.node());
+    }
+  }
 }
 
-if (card.stats(Direction.Better).cards.length > 0) {
-  const tree = makeTree(card, Direction.Better);
-  const chart = makeChart(tree, card.name, true);
-  const label = document.createElement("p");
-  label.textContent = card.name + " is worse than...";
-  outdiv.appendChild(label);
-  outdiv.appendChild(chart.node());
-}
-if (card.stats(Direction.Worse).cards.length > 0) {
-  const tree = makeTree(card, Direction.Worse);
-  const chart = makeChart(tree, card.name, true);
-  const label = document.createElement("p");
-  label.textContent = card.name + " is better than...";
-  outdiv.appendChild(label);
-  outdiv.appendChild(chart.node());
-}
+function displayTextWithCardLinks(elem: HTMLElement, text: string) {
+  const re = /\[\[([^\[\]]*)\]\]/g;
+  text = text.replace(re, "<a class='cardlink'>$1</a>");
+  elem.replaceChildren("");
+  elem.innerHTML = text;
+  for (const obj of document.getElementsByClassName("cardlink")) {
+    imbueHoverImage(obj, getImageURL(obj.textContent));
+  }
 }
 
 function main(): void {
@@ -837,17 +852,7 @@ function main(): void {
   button15.onclick = () => renderTable(Direction.Better);
   let philText = "";
   button2.onclick = () => {
-    if (philText === "") {
-      philText = philosophy.pageSource;
-      const re = /\[\[([^\[\]]*)\]\]/g;
-      philText = philText.replace(re,
-        "<a class='cardlink'>$1</a>");
-    }
-    outdiv.replaceChildren("");
-    outdiv.innerHTML = philText;
-    for (const obj of document.getElementsByClassName("cardlink")) {
-      imbueHoverImage(obj, getImageURL(obj.textContent));
-    }
+    displayTextWithCardLinks(outdiv, philosophy.pageSource);
   };
 }
 

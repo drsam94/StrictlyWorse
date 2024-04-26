@@ -171,13 +171,14 @@ function deep_equal(arr1, arr2) {
 function processData(dag, inData) {
     const top_level = [];
     for (const elem of inData) {
-        if (elem.length != 2) {
-            continue;
-        }
         const worse = elem[0];
         const better = elem[1];
         const worseNode = initNode(dag, worse);
         const betterNode = initNode(dag, better);
+        if (elem.length === 3) {
+            dag[better] = worseNode;
+            continue;
+        }
         worseNode.stats(Direction.Better).cards.push(betterNode);
         const betterCards = betterNode.stats(Direction.Worse).cards;
         betterCards.push(worseNode);
@@ -432,6 +433,9 @@ function initializeMaximalCards(dag, toInit, dir) {
     if (toInit.length == 0) {
         for (const cardName in dag) {
             const card = dag[cardName];
+            if (card.name !== cardName) {
+                continue;
+            }
             if (card.stats(dir).cards.length == 0 && !card.isPlaceholder()) {
                 toInit.push(card);
             }
@@ -571,21 +575,29 @@ function displayCharts(outdiv, dag, name) {
         outdiv.appendChild(text);
         return;
     }
-    if (card.stats(Direction.Better).cards.length > 0) {
-        const tree = makeTree(card, Direction.Better);
-        const chart = makeChart(tree, card.name, true);
-        const label = document.createElement("p");
-        label.textContent = card.name + " is worse than...";
-        outdiv.appendChild(label);
-        outdiv.appendChild(chart.node());
+    for (const dir of [Direction.Better, Direction.Worse]) {
+        if (card.stats(dir).cards.length > 0) {
+            const tree = makeTree(card, dir);
+            const chart = makeChart(tree, card.name, true);
+            const label = document.createElement("p");
+            let nameStr = "[[" + name + "]]";
+            if (card.name !== name) {
+                nameStr += " (Equivalent to [[" + card.name + "]])";
+            }
+            const textContent = nameStr + " is " + (dir == Direction.Better ? "worse" : "better") + " than...";
+            outdiv.appendChild(label);
+            displayTextWithCardLinks(label, textContent);
+            outdiv.appendChild(chart.node());
+        }
     }
-    if (card.stats(Direction.Worse).cards.length > 0) {
-        const tree = makeTree(card, Direction.Worse);
-        const chart = makeChart(tree, card.name, true);
-        const label = document.createElement("p");
-        label.textContent = card.name + " is better than...";
-        outdiv.appendChild(label);
-        outdiv.appendChild(chart.node());
+}
+function displayTextWithCardLinks(elem, text) {
+    const re = /\[\[([^\[\]]*)\]\]/g;
+    text = text.replace(re, "<a class='cardlink'>$1</a>");
+    elem.replaceChildren("");
+    elem.innerHTML = text;
+    for (const obj of document.getElementsByClassName("cardlink")) {
+        imbueHoverImage(obj, getImageURL(obj.textContent));
     }
 }
 function main() {
@@ -675,16 +687,7 @@ function main() {
     button15.onclick = () => renderTable(Direction.Better);
     let philText = "";
     button2.onclick = () => {
-        if (philText === "") {
-            philText = philosophy.pageSource;
-            const re = /\[\[([^\[\]]*)\]\]/g;
-            philText = philText.replace(re, "<a class='cardlink'>$1</a>");
-        }
-        outdiv.replaceChildren("");
-        outdiv.innerHTML = philText;
-        for (const obj of document.getElementsByClassName("cardlink")) {
-            imbueHoverImage(obj, getImageURL(obj.textContent));
-        }
+        displayTextWithCardLinks(outdiv, philosophy.pageSource);
     };
 }
 main();
