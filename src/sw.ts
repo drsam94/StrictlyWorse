@@ -341,7 +341,7 @@ function makeTree(rootNode: Card, dir: Direction) {
   return data;
 }
 
-function getImageURL(name: string) {
+function getImageURL(name?: string) {
   const card = oracleData.all_cards[name];
   if (card === undefined) {
     return "";
@@ -354,7 +354,6 @@ function getImageURL(name: string) {
 
 function makeChart(data: any, rootName: string, startExpanded?: boolean) {
   data["name"] = rootName;
-  console.log(data);
   // Specify the charts’ dimensions. The height is variable, depending on the layout.
   const width = 1300;
   const marginTop = 10;
@@ -564,13 +563,15 @@ function initializeMaximalCards(dag: Record<string, Card>, toInit: Array<Card>, 
   }
 }
 
-function makeElement(type: string, parent: Node, text?: string): HTMLElement {
+function makeElement(type: string, parent?: Node, text?: string): HTMLElement {
   const elem = document.createElement(type);
   elem.className = "mytable";
   if (text) {
     elem.textContent = text;
   }
-  parent.appendChild(elem);
+  if (parent) {
+    parent.appendChild(elem);
+  }
   return elem;
 };
 
@@ -589,6 +590,18 @@ const getPTString = (oracle: any): string => {
   return oracle.power + " / " + oracle.toughness;
 };
 
+function renderCost(cost: string): string {
+  let ret = "";
+  // Grab all the pieces in {}
+  const re = /\{([^{}]*)\}/g;
+  for (const match of cost.matchAll(re)) {
+    // naming convention to avoid / in filenames
+    const sym = match[1].replace('/', '_');
+    ret += "<img width='15' height='15' position='float' src='res/" + sym + ".svg' />";  
+  }
+  return ret;
+}
+
 class TableElem {
   public name: string;
   public colors: Array<string>;
@@ -603,9 +616,20 @@ class TableElem {
     const oDir = dir == Direction.Better ? Direction.Worse : Direction.Better;
     this.name = card.name;
     this.colors = oracle.colors;
-    this.cost = oracle.mana_cost;
+    let cost = oracle.mana_cost;
+    if (cost) {
+      this.cost = renderCost(cost);
+    } else {
+      this.cost = "";
+    }
     this.cmc = oracle.cmc;
     this.type = oracle.type_line;
+    const emDash = '—';
+    const enDash = '-';
+    this.type = this.type.replace(emDash, enDash);
+    if (this.type.length > 20) {
+      this.type = this.type.substring(0,20) + ". . . ";
+    } 
     this.pt = getPTString(oracle);
     this.degree = card.stats(oDir).degree;
     this.totalWorse = card.stats(oDir).total;
@@ -655,18 +679,30 @@ class TableMaker {
     makeElement("th", hdrRow, "P / T");
     this.makeClickSort(makeElement("th", hdrRow, "Degree"), parent, TableColumn.Degree);
     this.makeClickSort(makeElement("th", hdrRow, "Total " + (this.dir == Direction.Worse ? "Worse" : "Better")), parent, TableColumn.TotalWorse);
+   
+    // Making a template row and cloning it substantially speeds up DOM creation here
+    // (something like 5-10x)
+    const numColumns = 6;
+    const templateRow = makeElement("tr");
+    for (let i = 0; i < numColumns; ++i) {
+      makeElement("td", templateRow);
+    }
     for (const card of this.swData) {
-      const elemRow = makeElement("tr", table);
-      const nameRow = makeElement("td", elemRow, card.name);
+      const elemRow = templateRow.cloneNode(true) as HTMLElement;
+      const children = elemRow.children;
+      const nameRow = children[0] as HTMLElement;
+      nameRow.textContent = card.name;
       imbueHoverImage(nameRow, getImageURL(card.name));
       nameRow.onclick = () => {
         displayCharts(parent, this.dag, card.name);
       }
-      makeElement("td", elemRow, card.cost);
-      makeElement("td", elemRow, card.type);
-      makeElement("td", elemRow, card.pt);
-      makeElement("td", elemRow, card.degree + "");
-      makeElement("td", elemRow, card.totalWorse + "");
+      children[1].innerHTML = card.cost;
+      children[2].textContent = card.type;
+      children[3].textContent = card.pt;
+      children[4].textContent = card.degree + "";
+      children[5].textContent = card.totalWorse + "";
+
+      table.appendChild(elemRow);
     }
     parent.appendChild(table);
   }
@@ -739,13 +775,16 @@ function displayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: str
 }
 
 function displayTextWithCardLinks(elem: HTMLElement, text: string) {
+  const timer = new Timer();
   const re = /\[\[([^\[\]]*)\]\]/g;
   text = text.replace(re, "<a class='cardlink'>$1</a>");
   elem.replaceChildren("");
   elem.innerHTML = text;
   for (const obj of document.getElementsByClassName("cardlink")) {
-    imbueHoverImage(obj, getImageURL(obj.textContent));
+    const o = obj as HTMLElement;
+    imbueHoverImage(o, getImageURL(o.textContent || ""));
   }
+  timer.checkpoint("Display Text");
 }
 
 class Timer {
@@ -875,10 +914,7 @@ function main(): void {
 
   button.onclick = () => renderTable(Direction.Worse);
   button15.onclick = () => renderTable(Direction.Better);
-  let philText = "";
-  button2.onclick = () => {
-    displayTextWithCardLinks(outdiv, philosophy.pageSource);
-  };
+  button2.onclick = () => displayTextWithCardLinks(outdiv, philosophy.pageSource);
 }
 
 main();
