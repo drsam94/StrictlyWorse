@@ -20,14 +20,36 @@ Perhaps a bit more controvertial is ignoring <i>supertypes</i>. The important on
 Lastly the card types themselves. While [[Personal Tutor]] can't find [[Lightning Strike]], I still claim it is strictly better than [[Volcanic Hammer]], so the abilility to be cast at instant speed is a pro, and the type is ignored. I take this to the logical extreme, and also say for example [[Omega Myr]] is better than [[Squire]] because of the less restrict mana cost, and consider the artifact type irrelevant. So long as the act of playing the card provides the same or more value, the type of the card it is attached to is considered superfluous.
 </p>
 
+<h2> Counters and other minor components </h2>
+In general, I assess strictly worse components based on average maintained board state, even though this does create some ambiguities. For example, I consider [[Endless One]] strictly better than [[Stone Golem]], even though the former can face threats like [[Spike Cannibal]] and [[Aether Snap]]. The assumption is that the pluses of counters (like being proliferated by [[Steady Progress]]) cancel out with the positives, and we just consider the average case, that paying five mana for a 5/5 is better than paying five mana for a 4/4. Some similar considerations are saying that [[Venerable Monk]] is better than [[Pearled Unicorn]], even though sometimes the fact that [[Venerable Monk]] coming into play creating a trigger on the stack that the opponent can respond to, while you can maintain priority after [[Pearled Unicorn]] resolves, will sometimes cause [[Venerable Monk]] to be worse because your opponent plays [[Lightning Bolt]] with the Venerable Monk trigger on the stack, preventing you from using it as sacrifice fodder for [[Annihilating Glare]].  Despite these considerations, we consider a 2/2 that gains you 2 life better than just a 2/2. Sometimes, these are judgment calls that can be tough, and I will try to explain any potentially dubious comparisons.
+
+
+<h2>Some examples of counted interactions</h2>
+Per the above, there are some gameplay interactions that we count, and others we don't. In general, if normal properties of boardstates can distinguish cards without very specific cards, we consider it relevant. So for example I consider [[Festering Goblin]] to be strictly worse than [[Shambling Goblin]], because [[Shambling Goblin]] can never be forced to target your own creatures if your opponent has none. That said, it also <i>can't</i> target your own creatures, but for the purpose of strictly worse, I consider an effect like giving your own creature -1/-1 until end of turn sufficiently rare as a positive effect that we ignore it. So in about 95% of situations, the above two cards behave the same, but in something like 4.99% of situations [[Shambling Goblin]] is better, and the thought that Festering Goblin could be better has to be such a narrow situation we ignore it. 
+
+<h2> Some Strictly Ignored Situations </h2>
+From the above, a lot of things are very loose, but I explicitly ignore analysis of the interaction with the following cards or classes of cards for analysis
+<ul>
+<li>Playing against [[Mind Control]] or other control-switching effects</li>
+<li>[[Mindslaver]] and other player control</li>
+<li>[[Brago's Representative]] and other voting manipulation</li>
+<li>[[Muraganda Petroglyphs]]</li>
+<li>[[Phosphorescent Feast]] and other chroma/devotion cards.</li>
+<li>Any "fun" cards that add "mattering" for things that otherwise don't matter in Magic, like [[Wordmail]]</li>
+<li>[[City in a Bottle]] and similar expansion-dependent effects</li>
+</ul>
+
 <h2> Two Player Games </h2>
 All cards are assessed here on the basis of two-player games of magic. Some cards are built for multiplayer in such a way that they end up quite bad when assessed for two-player magic. One example is [[Mass Mutiny]] is heavily outclassed by all other [[Threaten]] style effects. Other cards that scale with opponents will all be assessed here entirely on the basis of having a single opponent.
+
+<h2> Competent Opponents </h2>
+As an extension of asusming we are playing a two-player game, we assume our opponents will never help us. In particular, this means that if a card gives our opponent a choice, we can assume they will always pick the one that is better for them, and worse for us. So, for example, [[Siren of the Fanged Coast]] is strictly worse than [[Air Elemental]], because based on the above discussions we don't distinguish the counters, and one is a 4/4 with flying, and the other is a 4/4 with flying only if your opponent lets it be so. Even if the "other mode" seems like it lets you do something more, it really is only letting your opponent do something more.
 
 <h2> Rules Sets </h2>
 All cards are assessed based on being played in a game with fundamentally standard magic rules. This extends the two-player notion, and for example means that neither player has a Commander, and thus cards that reference commanders, like [[Flamekin Herald]] have meaningless abilities. Some rules variants are allowed, namely that cards could be played in either Constructed or Limited formats. Despite the fact I built this data mostly to drive cube-building, I do not take the preconditions of cube into consideration (e.g these cards may be played in non-singelton formats). I do take "funny" cards (i.e silver-boarded or acorn cards) into consideration, when they can be fairly assessed in comparison to another card. Lastly, ante rules are not in affect. Conspiracy cards with draft effects will be assessed purely based on their gameplay abilities assuming they appeared in your deck without being drafted (so for example [[Lore Seeker]] is just a 2/2). [[Regicide]] is a legal card to play in Legacy, but it would do nothing.
 
 <h2> Removed Cards </h2>
-For the most part, I want to consider all magic cards "in the pool." Some cards are really bad, and it could be tempting to for example say that we will not consider "Global Series Jiang Yanggu & Mu Yanling" because of how many truly awful cards in printed, adding new levels of awful for strictly worseness (why did they have to print [[Breath of Fire]] ?). However, due to the above notes on game modes, there are some cards I think do just have to be removed from the assessment pool. These come in a couple flavors, some of these cards would have to be assessed as literally blank cards based on my rules above. I also left in some Conspiracy cards, mostly because they were vanilla sizes that were interesting to compare, but [[Spire Phantasm]] being strictly worse then [[Snapping Drake]] would create an issue if I put Spire Phantasm in my strictly worse cube, as all of a sudden it wouldn't actually be worse than the drake in a draft.
+For the most part, I want to consider all magic cards "in the pool." Some cards are really bad, and it could be tempting to for example say that we will not consider "Global Series Jiang Yanggu & Mu Yanling" because of how many truly awful cards in printed, adding new levels of awful for strictly worseness (why did they have to print [[Breath of Fire]] ?). However, due to the above notes on game modes, there are some cards I think do just have to be removed from the assessment pool. These come in a couple flavors, some of these cards would have to be assessed as literally blank cards based on my rules above. I also left in some Conspiracy cards, mostly because they were vanilla sizes that were interesting to compare, but cards that would require different analysis in limited and constructed I keep outside. For example [[Spire Phantasm]] is strictly worse then [[Snapping Drake]] in constructed, but in limited that is not the case, during gameplay. On the otherhand [[Lore Seeker]] does something crazy in the draft, but it is always easy to understand what happens when it is played within a game.
 <h3> Commander Cards </h3>
 <ul>
 <li>[[Acolyte of Bahamut]]</li>
@@ -85,7 +107,6 @@ For the most part, I want to consider all magic cards "in the pool." Some cards 
 <li>[[Skull Storm]]</li>
 <li>[[Stinging Study]]</li>
 <li>[[Street Urchin]]</li>
-<li>[[Stumpsquall Hydra]]</li>
 <li>[[Sword Coast Sailor]]</li>
 <li>[[Tangleweave Armor]]</li>
 <li>[[Tavern Brawler]]</li>
@@ -121,7 +142,6 @@ Ante Cards
 <li>[[Tempest Efreet]]</li>
 <li>[[Timmerian Fiends]]</li>
 </ul>
-<h2> Competent Opponent </h2>
 
 
 `

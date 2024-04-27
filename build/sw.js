@@ -468,10 +468,11 @@ const getPTString = (oracle) => {
 };
 function renderCost(cost) {
     let ret = "";
-    const re = /\{([^{}]*)\}/g;
+    const re = /\{([^{}]*)\}([^{}]*)/g;
     for (const match of cost.matchAll(re)) {
         const sym = match[1].replace('/', '_');
         ret += "<img width='15' height='15' position='float' src='res/" + sym + ".svg' />";
+        ret += match[2];
     }
     return ret;
 }
@@ -598,6 +599,7 @@ class TableMaker {
 }
 function displayCharts(outdiv, dag, name) {
     outdiv.replaceChildren("");
+    window.location.hash = "card-" + name;
     const card = dag[name];
     if (!card) {
         const text = document.createElement("p");
@@ -621,7 +623,7 @@ function displayCharts(outdiv, dag, name) {
         }
     }
 }
-function displayTextWithCardLinks(elem, text) {
+function displayTextWithCardLinks(elem, text, setHash) {
     const timer = new Timer();
     const re = /\[\[([^\[\]]*)\]\]/g;
     text = text.replace(re, "<a class='cardlink'>$1</a>");
@@ -632,6 +634,9 @@ function displayTextWithCardLinks(elem, text) {
         imbueHoverImage(o, getImageURL(o.textContent || ""));
     }
     timer.checkpoint("Display Text");
+    if (setHash) {
+        window.location.hash = "page-philosophy";
+    }
 }
 class Timer {
     constructor() {
@@ -648,6 +653,32 @@ class Timer {
     }
 }
 ;
+const tableMakers = [undefined, undefined];
+const renderTable = (outdiv, dag, dir) => {
+    const timer = new Timer();
+    initializeMaximalCards(dag, maximalCards[dir], dir);
+    if (tableMakers[dir] === undefined) {
+        tableMakers[dir] = new TableMaker(maximalCards[dir], oracleData, dag, dir);
+    }
+    tableMakers[dir]?.renderTable(outdiv);
+    timer.checkpoint("Render Table");
+    window.location.hash = "table-" + Direction[dir];
+};
+function initializePageFromHash(outdiv, dag) {
+    const hash = window.location.hash;
+    const loc = hash.indexOf('-');
+    const key = hash.substring(1, loc);
+    const val = decodeURI(hash.substring(loc + 1));
+    if (key === "card") {
+        displayCharts(outdiv, dag, val);
+    }
+    else if (key === "table") {
+        renderTable(outdiv, dag, Direction[val]);
+    }
+    else if (key === "page") {
+        displayTextWithCardLinks(outdiv, philosophy.pageSource, true);
+    }
+}
 function main() {
     const timer = new Timer();
     const style = document.createElement("style");
@@ -728,18 +759,9 @@ function main() {
         }
         displayCharts(outdiv, dag, inputElem.value);
     });
-    const tableMakers = [undefined, undefined];
-    const renderTable = (dir) => {
-        timer.reset();
-        initializeMaximalCards(dag, maximalCards[dir], dir);
-        if (tableMakers[dir] === undefined) {
-            tableMakers[dir] = new TableMaker(maximalCards[dir], oracleData, dag, dir);
-        }
-        tableMakers[dir]?.renderTable(outdiv);
-        timer.checkpoint("Render Table");
-    };
-    button.onclick = () => renderTable(Direction.Worse);
-    button15.onclick = () => renderTable(Direction.Better);
-    button2.onclick = () => displayTextWithCardLinks(outdiv, philosophy.pageSource);
+    button.onclick = () => renderTable(outdiv, dag, Direction.Worse);
+    button15.onclick = () => renderTable(outdiv, dag, Direction.Better);
+    button2.onclick = () => displayTextWithCardLinks(outdiv, philosophy.pageSource, true);
+    initializePageFromHash(outdiv, dag);
 }
 main();

@@ -191,8 +191,6 @@ class Card {
 };
 /****** end file */
 
-
-
 function initNode(dag: any, key: string): Card {
   if (!(key in dag)) {
     dag[key] = new Card(key);
@@ -547,7 +545,7 @@ function addCheckBox(base: HTMLElement, label: string): () => string {
 }
 
 
-const maximalCards: Record<Direction, Array<Card>> = [[],  []];
+const maximalCards: Record<Direction, Array<Card>> = [[], []];
 function initializeMaximalCards(dag: Record<string, Card>, toInit: Array<Card>, dir: Direction) {
   if (toInit.length == 0) {
     for (const cardName in dag) {
@@ -593,11 +591,12 @@ const getPTString = (oracle: any): string => {
 function renderCost(cost: string): string {
   let ret = "";
   // Grab all the pieces in {}
-  const re = /\{([^{}]*)\}/g;
+  const re = /\{([^{}]*)\}([^{}]*)/g;
   for (const match of cost.matchAll(re)) {
     // naming convention to avoid / in filenames
     const sym = match[1].replace('/', '_');
-    ret += "<img width='15' height='15' position='float' src='res/" + sym + ".svg' />";  
+    ret += "<img width='15' height='15' position='float' src='res/" + sym + ".svg' />";
+    ret += match[2];
   }
   return ret;
 }
@@ -628,8 +627,8 @@ class TableElem {
     const enDash = '-';
     this.type = this.type.replace(emDash, enDash);
     if (this.type.length > 20) {
-      this.type = this.type.substring(0,20) + ". . . ";
-    } 
+      this.type = this.type.substring(0, 20) + ". . . ";
+    }
     this.pt = getPTString(oracle);
     this.degree = card.stats(oDir).degree;
     this.totalWorse = card.stats(oDir).total;
@@ -679,7 +678,7 @@ class TableMaker {
     makeElement("th", hdrRow, "P / T");
     this.makeClickSort(makeElement("th", hdrRow, "Degree"), parent, TableColumn.Degree);
     this.makeClickSort(makeElement("th", hdrRow, "Total " + (this.dir == Direction.Worse ? "Worse" : "Better")), parent, TableColumn.TotalWorse);
-   
+
     // Making a template row and cloning it substantially speeds up DOM creation here
     // (something like 5-10x)
     const numColumns = 6;
@@ -746,15 +745,16 @@ class TableMaker {
 }
 
 function displayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: string): void {
-    outdiv.replaceChildren("");
+  outdiv.replaceChildren("");
+  window.location.hash = "card-" + name;
 
-    const card = dag[name];
-    if (!card) {
-      const text = document.createElement("p");
-      text.textContent = name + " Not Found";
-      outdiv.appendChild(text);
-      return;
-    }
+  const card = dag[name];
+  if (!card) {
+    const text = document.createElement("p");
+    text.textContent = name + " Not Found";
+    outdiv.appendChild(text);
+    return;
+  }
 
   for (const dir of [Direction.Better, Direction.Worse]) {
 
@@ -774,7 +774,7 @@ function displayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: str
   }
 }
 
-function displayTextWithCardLinks(elem: HTMLElement, text: string) {
+function displayTextWithCardLinks(elem: HTMLElement, text: string, setHash?: boolean) {
   const timer = new Timer();
   const re = /\[\[([^\[\]]*)\]\]/g;
   text = text.replace(re, "<a class='cardlink'>$1</a>");
@@ -785,6 +785,9 @@ function displayTextWithCardLinks(elem: HTMLElement, text: string) {
     imbueHoverImage(o, getImageURL(o.textContent || ""));
   }
   timer.checkpoint("Display Text");
+  if (setHash) {
+    window.location.hash = "page-philosophy";
+  }
 }
 
 class Timer {
@@ -804,6 +807,32 @@ class Timer {
     this.currentMs = now;
   }
 };
+
+const tableMakers: Record<Direction, TableMaker | undefined> = [undefined, undefined];
+const renderTable = (outdiv: HTMLElement, dag: Record<string, Card>, dir: Direction) => {
+  const timer = new Timer();
+  initializeMaximalCards(dag, maximalCards[dir], dir);
+  if (tableMakers[dir] === undefined) {
+    tableMakers[dir] = new TableMaker(maximalCards[dir], oracleData, dag, dir);
+  }
+  tableMakers[dir]?.renderTable(outdiv);
+  timer.checkpoint("Render Table");
+  window.location.hash = "table-" + Direction[dir];
+};
+
+function initializePageFromHash(outdiv: HTMLElement, dag: Record<string, Card>) {
+  const hash = window.location.hash;
+  const loc = hash.indexOf('-');
+  const key = hash.substring(1, loc);
+  const val = decodeURI(hash.substring(loc + 1));
+  if (key === "card") {
+    displayCharts(outdiv, dag, val);
+  } else if (key === "table") {
+    renderTable(outdiv, dag, Direction[val as keyof typeof Direction])
+  } else if (key === "page") {
+    displayTextWithCardLinks(outdiv, philosophy.pageSource, true);
+  }
+}
 
 function main(): void {
   const timer = new Timer();
@@ -900,21 +929,10 @@ function main(): void {
     displayCharts(outdiv, dag, inputElem.value);
   });
 
-
-  const tableMakers: Record<Direction, TableMaker | undefined> = [undefined, undefined];
-  const renderTable = (dir: Direction) => {
-    timer.reset()
-    initializeMaximalCards(dag, maximalCards[dir], dir);
-    if (tableMakers[dir] === undefined) {
-      tableMakers[dir] = new TableMaker(maximalCards[dir], oracleData, dag, dir);
-    }
-    tableMakers[dir]?.renderTable(outdiv);
-    timer.checkpoint("Render Table");
-  };
-
-  button.onclick = () => renderTable(Direction.Worse);
-  button15.onclick = () => renderTable(Direction.Better);
-  button2.onclick = () => displayTextWithCardLinks(outdiv, philosophy.pageSource);
+  button.onclick = () => renderTable(outdiv, dag, Direction.Worse);
+  button15.onclick = () => renderTable(outdiv, dag, Direction.Better);
+  button2.onclick = () => displayTextWithCardLinks(outdiv, philosophy.pageSource, true);
+  initializePageFromHash(outdiv, dag);
 }
 
 main();
