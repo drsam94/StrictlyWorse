@@ -548,8 +548,7 @@ function addCheckBox(base: HTMLElement, label: string): () => string {
 const maximalCards: Record<Direction, Array<Card>> = [[], []];
 function initializeMaximalCards(dag: Record<string, Card>, toInit: Array<Card>, dir: Direction) {
   if (toInit.length == 0) {
-    for (const cardName in dag) {
-      const card = dag[cardName];
+    for (const [cardName, card] of Object.entries(dag)) {
       if (card.name !== cardName) {
         // Skip alias nodes
         continue;
@@ -588,23 +587,37 @@ const getPTString = (oracle: any): string => {
   return oracle.power + " / " + oracle.toughness;
 };
 
-function renderCost(cost: string): string {
-  let ret = "";
+const costCache : Record<string, HTMLElement> = {};
+function renderCost(cost: string): HTMLElement {
+  if (costCache[cost] !== undefined) {
+    return costCache[cost].cloneNode(true) as HTMLElement;
+  }
+  const rootNode = document.createElement("div");
   // Grab all the pieces in {}
   const re = /\{([^{}]*)\}([^{}]*)/g;
   for (const match of cost.matchAll(re)) {
     // naming convention to avoid / in filenames
     const sym = match[1].replace('/', '_');
-    ret += "<img width='15' height='15' position='float' src='res/" + sym + ".svg' />";
-    ret += match[2];
+    const img = document.createElement("img");
+    img.src = "res/" + sym + ".svg";
+    img.style.width = "15";
+    img.style.height = "15";
+    img.style.position = "float";
+    rootNode.appendChild(img);
+    if (match[2]) {
+      const p = document.createElement("span");
+      p.textContent = match[2];
+      p.style.position = "float";
+      rootNode.appendChild(p);
+    }
   }
-  return ret;
+  return rootNode;
 }
 
 class TableElem {
   public name: string;
   public colors: Array<string>;
-  public cost: string;
+  public cost: HTMLElement;
   public cmc: number;
   public type: string;
   public pt: string;
@@ -615,12 +628,16 @@ class TableElem {
     const oDir = dir == Direction.Better ? Direction.Worse : Direction.Better;
     this.name = card.name;
     this.colors = oracle.colors;
-    let cost = oracle.mana_cost;
-    if (cost) {
-      this.cost = renderCost(cost);
-    } else {
-      this.cost = "";
+    let cost = "";
+    if (oracle.mana_cost) {
+      cost = oracle.mana_cost;
+    } else if (oracle.card_faces) {
+      cost = oracle.card_faces[0].mana_cost;
+      if (oracle.card_faces[1].mana_cost) {
+        cost += "//" + oracle.card_faces[1].mana_cost;
+      }
     }
+    this.cost = renderCost(cost);
     this.cmc = oracle.cmc;
     this.type = oracle.type_line;
     const emDash = '—';
@@ -695,7 +712,7 @@ class TableMaker {
       nameRow.onclick = () => {
         displayCharts(parent, this.dag, card.name);
       }
-      children[1].innerHTML = card.cost;
+      children[1].appendChild(card.cost);
       children[2].textContent = card.type;
       children[3].textContent = card.pt;
       children[4].textContent = card.degree + "";
@@ -810,11 +827,13 @@ class Timer {
 
 const tableMakers: Record<Direction, TableMaker | undefined> = [undefined, undefined];
 const renderTable = (outdiv: HTMLElement, dag: Record<string, Card>, dir: Direction) => {
-  const timer = new Timer();
   initializeMaximalCards(dag, maximalCards[dir], dir);
+
+  const timer = new Timer();
   if (tableMakers[dir] === undefined) {
     tableMakers[dir] = new TableMaker(maximalCards[dir], oracleData, dag, dir);
   }
+
   tableMakers[dir]?.renderTable(outdiv);
   timer.checkpoint("Render Table");
   window.location.hash = "table-" + Direction[dir];
@@ -879,7 +898,7 @@ function main(): void {
   const button = document.createElement("button");
   button.type = "button";
   button.style.display = "block";
-  button.style.border = "none";
+  button.style.border = "2px solid black";
   button.style.textAlign = "center";
   button.style.cursor = "pointer";
   button.style.backgroundColor = "#4CAF50";
@@ -888,20 +907,20 @@ function main(): void {
   const button15 = document.createElement("button");
   button15.type = "button";
   button15.style.display = "block";
-  button15.style.border = "none";
+  button15.style.border = "2px solid black";
   button15.style.textAlign = "center";
   button15.style.cursor = "pointer";
-  button15.style.backgroundColor = "#4C50AF";
+  button15.style.backgroundColor = "#4CF0AF";
   button15.innerText = "Generate Table of Best Cards";
 
   const button2 = document.createElement("button");
   button2.type = "button";
   button2.style.display = "block";
-  button2.style.border = "none";
+  button2.style.border = "2px solid black";
   button.style.textAlign = "center";
   button2.style.cursor = "pointer";
   button2.style.backgroundColor = "#AF504C";
-  button2.innerText = "Find Out More";
+  button2.innerText = "Read about the process";
 
   const div = document.createElement("div");
 
