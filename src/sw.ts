@@ -191,6 +191,29 @@ class Card {
 };
 /****** end file */
 
+const specialSet: Set<string> = new Set();
+
+function concatSpecial(name1: string, name2: string): string {
+  return name1 + "__" + name2;
+}
+function isSpecial(name1: string, name2: string): boolean {
+  return specialSet.has(concatSpecial(name1, name2));
+}
+function addSpecialPair(name1: string, name2: string): void {
+  specialSet.add(concatSpecial(name1, name2));
+}
+function getPointerIfSpecial(name1: string, name2: string, dir: Direction): string {
+  if (dir === Direction.Worse) {
+    const temp = name1;
+    name1 = name2;
+    name2 = temp;
+  }
+  if (isSpecial(name1, name2)) {
+    return name1;
+  }
+  return "";
+}
+
 function initNode(dag: any, key: string): Card {
   if (!(key in dag)) {
     dag[key] = new Card(key);
@@ -227,8 +250,12 @@ function processData(dag: Record<string, Card>, inData: any) {
     const worseNode = initNode(dag, worse);
     const betterNode = initNode(dag, better);
     if (elem.length === 3) {
-      dag[better] = worseNode;
-      continue;
+      if (elem[2] === '=') {
+        dag[better] = worseNode;
+        continue;
+      } else if (elem[2] === '!') {
+        addSpecialPair(elem[0], elem[1]);
+      }
     }
     worseNode.stats(Direction.Better).cards.push(betterNode);
     const betterCards = betterNode.stats(Direction.Worse).cards;
@@ -278,7 +305,7 @@ function processData(dag: Record<string, Card>, inData: any) {
   }
   //
 
-  const data = { "name": "root", "children": [], value: 1, depth: 1 };
+  const data = { "name": "root", "children": [], value: 1, depth: 1, specialPointer: "" };
   recurAddChildren(data, top_level, Direction.Worse);
 
   return data;
@@ -324,7 +351,8 @@ function recurAddChildren(rootNode: any, childList: Array<Card>, dir: Direction)
       name: child.name,
       children: [],
       value: child.stats(dir).total,
-      depth: child.stats(dir).degree
+      depth: child.stats(dir).degree,
+      special: getPointerIfSpecial(rootNode.name, child.name, dir)
     };
     rootNode.children.push(obj);
     // console.log(obj)
@@ -446,7 +474,7 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
       .attr("stroke-linejoin", "round")
       .attr("stroke-width", 3)
       .attr("stroke", "white")
-      .attr("fill", (d: any) => d.data.value > 5 ? "#900" : "#555")
+      .attr("fill", (d: any) => d.data.special ? "#900" : "#555")
       .attr("paint-order", "stroke")
       .on("mouseover", (event: MouseEvent, d: any) => {
         const imgURL = getImageURL(d.data.name);
@@ -587,7 +615,7 @@ const getPTString = (oracle: any): string => {
   return oracle.power + " / " + oracle.toughness;
 };
 
-const costCache : Record<string, HTMLElement> = {};
+const costCache: Record<string, HTMLElement> = {};
 function renderCost(cost: string): HTMLElement {
   if (costCache[cost] !== undefined) {
     return costCache[cost].cloneNode(true) as HTMLElement;
