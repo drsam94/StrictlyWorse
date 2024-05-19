@@ -142,6 +142,14 @@ Ante Cards
 <li>[[Tempest Efreet]]</li>
 <li>[[Timmerian Fiends]]</li>
 </ul>
+Funny Cards that complicate things to consider
+<ul>
+<li>[[The Secret Lair]]</li>
+<li>[[Barry's Land]]</li>
+<li>[[_____]]</li>
+<li>[[Avatar of Me]]</li>
+<li>[[Brushstroke Paintermage]]</li>
+</ul>
 
 
 `

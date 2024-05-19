@@ -9,6 +9,8 @@ import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import * as rawData from '../res/data.js';
 import * as oracleData from '../res/filtered-oracle.js';
 import * as philosophy from '../res/philosophy.js';
+import * as sq from '../res/unmatched-search.js';
+
 /****    file hover.ts */
 
 const CARD_HEIGHT = "476";
@@ -23,6 +25,7 @@ function showImage(elem: HTMLElement, imgSrc: string) {
   elem.appendChild(popImage);
 }
 function hideImage(elem: HTMLElement) {
+  if (!elem.lastChild) {return;}
   elem.removeChild(elem.lastChild);
 }
 
@@ -560,6 +563,7 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
   return svg;
 }
 
+/*
 function addCheckBox(base: HTMLElement, label: string): () => string {
   const boxElem = document.createElement("div");
   const labelElem = document.createElement("label");
@@ -571,7 +575,7 @@ function addCheckBox(base: HTMLElement, label: string): () => string {
   base.appendChild(boxElem);
   return () => checkbox.checked ? label : "";
 }
-
+*/
 
 const maximalCards: Record<Direction, Array<Card>> = [[], []];
 function initializeMaximalCards(dag: Record<string, Card>, toInit: Array<Card>, dir: Direction) {
@@ -585,6 +589,7 @@ function initializeMaximalCards(dag: Record<string, Card>, toInit: Array<Card>, 
         toInit.push(card);
       }
     }
+    console.log(toInit.length);
   }
 }
 
@@ -923,32 +928,25 @@ function main(): void {
   inputElem.style.width = "100%";
   wrapperDiv.appendChild(inputElem);
 
-  const button = document.createElement("button");
-  button.type = "button";
-  button.style.display = "block";
-  button.style.border = "2px solid black";
-  button.style.textAlign = "center";
-  button.style.cursor = "pointer";
-  button.style.backgroundColor = "#4CAF50";
-  button.innerText = "Generate Table of SW Cards";
+  const makeButton = (color: string, text: string): HTMLElement => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.style.display = "block";
+    button.style.border = "2px solid black";
+    button.style.textAlign = "center";
+    button.style.cursor = "pointer";
+    button.style.backgroundColor = color;
+    button.innerText = text;
+    return button;
+  };
 
-  const button15 = document.createElement("button");
-  button15.type = "button";
-  button15.style.display = "block";
-  button15.style.border = "2px solid black";
-  button15.style.textAlign = "center";
-  button15.style.cursor = "pointer";
-  button15.style.backgroundColor = "#4CF0AF";
-  button15.innerText = "Generate Table of Best Cards";
+  const button = makeButton("#4CAF50", "Generate Table of SW Cards");
 
-  const button2 = document.createElement("button");
-  button2.type = "button";
-  button2.style.display = "block";
-  button2.style.border = "2px solid black";
-  button.style.textAlign = "center";
-  button2.style.cursor = "pointer";
-  button2.style.backgroundColor = "#AF504C";
-  button2.innerText = "Read about the process";
+  const button15 = makeButton("#4CF0AF", "Generate Table of Best Cards")
+
+  const button2 = makeButton("#AF504C", "Read about the process");
+
+  const button3 = makeButton("#ABCDEF", "<TEST> Search Query Output");
 
   const div = document.createElement("div");
 
@@ -956,6 +954,7 @@ function main(): void {
   div.appendChild(button);
   div.appendChild(button15);
   div.appendChild(button2);
+  div.appendChild(button3);
 
   const outdiv = document.createElement("div");
   div.appendChild(outdiv);
@@ -979,6 +978,7 @@ function main(): void {
   button.onclick = () => renderTable(outdiv, dag, Direction.Worse);
   button15.onclick = () => renderTable(outdiv, dag, Direction.Better);
   button2.onclick = () => displayTextWithCardLinks(outdiv, philosophy.pageSource, true);
+  button3.onclick = () => displayTextWithCardLinks(outdiv, sq.pageSource, true);
   initializePageFromHash(outdiv, dag);
 }
 
