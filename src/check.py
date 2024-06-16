@@ -27,11 +27,18 @@ def get_text_names() -> set[str]:
         names.add(match.group(1))
     return names
 
+def any_prop(card, key: str, val: str) -> bool:
+    if key in card and card[key] == val:
+        return True
+    if 'card_faces' in card and any(key in face and face[key] == val for face in card['card_faces']):
+        return True
+    return False 
+
 def search_query(card) -> bool:
     if 'Creature' not in card['type_line']:
         return False
-    if card['digital'] or card['layout'] == 'token':
-        return False
+    if any_prop(card, 'digital', True) or any_prop(card, 'layout', 'token'):
+        return False 
     if ('colors' in card and 'W' in card['colors'] and len(card['colors']) == 1) or (
         'card_faces' in card and any('colors' in face and 'W' in face['colors'] for face in card['card_faces'])
     ):
@@ -71,4 +78,13 @@ if __name__ == "__main__":
             for name in sq_names:
                 outf.write(f"<li>[[{name}]]</li>\n")
             outf.write("</ul>`;\n")
-        print("All Good! Exported File")  
+        sw.sort(key=lambda x: x[0])
+        with open('res/data.js', "w+") as outf:
+            outf.write('export const all_relations = [\n')
+            first = True
+            for item in sw:
+                if not first: outf.write(",\n")
+                json.dump(item, outf)
+                first = False 
+            outf.write("\n];")
+        print("All Good! Exported Files")  

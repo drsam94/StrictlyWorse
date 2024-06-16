@@ -906,13 +906,7 @@ function main(): void {
   style.appendChild(cssStyleNode2);
 
   const dag: Record<string, Card> = {};
-  processData(dag, rawData.black);
-  processData(dag, rawData.red);
-  processData(dag, rawData.white);
-  processData(dag, rawData.artifact);
-  processData(dag, rawData.blue);
-  processData(dag, rawData.green);
-  processData(dag, rawData.multi);
+  processData(dag, rawData.all_relations);
 
   timer.checkpoint("Initial Data Ingest");
   computeStats(dag);
