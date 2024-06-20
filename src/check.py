@@ -78,7 +78,7 @@ if __name__ == "__main__":
             for name in sq_names:
                 outf.write(f"<li>[[{name}]]</li>\n")
             outf.write("</ul>`;\n")
-        sw.sort(key=lambda x: x[0])
+        sw.sort(key=lambda x: x[0]+x[1])
         with open('res/data.js', "w+") as outf:
             outf.write('export const all_relations = [\n')
             first = True
