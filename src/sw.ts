@@ -22,6 +22,13 @@ function showImage(elem: HTMLElement, imgSrc: string) {
   popImage.style.zIndex = "1";
   popImage.style.width = CARD_WIDTH;
   popImage.style.height = CARD_HEIGHT;
+  const sourceLoc = elem.getBoundingClientRect()
+  if (sourceLoc.left > window.innerWidth / 2) {
+    console.log(sourceLoc.left);
+    // pop up image to the left
+    popImage.style.left = "" + (-CARD_WIDTH);
+    popImage.style.top = "15px";
+  }
   elem.appendChild(popImage);
 }
 function hideImage(elem: HTMLElement) {
@@ -389,7 +396,7 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
   const marginRight = 10;
   const marginBottom = 10;
   const marginLeft = 200;
-
+  const fontHeight = 12;
   // Rows are separated by dx pixels, columns by dy pixels. These names can be counter-intuitive
   // (dx is a height, and dy a width). This because the tree must be viewed with the root at the
   // “bottom”, in the data domain. The width of a column is based on the tree’s height.
@@ -406,7 +413,7 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
     .attr("width", width)
     .attr("height", dx)
     .attr("viewBox", [-marginLeft, -marginTop, width, dx])
-    .attr("style", "max-width: 100%; height: auto; font: 12px sans-serif; user-select: none;");
+    .attr("style", "max-width: 100%; height: auto; font: " + fontHeight + "px sans-serif; user-select: none;");
 
   const gLink = svg.append("g")
     .attr("fill", "none")
@@ -496,6 +503,8 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
           .style("width", CARD_WIDTH)
           .style("height", CARD_HEIGHT)
           .style("position", "absolute")
+          .style("left", (event.clientX > window.innerWidth / 2 ? -CARD_WIDTH : "0") + "px")
+          .style("top", fontHeight * 2 + "px")
           .style("zIndex", "1");
       })
       .on("mouseout", (event: MouseEvent) => {
@@ -563,19 +572,7 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
   return svg;
 }
 
-/*
-function addCheckBox(base: HTMLElement, label: string): () => string {
-  const boxElem = document.createElement("div");
-  const labelElem = document.createElement("label");
-  labelElem.textContent = label;
-  const checkbox = document.createElement("input");
-  checkbox.type = "checkbox";
-  boxElem.appendChild(labelElem);
-  boxElem.appendChild(checkbox);
-  base.appendChild(boxElem);
-  return () => checkbox.checked ? label : "";
-}
-*/
+
 
 const maximalCards: Record<Direction, Array<Card>> = [[], []];
 function initializeMaximalCards(dag: Record<string, Card>, toInit: Array<Card>, dir: Direction) {
@@ -632,6 +629,7 @@ function renderCost(cost: string): HTMLElement {
     return costCache[cost].cloneNode(true) as HTMLElement;
   }
   const rootNode = document.createElement("div");
+  rootNode.style.display = "inline-block";
   // Grab all the pieces in {}
   const re = /\{([^{}]*)\}([^{}]*)/g;
   for (const match of cost.matchAll(re)) {
@@ -691,13 +689,56 @@ class TableElem {
   }
 }
 
+class FlagsState {
+  private flags: Array<string> = []
+  private flagValues: Array<boolean> = []
+  private onChangeCB: (p:HTMLElement) => void;
+  private parent: HTMLElement | null;
+  constructor (flagNames: Array<string>, ocb: (p:HTMLElement) => void = (x) => {}) {
+    this.flags = [...flagNames];
+    this.flagValues = new Array(flagNames.length);
+    this.flagValues.fill(true);
+    this.onChangeCB = ocb;
+    this.parent = null;
+  }
+
+  public render(parent: HTMLElement): void {
+    if (parent) {
+      this.parent = parent;
+    } else {
+      return;
+    }
+    // For now this is specific to labels that are many symbols
+    for (let i = 0; i < this.flags.length; ++i) {
+      const cbDiv = document.createElement("div");
+      cbDiv.style.display = "inline-block";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      const capturedI = i;
+      checkbox.onchange = () => {
+        this.flagValues[capturedI] = checkbox.checked;
+        if (this.parent) this.onChangeCB(this.parent);
+      };
+      checkbox.checked = this.flagValues[i];
+      parent.appendChild(renderCost(this.flags[i]))
+      cbDiv.appendChild(checkbox);
+      parent.appendChild(cbDiv);
+    }    
+  }
+
+  public getFlagValues(): Array<boolean> {
+    return this.flagValues;
+  }
+}
+
 class TableMaker {
   private column: TableColumn = TableColumn.Cost;
   private increasing: boolean = true;
   private swData: Array<TableElem>;
   private dag: Record<string, Card>;
   private dir: Direction;
-
+  private flags: FlagsState;
+  
   constructor(cards: Array<Card>, oData: any, dg: Record<string, Card>, dir: Direction) {
     this.swData = [];
     for (const card of cards) {
@@ -710,6 +751,7 @@ class TableMaker {
     }
     this.dag = dg;
     this.dir = dir;
+    this.flags = new FlagsState(["{W}", "{U}", "{B}", "{R}", "{G}"], (p: HTMLElement) => {this.renderTable(p);});
   }
 
   private makeClickSort(elem: HTMLElement, parent: HTMLElement, column: TableColumn) {
@@ -726,6 +768,8 @@ class TableMaker {
   public renderTable(parent: HTMLElement) {
     this.cardSort();
     parent.replaceChildren("");
+    const flagsDiv = makeElement("div", parent);
+    this.flags.render(flagsDiv);
     const table = makeElement("table", parent);
     const hdrRow = makeElement("tr", table);
     this.makeClickSort(makeElement("th", hdrRow, "Card"), parent, TableColumn.Name);
@@ -743,6 +787,9 @@ class TableMaker {
       makeElement("td", templateRow);
     }
     for (const card of this.swData) {
+      if (!this.passesFilter(card)) {
+        continue;
+      }
       const elemRow = templateRow.cloneNode(true) as HTMLElement;
       const children = elemRow.children;
       const nameRow = children[0] as HTMLElement;
@@ -759,9 +806,20 @@ class TableMaker {
 
       table.appendChild(elemRow);
     }
+    parent.appendChild(flagsDiv);
     parent.appendChild(table);
   }
 
+  private passesFilter(card: TableElem): boolean {
+    const includeColors = this.flags.getFlagValues();
+    for (let i = 0; i < includeColors.length; ++i) {
+      const color = "WUBRG".charAt(i);
+      if (!includeColors[i] && card.colors.includes(color)) {
+        return false;
+      }
+    }
+    return true;
+  }
   private cardSort() {
     const costCompare = (a: TableElem, b: TableElem) => {
       // TODO: use faces
