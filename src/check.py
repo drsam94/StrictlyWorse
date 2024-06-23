@@ -48,7 +48,20 @@ def search_query(card) -> bool:
 if __name__ == "__main__":
     sw_file = 'res/data.js' if len(sys.argv) < 2 else sys.argv[1]
     sf_file = 'res/oracle-cards.json' if len(sys.argv) < 3 else sys.argv[2]
+    vanilla_file = 'res/vanilla.json' if len(sys.argv) < 4 else sys.argv[3]
+    vanilla = json.load(open(vanilla_file))
     sw = parse_sw(sw_file)
+    filtered_sw = []
+    lastItem = []
+    for item in sw:
+        for i in range(len(item)):
+            if item[i] in vanilla:
+                item[i] = vanilla[item[i]]
+        if item != lastItem:
+            filtered_sw.append(item)
+            lastItem = item 
+    sw = filtered_sw
+
     sf = parse_sf(sf_file)
     official_names = {obj["name"] : obj for obj in sf if obj['layout'] != 'token'}
     sw_names = set()

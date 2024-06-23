@@ -22,12 +22,11 @@ function showImage(elem: HTMLElement, imgSrc: string) {
   popImage.style.zIndex = "1";
   popImage.style.width = CARD_WIDTH;
   popImage.style.height = CARD_HEIGHT;
-  const sourceLoc = elem.getBoundingClientRect()
+  const sourceLoc = elem.getBoundingClientRect();
+  
   if (sourceLoc.left > window.innerWidth / 2) {
-    console.log(sourceLoc.left);
     // pop up image to the left
-    popImage.style.left = "" + (-CARD_WIDTH);
-    popImage.style.top = "15px";
+    popImage.style.left = "" + (sourceLoc.left + (-CARD_WIDTH));
   }
   elem.appendChild(popImage);
 }
@@ -387,7 +386,11 @@ function getImageURL(name?: string) {
   return face["image_uris"]["normal"];
 }
 
-
+function rectContains(rect: DOMRect, pt: MouseEvent): boolean {
+  console.log(rect, pt);
+  return (pt.clientX > rect.left && pt.clientY < rect.right &&
+      pt.clientY > rect.top && pt.clientY < rect.bottom);
+}
 function makeChart(data: any, rootName: string, startExpanded?: boolean) {
   data["name"] = rootName;
   // Specify the charts’ dimensions. The height is variable, depending on the layout.
@@ -496,6 +499,8 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
           .style("left", (event.clientX + 10) + "px")
           .style("top", (event.clientY - 15) + "px");
 
+        const rect = (event.target as HTMLElement).getBoundingClientRect();
+        const distanceWithinText = event.clientX - rect.left;
         hoverDiv.transition()
           .style("opacity", 1)
         hoverDiv.append("img")
@@ -503,8 +508,8 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
           .style("width", CARD_WIDTH)
           .style("height", CARD_HEIGHT)
           .style("position", "absolute")
-          .style("left", (event.clientX > window.innerWidth / 2 ? -CARD_WIDTH : "0") + "px")
-          .style("top", fontHeight * 2 + "px")
+          .style("left", (event.clientX > window.innerWidth / 2 ? (-CARD_WIDTH) - distanceWithinText - 15 : "0") + "px")
+          .style("top", (fontHeight * 2 ) + "px")
           .style("zIndex", "1");
       })
       .on("mouseout", (event: MouseEvent) => {
