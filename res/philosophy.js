@@ -37,6 +37,7 @@ From the above, a lot of things are very loose, but I explicitly ignore analysis
 <li>[[Phosphorescent Feast]] and other chroma/devotion cards.</li>
 <li>Any "fun" cards that add "mattering" for things that otherwise don't matter in Magic, like [[Wordmail]]</li>
 <li>[[City in a Bottle]] and similar expansion-dependent effects</li>
+<li>The <b>Unleash</b> keyword is not viewed as a downside due to preventing the creature from blocking if it acquires counters outside the ability</li>
 </ul>
 
 <h2> Two Player Games </h2>
@@ -117,6 +118,7 @@ For the most part, I want to consider all magic cards "in the pool." Some cards 
 </ul>
 Conspiracy Draft Cards
 <ul>
+<li>[[Archdemon of Paliano]]</li>
 <li>[[Caller of the Untamed]]</li>
 <li>[[Cogwork Grinder]]</li>
 <li>[[Garbage Fire]]</li>
@@ -128,6 +130,7 @@ Conspiracy Draft Cards
 <li>[[Smuggler Captain]]</li>
 <li>[[Spire Phantasm]]</li>
 <li>[[Arcane Savant]]</li>
+<li>[[Volatile Chimera]]</li>
 
 </ul>
 Ante Cards

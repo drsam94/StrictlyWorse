@@ -28,6 +28,10 @@ function showImage(elem: HTMLElement, imgSrc: string) {
     // pop up image to the left
     popImage.style.left = "" + (sourceLoc.left + (-CARD_WIDTH));
   }
+  const bottomEdge = window.innerHeight + window.scrollY;
+  if (sourceLoc.top + +CARD_HEIGHT > window.innerHeight) {
+    popImage.style.top = "" + (bottomEdge + (-CARD_HEIGHT));
+  }
   elem.appendChild(popImage);
 }
 function hideImage(elem: HTMLElement) {
