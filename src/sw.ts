@@ -498,10 +498,15 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
         if (imgURL === "") {
           return;
         }
+        const bottomEdge = window.innerHeight + window.scrollY;
+        let top = event.clientY + window.scrollY - 15;
+        if (event.clientY + +CARD_HEIGHT > window.innerHeight) {
+          top =  (bottomEdge + (-CARD_HEIGHT));
+        }
         hoverDiv
           .style("position", "absolute")
           .style("left", (event.clientX + 10) + "px")
-          .style("top", (event.clientY - 15) + "px");
+          .style("top", top + "px");
 
         const rect = (event.target as HTMLElement).getBoundingClientRect();
         const distanceWithinText = event.clientX - rect.left;

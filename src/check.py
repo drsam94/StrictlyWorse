@@ -35,12 +35,15 @@ def any_prop(card, key: str, val: str) -> bool:
     return False 
 
 def search_query(card) -> bool:
-    if 'Creature' not in card['type_line']:
+    #if 'Creature' not in card['type_line']:
+    #    return False
+    if card['cmc'] != 1.0:
         return False
     if any_prop(card, 'digital', True) or any_prop(card, 'layout', 'token'):
         return False 
-    if ('colors' in card and 'R' in card['colors'] and len(card['colors']) == 1) or (
-        'card_faces' in card and any('colors' in face and 'R' in face['colors'] for face in card['card_faces'])
+    color = 'U'
+    if ('colors' in card and color in card['colors'] and len(card['colors']) == 1) or (
+        'card_faces' in card and any('colors' in face and color in face['colors'] for face in card['card_faces'])
     ):
         return True
     return False
@@ -60,6 +63,7 @@ if __name__ == "__main__":
         if item != lastItem:
             filtered_sw.append(item)
             lastItem = item 
+        
     sw = filtered_sw
 
     sf = parse_sf(sf_file)
