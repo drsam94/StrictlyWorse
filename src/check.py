@@ -35,13 +35,13 @@ def any_prop(card, key: str, val: str) -> bool:
     return False 
 
 def search_query(card) -> bool:
-    #if 'Creature' not in card['type_line']:
-    #    return False
-    if card['cmc'] != 1.0:
+    if 'Creature' in card['type_line']:
+        return False
+    if card['cmc'] > 3.0:
         return False
     if any_prop(card, 'digital', True) or any_prop(card, 'layout', 'token'):
         return False 
-    color = 'U'
+    color = 'R'
     if ('colors' in card and color in card['colors'] and len(card['colors']) == 1) or (
         'card_faces' in card and any('colors' in face and color in face['colors'] for face in card['card_faces'])
     ):
