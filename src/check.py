@@ -1,7 +1,7 @@
 #!/usr/bin/python3.9
 
-import sys 
-import json 
+import sys
+import json
 
 def parse_sw(file: str):
     content = '['
@@ -32,16 +32,16 @@ def any_prop(card, key: str, val: str) -> bool:
         return True
     if 'card_faces' in card and any(key in face and face[key] == val for face in card['card_faces']):
         return True
-    return False 
+    return False
 
 def search_query(card) -> bool:
-    if 'Creature' in card['type_line']:
+    if 'Creature' not in card['type_line']:
         return False
-    if card['cmc'] > 3.0:
+    if card['cmc'] < 6.0:
         return False
     if any_prop(card, 'digital', True) or any_prop(card, 'layout', 'token'):
-        return False 
-    color = 'R'
+        return False
+    color = 'G'
     if ('colors' in card and color in card['colors'] and len(card['colors']) == 1) or (
         'card_faces' in card and any('colors' in face and color in face['colors'] for face in card['card_faces'])
     ):
@@ -56,14 +56,18 @@ if __name__ == "__main__":
     sw = parse_sw(sw_file)
     filtered_sw = []
     lastItem = []
+    filtered_items = []
     for item in sw:
         for i in range(len(item)):
             if item[i] in vanilla:
                 item[i] = vanilla[item[i]]
         if item != lastItem:
             filtered_sw.append(item)
-            lastItem = item 
-        
+            lastItem = item
+        else:
+            filtered_items.append(", ".join(item))
+    if len(filtered_items) > 0:
+        print(f"Removed {len(filtered_items)} duplicates: {chr(10).join(filtered_items)}")
     sw = filtered_sw
 
     sf = parse_sf(sf_file)
@@ -77,7 +81,7 @@ if __name__ == "__main__":
             print(elem)
             raise e
 
-    sw_names = sw_names.union(get_text_names())    
+    sw_names = sw_names.union(get_text_names())
     error_names = sw_names - set(official_names.keys())
     error_names = [name for name in error_names if not is_placeholder(name)]
     sq_names = {name for name, obj in official_names.items() if name not in sw_names and search_query(obj)}
@@ -102,6 +106,7 @@ if __name__ == "__main__":
             for item in sw:
                 if not first: outf.write(",\n")
                 json.dump(item, outf)
-                first = False 
+                first = False
             outf.write("\n];")
-        print("All Good! Exported Files")  
+            print(f"Relation Count: {len(sw)}")
+        print("All Good! Exported Files")

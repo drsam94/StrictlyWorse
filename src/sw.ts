@@ -23,7 +23,7 @@ function showImage(elem: HTMLElement, imgSrc: string) {
   popImage.style.width = CARD_WIDTH;
   popImage.style.height = CARD_HEIGHT;
   const sourceLoc = elem.getBoundingClientRect();
-  
+
   if (sourceLoc.left > window.innerWidth / 2) {
     // pop up image to the left
     popImage.style.left = "" + (sourceLoc.left + (-CARD_WIDTH));
@@ -716,12 +716,10 @@ class FlagsState {
     this.parent = null;
   }
 
-  public render(parent: HTMLElement): void {
-    if (parent) {
-      this.parent = parent;
-    } else {
-      return;
-    }
+  public render(parent: HTMLElement): HTMLElement {
+    this.parent = parent;
+
+    const flagsDiv = makeElement("div", parent);
     // For now this is specific to labels that are many symbols
     for (let i = 0; i < this.flags.length; ++i) {
       const cbDiv = document.createElement("div");
@@ -734,10 +732,11 @@ class FlagsState {
         if (this.parent) this.onChangeCB(this.parent);
       };
       checkbox.checked = this.flagValues[i];
-      parent.appendChild(renderCost(this.flags[i]))
+      flagsDiv.appendChild(renderCost(this.flags[i]))
       cbDiv.appendChild(checkbox);
-      parent.appendChild(cbDiv);
-    }    
+      flagsDiv.appendChild(cbDiv);
+    }
+    return flagsDiv;
   }
 
   public getFlagValues(): Array<boolean> {
@@ -752,7 +751,7 @@ class TableMaker {
   private dag: Record<string, Card>;
   private dir: Direction;
   private flags: FlagsState;
-  
+
   constructor(cards: Array<Card>, oData: any, dg: Record<string, Card>, dir: Direction) {
     this.swData = [];
     for (const card of cards) {
@@ -782,8 +781,7 @@ class TableMaker {
   public renderTable(parent: HTMLElement) {
     this.cardSort();
     parent.replaceChildren("");
-    const flagsDiv = makeElement("div", parent);
-    this.flags.render(flagsDiv);
+    const flagsDiv = this.flags.render(parent);
     const table = makeElement("table", parent);
     const hdrRow = makeElement("tr", table);
     this.makeClickSort(makeElement("th", hdrRow, "Card"), parent, TableColumn.Name);
