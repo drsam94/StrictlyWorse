@@ -35,18 +35,31 @@ def any_prop(card, key: str, val: str) -> bool:
     return False
 
 def search_query(card) -> bool:
-    if 'Creature' not in card['type_line']:
+    if 'Creature'  in card['type_line']:
         return False
-    if card['cmc'] < 6.0:
+    if card['cmc'] >= 6.0:
         return False
     if any_prop(card, 'digital', True) or any_prop(card, 'layout', 'token'):
         return False
-    color = 'G'
+    color = 'B'
     if ('colors' in card and color in card['colors'] and len(card['colors']) == 1) or (
         'card_faces' in card and any('colors' in face and color in face['colors'] for face in card['card_faces'])
     ):
         return True
     return False
+
+def simplify_obj(card):
+    preserved_keys = ["card_faces", "image_uris", "colors", "mana_cost", "cmc", "type_line", "power", "toughness"]
+    ret = {key: value for key, value in card.items() if key in preserved_keys}
+    if "image_uris" in ret:
+        normal = ret["image_uris"]["normal"]
+        ret["image_uris"] = {"normal": normal}
+    if "card_faces" in ret:
+        for face in ret["card_faces"]:
+            if "image_uris" in face:
+                normal = face["image_uris"]["normal"]
+                face["image_uris"] = {"normal": normal}
+    return ret 
 
 if __name__ == "__main__":
     sw_file = 'res/data.js' if len(sys.argv) < 2 else sys.argv[1]
@@ -92,7 +105,7 @@ if __name__ == "__main__":
     else:
         with open('res/filtered-oracle.js', 'w+') as outf:
             outf.write('export const all_cards = \n')
-            filtered_names = {name: obj for name,obj in official_names.items() if name in sw_names}
+            filtered_names = {name: simplify_obj(obj) for name,obj in official_names.items() if name in sw_names}
             json.dump(filtered_names, outf)
         with open('res/unmatched-search.js', "w+") as outf:
             outf.write('export const pageSource = `\n<h1>Search Query Cards</h1>\n<ul>\n')

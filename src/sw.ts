@@ -826,7 +826,7 @@ class TableMaker {
     const includeColors = this.flags.getFlagValues();
     for (let i = 0; i < includeColors.length; ++i) {
       const color = "WUBRG".charAt(i);
-      if (!includeColors[i] && card.colors.includes(color)) {
+      if (!includeColors[i] && card.colors && card.colors.includes(color)) {
         return false;
       }
     }
