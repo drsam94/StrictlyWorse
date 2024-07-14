@@ -41,7 +41,7 @@ def search_query(card) -> bool:
         return False
     if any_prop(card, 'digital', True) or any_prop(card, 'layout', 'token'):
         return False
-    color = 'W'
+    color = 'B'
     if ('colors' in card and color in card['colors'] and len(card['colors']) == 1) or (
         'card_faces' in card and any('colors' in face and color in face['colors'] for face in card['card_faces'])
     ):
