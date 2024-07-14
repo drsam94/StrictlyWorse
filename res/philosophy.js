@@ -131,7 +131,12 @@ Conspiracy Draft Cards
 <li>[[Spire Phantasm]]</li>
 <li>[[Arcane Savant]]</li>
 <li>[[Volatile Chimera]]</li>
+<li>[[Custodi Peacekeeper]]</li>
+</ul>
 
+Multiplayer Cards
+<ul>
+<li>[[Decoy Gambit]]</li>
 </ul>
 Ante Cards
 <ul>
