@@ -79,7 +79,6 @@ For the most part, I want to consider all magic cards "in the pool." Some cards 
 <li>[[Folk Hero]]</li>
 <li>[[Font of Magic]]</li>
 <li>[[Forge of Heroes]]</li>
-<li>[[Fury Storm]]</li>
 <li>[[Gray Harbor Merfolk]]</li>
 <li>[[Guardian Augmenter]]</li>
 <li>[[Guild Artisan]]</li>

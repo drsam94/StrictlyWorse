@@ -325,9 +325,10 @@ function processData(dag: Record<string, Card>, inData: any) {
 }
 
 
+const worseSet: Record<string, Set<string>> = {};
+const betterSet: Record<string, Set<string>> = {};
+
 function computeStats(dag: Record<string, Card>): void {
-  const worseSet: Record<string, Set<string>> = {};
-  const betterSet: Record<string, Set<string>> = {};
   const getSet = (dir: Direction) => dir == Direction.Worse ? worseSet : betterSet;
   function computeStatsRecursive(card: Card, dir: Direction) {
     const set = getSet(dir);
@@ -390,11 +391,7 @@ function getImageURL(name?: string) {
   return face["image_uris"]["normal"];
 }
 
-function rectContains(rect: DOMRect, pt: MouseEvent): boolean {
-  console.log(rect, pt);
-  return (pt.clientX > rect.left && pt.clientY < rect.right &&
-      pt.clientY > rect.top && pt.clientY < rect.bottom);
-}
+
 function makeChart(data: any, rootName: string, startExpanded?: boolean) {
   data["name"] = rootName;
   // Specify the charts’ dimensions. The height is variable, depending on the layout.
@@ -582,11 +579,63 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
   });
 
   update(null, root);
-
+console.log(svg);
   return svg;
 }
 
+function makeDateHistogram(indata: Array<string>): HTMLElement {
+  const formatDate = d3.utcParse("%Y-%m-%d");
+// set the dimensions and margins of the graph
+const margin = {top: 10, right: 30, bottom: 30, left: 40},
+    width = 460 - margin.left - margin.right,
+    height = 400 - margin.top - margin.bottom;
 
+// append the svg object to the body of the page
+var svg = d3.create("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom);
+  svg.append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+
+        // X axis: scale and draw:
+  var x = d3.scaleUtc([new Date(1993, 0, 1), new Date(2025, 1, 1), 960]);
+
+  svg.append("g")
+  .attr("transform", "translate(0," + height + ")")
+  .call(d3.axisBottom(x));
+
+// set the parameters for the histogram
+var histogram = d3.histogram()
+  .value(function(d: string) {return formatDate(d); })   // I need to give the vector of value
+  .domain(x.domain())  // then the domain of the graphic
+  .thresholds(x.ticks(70)); // then the numbers of bins
+
+// And apply this function to data to get the bins
+var bins = histogram(indata);
+
+// Y axis: scale and draw:
+var y = d3.scaleLinear()
+  .range([height, 0]);
+  y.domain([0, d3.max(bins, function(d) { return d.length; })]);   // d3.hist has to be called before the Y axis obviously
+svg.append("g")
+  .call(d3.axisLeft(y));
+
+// append the bar rectangles to the svg element
+svg.selectAll("rect")
+  .data(bins)
+  .enter()
+  .append("rect")
+    .attr("x", 1)
+    //.attr("transform", function(d) { return "translate(" + x(d.x0) + "," + y(d.length) + ")"; })
+   // .attr("width", function(d) { return x(d.x1) - x(d.x0) -1 ; })
+   .attr("height", function(d) { return height - y(d.length); })
+    .style("fill", "#69b3a2")
+
+    console.log(svg);
+return svg;
+}
 
 const maximalCards: Record<Direction, Array<Card>> = [[], []];
 function initializeMaximalCards(dag: Record<string, Card>, toInit: Array<Card>, dir: Direction) {
@@ -870,6 +919,18 @@ class TableMaker {
   }
 }
 
+function extractDates(card: Card, dir: Direction): Array<string> {
+  const oracle = oracleData.all_cards;
+  const collection = (dir == Direction.Better ? betterSet : worseSet)[card.name];
+
+  const ret: Array<string> = [];
+  for (const name of collection) {
+      const data = oracle[name];
+      ret.push(data["released_at"]);
+  }
+  return ret;
+}
+
 function displayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: string): void {
   outdiv.replaceChildren("");
   window.location.hash = "card-" + name;
@@ -893,9 +954,12 @@ function displayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: str
         nameStr += " (Equivalent to [[" + card.name + "]])";
       }
       const textContent = nameStr + " is " + (dir == Direction.Better ? "worse" : "better") + " than...";
+      const dateData = extractDates(card, dir);
+      const dateChart = makeDateHistogram(dateData);
       outdiv.appendChild(label);
       displayTextWithCardLinks(label, textContent);
       outdiv.appendChild(chart.node());
+      outdiv.appendChild(dateChart.node());
     }
   }
 }
