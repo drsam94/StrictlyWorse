@@ -35,22 +35,22 @@ def any_prop(card, key: str, val: str) -> bool:
     return False
 
 def search_query(card) -> bool:
-    """
+    if 'type_line' not in card:
+        return False
     if 'Creature'  not in card['type_line']:
         return False
-    if card['cmc'] > 4.0:
-        return False
+    #if card['cmc'] > 4.0:
+    #    return False
     if any_prop(card, 'digital', True) or any_prop(card, 'layout', 'token'):
         return False
-    color = 'B'
+    color = 'G'
+    if "oracle_text" not in card or 'reach' not in card["oracle_text"].lower():
+        return False
     if ('colors' in card and color in card['colors'] and len(card['colors']) == 1) or (
         'card_faces' in card and any('colors' in face and color in face['colors'] for face in card['card_faces'])
     ):
         return True
-    """
-    if 'oracle_text' in card and 'commander' in card["oracle_text"].lower():
-        return True
-    return False
+    return True
 
 def simplify_obj(card):
     preserved_keys = ["card_faces", "image_uris", "colors", "mana_cost", "cmc", "type_line", "power", "toughness", "released_at"]

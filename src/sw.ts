@@ -405,7 +405,7 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
   // (dx is a height, and dy a width). This because the tree must be viewed with the root at the
   // “bottom”, in the data domain. The width of a column is based on the tree’s height.
   const root = d3.hierarchy(data);
-  const dx = 12;
+  const dx = 14;
   const dy = (width - marginRight - marginLeft) / (1 + root.height);
 
   // Define the tree layout and the shape for links.
@@ -579,61 +579,79 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
   });
 
   update(null, root);
-console.log(svg);
   return svg;
 }
 
 function makeDateHistogram(indata: Array<string>): HTMLElement {
-  const formatDate = d3.utcParse("%Y-%m-%d");
-// set the dimensions and margins of the graph
-const margin = {top: 10, right: 30, bottom: 30, left: 40},
-    width = 460 - margin.left - margin.right,
-    height = 400 - margin.top - margin.bottom;
+    const width = 800;
+    const height = 200;
+    const margin = { top: 20, right: 50, bottom: 30, left: 50 };
+    
+    // Parse dates
+    const parseDate = d3.timeParse("%Y-%m-%d");
+    indata.sort((a, b) => parseDate(a) - parseDate(b));
+    console.log(indata);
+    const dates = indata.map(d => parseDate(d));
+    
+    console.log(dates);
 
-// append the svg object to the body of the page
-var svg = d3.create("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom);
-  svg.append("g")
-    .attr("transform",
-          "translate(" + margin.left + "," + margin.top + ")");
+        // Setup scales
+        const x = d3.scaleTime()
+        .domain(d3.extent(dates)).nice()
+        .range([margin.left, width - margin.right]);
+
+    // Create histogram bins
+    const histogram = (d3.histogram()
+    .value(d => d)
+    .domain(x.domain())
+    .thresholds(x.ticks(8)))  (dates);
+    console.log(histogram);
 
 
-        // X axis: scale and draw:
-  var x = d3.scaleUtc([new Date(1993, 0, 1), new Date(2025, 1, 1), 960]);
 
-  svg.append("g")
-  .attr("transform", "translate(0," + height + ")")
-  .call(d3.axisBottom(x));
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(histogram, d => d.length)])
+        .nice()
+        .range([height - margin.bottom, margin.top]);
+    
+    // Create SVG and append axes and bars
+    const svg = d3.create("svg")
+        .attr("width", width)
+        .attr("height", height);
+       // Append y axis
+       svg.append("g")
+       .attr("transform", `translate(${margin.left},0)`)
+       .call(d3.axisLeft(y).ticks(5));
 
-// set the parameters for the histogram
-var histogram = d3.histogram()
-  .value(function(d: string) {return formatDate(d); })   // I need to give the vector of value
-  .domain(x.domain())  // then the domain of the graphic
-  .thresholds(x.ticks(70)); // then the numbers of bins
+    // Append bars
+    console.log("yo")
+    console.log(x(histogram[0].x1));
+    svg.selectAll("rect")
+    .data(histogram)
+    .enter()
+    .append("rect")
+    .attr("x", d => { const ret = x(d.x0) + 1; console.log(ret); return ret; })
+    .attr("width", d => Math.max(0, x(d.x1) - x(d.x0) - 1))
+    .attr("y", d => { console.log(d.length); return y(d.length); })
+    .attr("height", d => y(0) - y(d.length))
+    .attr("fill", "steelblue")
+    .attr("stroke", "black") // Add a black border around the bars
+    .attr("stroke-width", 1); // Adjust border width as needed
+    
+    // Append x axis
+    svg.append("g")
+        .attr("transform", `translate(0,${height - margin.bottom})`)
+        .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%Y-%m")));
+    
 
-// And apply this function to data to get the bins
-var bins = histogram(indata);
-
-// Y axis: scale and draw:
-var y = d3.scaleLinear()
-  .range([height, 0]);
-  y.domain([0, d3.max(bins, function(d) { return d.length; })]);   // d3.hist has to be called before the Y axis obviously
-svg.append("g")
-  .call(d3.axisLeft(y));
-
-// append the bar rectangles to the svg element
-svg.selectAll("rect")
-  .data(bins)
-  .enter()
-  .append("rect")
-    .attr("x", 1)
-    //.attr("transform", function(d) { return "translate(" + x(d.x0) + "," + y(d.length) + ")"; })
-   // .attr("width", function(d) { return x(d.x1) - x(d.x0) -1 ; })
-   .attr("height", function(d) { return height - y(d.length); })
-    .style("fill", "#69b3a2")
-
-    console.log(svg);
+    
+    // Add title
+    svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", margin.top / 2)
+        .attr("text-anchor", "middle")
+        .style("font-size", "12px")
+        .text("Release Order");
 return svg;
 }
 
@@ -757,9 +775,12 @@ class FlagsState {
   private flagValues: Array<boolean> = []
   private onChangeCB: (p:HTMLElement) => void;
   private parent: HTMLElement | null;
-  constructor (flagNames: Array<string>, ocb: (p:HTMLElement) => void = (x) => {}) {
-    this.flags = [...flagNames];
-    this.flagValues = new Array(flagNames.length);
+  private colors = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}"];
+  private types = ["Creature","Instant","Sorcery","Enchantment","Artifact","Land"];
+  
+  constructor (ocb: (p:HTMLElement) => void = (x) => {}) {
+    this.flags = [...this.colors, ...this.types];
+    this.flagValues = new Array(this.flags.length);
     this.flagValues.fill(true);
     this.onChangeCB = ocb;
     this.parent = null;
@@ -781,15 +802,35 @@ class FlagsState {
         if (this.parent) this.onChangeCB(this.parent);
       };
       checkbox.checked = this.flagValues[i];
-      flagsDiv.appendChild(renderCost(this.flags[i]))
+      const textLabel = (text: string) => {
+        const rootNode = document.createElement("div");
+        rootNode.style.display = "inline-block";
+        const childNode = document.createElement("p");
+        childNode.innerText = text;
+        rootNode.appendChild(childNode);
+        return rootNode;
+      };
+      const labelMaker = i < 6 ? renderCost : textLabel;
+      
+      flagsDiv.appendChild(labelMaker(this.flags[i]));
       cbDiv.appendChild(checkbox);
       flagsDiv.appendChild(cbDiv);
+      if (i == 5) {
+        flagsDiv.appendChild(document.createElement("br"));
+      }
     }
     return flagsDiv;
   }
 
-  public getFlagValues(): Array<boolean> {
-    return this.flagValues;
+  public getColorFlags(): Array<boolean> {
+    return this.flagValues.slice(0, 5);
+  }
+  public getTypeFlags() : Record<string, boolean> {
+    const ret: Record<string, boolean> = {};
+    for (let i = 0; i < this.flags.length; ++i) {
+      ret[this.flags[i]] = this.flagValues[i];
+    }
+    return ret;
   }
 }
 
@@ -813,7 +854,7 @@ class TableMaker {
     }
     this.dag = dg;
     this.dir = dir;
-    this.flags = new FlagsState(["{W}", "{U}", "{B}", "{R}", "{G}"], (p: HTMLElement) => {this.renderTable(p);});
+    this.flags = new FlagsState((p: HTMLElement) => {this.renderTable(p);});
   }
 
   private makeClickSort(elem: HTMLElement, parent: HTMLElement, column: TableColumn) {
@@ -872,15 +913,37 @@ class TableMaker {
   }
 
   private passesFilter(card: TableElem): boolean {
-    const includeColors = this.flags.getFlagValues();
-    for (let i = 0; i < includeColors.length; ++i) {
-      const color = "WUBRG".charAt(i);
-      if (!includeColors[i] && card.colors && card.colors.includes(color)) {
+    return this.passesColorFilter(card) && this.passesTypeFilter(card);
+  }
+  private passesColorFilter(card: TableElem) : boolean {
+    const colors = card.colors ?? [];
+    const includeColors = this.flags.getColorFlags();
+    if (colors.length == 0) {
+      // colorless
+      return includeColors[5];
+    }
+    for (const color of colors) {
+      const idx = "WUBRG".indexOf(color);
+      if (!includeColors[idx]) {
         return false;
       }
     }
     return true;
   }
+  private passesTypeFilter(card: TableElem): boolean {
+    const words = card.type.split(" ");
+    const flags = this.flags.getTypeFlags();
+    for (const word of words) {
+      const val = flags[word];
+      if (val === undefined || val === true) {
+        continue;
+      } else {
+        return false;
+      }
+    }
+    return true;
+  }
+
   private cardSort() {
     const costCompare = (a: TableElem, b: TableElem) => {
       // TODO: use faces
@@ -926,7 +989,13 @@ function extractDates(card: Card, dir: Direction): Array<string> {
   const ret: Array<string> = [];
   for (const name of collection) {
       const data = oracle[name];
-      ret.push(data["released_at"]);
+      if (data === undefined) {
+        continue;
+      }
+      const ra = data["released_at"];
+      if (ra !== undefined) {
+        ret.push(ra);
+      }
   }
   return ret;
 }
@@ -953,13 +1022,15 @@ function displayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: str
       if (card.name !== name) {
         nameStr += " (Equivalent to [[" + card.name + "]])";
       }
-      const textContent = nameStr + " is " + (dir == Direction.Better ? "worse" : "better") + " than...";
+      const textContent = nameStr + " is <strong>" + (dir == Direction.Better ? "worse" : "better") + "</strong> than...";
       const dateData = extractDates(card, dir);
       const dateChart = makeDateHistogram(dateData);
       outdiv.appendChild(label);
       displayTextWithCardLinks(label, textContent);
       outdiv.appendChild(chart.node());
-      outdiv.appendChild(dateChart.node());
+      if (dateData.length > 1) {
+        outdiv.appendChild(dateChart.node());
+      }
     }
   }
 }
@@ -1100,7 +1171,7 @@ function main(): void {
 
   document.body.appendChild(trailerDiv);
   timer.checkpoint("Button Init");
-  autocomplete(inputElem, Object.keys(dag));
+  autocomplete(inputElem, Object.keys(dag), false);
   timer.checkpoint("Autocomplete Computation");
   inputElem.addEventListener("keydown", (event: any) => {
     if (event.key != "Enter") {

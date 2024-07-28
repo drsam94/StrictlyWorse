@@ -117,6 +117,7 @@ For the most part, I want to consider all magic cards "in the pool." Some cards 
 </ul>
 Conspiracy Draft Cards
 <ul>
+<li>[[Animus of Predation]]</li>
 <li>[[Archdemon of Paliano]]</li>
 <li>[[Caller of the Untamed]]</li>
 <li>[[Cogwork Grinder]]</li>
@@ -136,6 +137,9 @@ Conspiracy Draft Cards
 Multiplayer Cards
 <ul>
 <li>[[Decoy Gambit]]</li>
+<li>[[Corporeal Projection]]</li>
+<li>[[Legion Loyalty]]</li>
+<li>[[Blade of Selves]]</li>
 </ul>
 Ante Cards
 <ul>
