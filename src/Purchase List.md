@@ -41,3 +41,19 @@ Shivan Dragon
 Wrack with Madness
 Dissension in the Ranks
 Deep Reconnaissance
+Mageeta's Boon
+
+Utter End
+Lightning Stormkin
+Thoughtflare
+Wee Dragonauts
+Bull Cerodon
+Iroas's Champion
+Treasured Find
+Windgrace's Judgment
+Leonin Armorguard
+Tyrant's Familiar
+Brimstone Dragon
+Mishra's Foundry,
+Hearthfire Hobgoblin
+Wasp Lancer

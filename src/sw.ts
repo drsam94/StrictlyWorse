@@ -85,7 +85,7 @@ function autocomplete(inp: HTMLInputElement, arr: string[], commaSeparated?: boo
         b.innerHTML += "<strong>" + prefix + "</strong>";
         b.innerHTML += elem.substring(modifiedVal.length);
         /*insert a input field that will hold the current array item's value:*/
-        b.innerHTML += "<input type='hidden' value='" + elem + "'>";
+        b.innerHTML += "<input type='hidden' value=\"" + elem + "\">";
         /*execute a function when someone clicks on the item value (DIV element):*/
         b.addEventListener("click", function () {
           /*insert the value for the autocomplete text field:*/

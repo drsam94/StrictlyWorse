@@ -15,7 +15,7 @@ Due to the mechanics of Chroma and Devotion, one could argue for playing [[Sword
 <p>
 This one is perhaps a bit more controvertial, but doing this as a blanket rule leads to simpler evaluation. To start with probably the simplest example, we consider creature subtypes to be incomparable, with it not being worse to have one creature type or another. Sure, in many cases you might want [[Mons's Goblin Raiders]] over [[Dwarven Trader]] because one interacts with Goblin support like [[Goblin King]], but maybe you are comboing with [[Dwarven Pony]]. And even if you don't have the pony, you might want to dodge [[Tivadar of Thorn]]. So, creature types are ignored for purposes of card comparison. The only subtypes I have considered advantageous are land subtypes, despite there being some hate for basic land types, this is almost always an advantage, and e.g being a Gate is almost entirely upside (there are no explicit ways to punish your opponent for playing a gate, but maybe your opponent is playing [[Maze's End]] and [[Annex]]...).
 
-Perhaps a bit more controvertial is ignoring <i>supertypes</i>. The important one here is Legendary. So, for example, I consider in this data [[Isamaru, Hound of Konda]] to be better than [[Savannah Lions]], despite the fact that Isamaru is worse to have multiples of in an opening hand in a white weenie deck. So many modern creatures are legendary that it just isn't particularly interesting to restrict comparability by this. Other supertypes like Snow are also ignored. World too, and yes, that does come up. I do not consider Basic lands comparable with other cards, however.
+Perhaps a bit more controvertial is ignoring <i>supertypes</i>. The important one here is Legendary. So, for example, I consider in this data [[Isamaru, Hound of Konda]] to be better than [[Savannah Lions]], despite the fact that Isamaru is worse to have multiples of in an opening hand in a white weenie deck. So many modern creatures are legendary that it just isn't particularly interesting to restrict comparability by this. Other supertypes like Snow are also ignored. World too, and yes, that does come up. I do not consider Basic lands comparable with other cards, however. Also the Lesson subtype is considered a benefit on a card due to its interaction with the Learn mechanic, causing these cards to not really be meant to be played in a maindeck.
 
 Lastly the card types themselves. While [[Personal Tutor]] can't find [[Lightning Strike]], I still claim it is strictly better than [[Volcanic Hammer]], so the abilility to be cast at instant speed is a pro, and the type is ignored. I take this to the logical extreme, and also say for example [[Omega Myr]] is better than [[Squire]] because of the less restrict mana cost, and consider the artifact type irrelevant. So long as the act of playing the card provides the same or more value, the type of the card it is attached to is considered superfluous.
 </p>
@@ -140,6 +140,7 @@ Multiplayer Cards
 <li>[[Corporeal Projection]]</li>
 <li>[[Legion Loyalty]]</li>
 <li>[[Blade of Selves]]</li>
+<li>[[Mystic Barrier]]</li>
 </ul>
 Ante Cards
 <ul>
@@ -160,6 +161,8 @@ Funny Cards that complicate things to consider
 <li>[[_____]]</li>
 <li>[[Avatar of Me]]</li>
 <li>[[Brushstroke Paintermage]]</li>
+<li>[[Cryptic Spires]]</li>
+<li>[[Gold Mine]]</li>
 </ul>
 
 

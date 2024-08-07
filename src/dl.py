@@ -3,8 +3,13 @@ import requests
 import datetime
 import json
 
+def is_bad(card):
+    return card['lang'] != 'en' or card['digital'] == True 
+
 def better_example(card, prev_data):
-    if card['lang'] == 'en' and prev_data['lang'] != 'en':
+    if is_bad(card):
+        return False 
+    elif is_bad(prev_data):
         return True 
     my_released = datetime.datetime.strptime(card["released_at"], "%Y-%m-%d")
     old_released = datetime.datetime.strptime(prev_data["released_at"], "%Y-%m-%d")
