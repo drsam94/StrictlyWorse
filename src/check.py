@@ -39,23 +39,18 @@ def search_query(card) -> bool:
         return False
     if 'type_line' not in card:
         return False
-    if 'Equipment' not in card['type_line']:
-        return False
-    if 'Artifact' in card['type_line']:
-        return True
-    else:
+    if 'Sorcery' not in card['type_line']:
         return False
     #if card['cmc'] > 4.0:
     #    return False
-        return False
-    color = 'U'
-    if "oracle_text" not in card or 'flying' not in card["oracle_text"].lower():
-        return False
+    color = 'R'
+    #if "oracle_text" not in card or 'flying' not in card["oracle_text"].lower():
+    #    return False
     if ('colors' in card and color in card['colors'] and len(card['colors']) == 1) or (
         'card_faces' in card and any('colors' in face and color in face['colors'] for face in card['card_faces'])
     ):
         return True
-    return True
+    return False
 
 def simplify_obj(card):
     preserved_keys = ["card_faces", "image_uris", "colors", "mana_cost", "cmc", "type_line", "power", "toughness", "released_at"]
@@ -104,8 +99,10 @@ if __name__ == "__main__":
             raise e
 
     sw_names = sw_names.union(get_text_names())
-    error_names = sw_names - set(official_names.keys())
-    error_names = [name for name in error_names if not is_placeholder(name)]
+    error_names = []
+    ph_names = []
+    for name in sw_names - set(official_names.keys()):
+        (ph_names if is_placeholder(name) else error_names).append(name)
     sq_names = {name for name, obj in official_names.items() if name not in sw_names and search_query(obj)}
     sw_names = sw_names.union(sq_names)
     if len(error_names) > 0:

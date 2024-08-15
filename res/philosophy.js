@@ -141,6 +141,7 @@ Multiplayer Cards
 <li>[[Legion Loyalty]]</li>
 <li>[[Blade of Selves]]</li>
 <li>[[Mystic Barrier]]</li>
+<li>[[Pendant of Prosperity]]</li>
 </ul>
 Ante Cards
 <ul>
