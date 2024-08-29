@@ -104,6 +104,7 @@ if __name__ == "__main__":
     for name in sw_names - set(official_names.keys()):
         (ph_names if is_placeholder(name) else error_names).append(name)
     sq_names = {name for name, obj in official_names.items() if name not in sw_names and search_query(obj)}
+    non_sw_names = {name for name, obj in official_names.items() if name not in sw_names}
     sw_names = sw_names.union(sq_names)
     if len(error_names) > 0:
         print("The Following are not actual mtg card names:")
@@ -118,6 +119,10 @@ if __name__ == "__main__":
             for name in sq_names:
                 outf.write(f"<li>[[{name}]]</li>\n")
             outf.write("</ul>`;\n")
+        with open('res/filtered-oracle-unmatched.js', "w+") as outf:
+            outf.write('export const all_cars = \n')
+            filtered_names = {name: simplify_obj(obj) for name,obj in official_names.items() if name in non_sw_names}
+            json.dump(filtered_names, outf)
         sw.sort(key=lambda x: x[0]+x[1])
         with open('res/data.js', "w+") as outf:
             outf.write('export const all_relations = [\n')

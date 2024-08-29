@@ -9,6 +9,7 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import * as rawData from '../res/data.js';
 import * as oracleData from '../res/filtered-oracle.js';
+import * as oracleDataUnmapped from '../res/filtered-oracle-unmatched.js'
 import * as philosophy from '../res/philosophy.js';
 import * as sq from '../res/unmatched-search.js';
 
@@ -36,7 +37,7 @@ function showImage(elem: HTMLElement, imgSrc: string) {
   elem.appendChild(popImage);
 }
 function hideImage(elem: HTMLElement) {
-  if (!elem.lastChild) {return;}
+  if (!elem.lastChild) { return; }
   elem.removeChild(elem.lastChild);
 }
 
@@ -205,6 +206,8 @@ class Card {
 };
 /****** end file */
 
+// NB: feature I didn't implement, idea of specialness would be to document certain
+// edges as special
 const specialSet: Set<string> = new Set();
 
 function concatSpecial(name1: string, name2: string): string {
@@ -547,7 +550,7 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
         const bottomEdge = window.innerHeight + window.scrollY;
         let top = event.clientY + window.scrollY - 15;
         if (event.clientY + +CARD_HEIGHT > window.innerHeight) {
-          top =  (bottomEdge + (-CARD_HEIGHT));
+          top = (bottomEdge + (-CARD_HEIGHT));
         }
         hoverDiv
           .style("position", "absolute")
@@ -564,7 +567,7 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
           .style("height", CARD_HEIGHT)
           .style("position", "absolute")
           .style("left", (event.clientX > window.innerWidth / 2 ? (-CARD_WIDTH) - distanceWithinText - 15 : "0") + "px")
-          .style("top", (fontHeight * 2 ) + "px")
+          .style("top", (fontHeight * 2) + "px")
           .style("zIndex", "1");
       })
       .on("mouseout", (event: MouseEvent) => {
@@ -632,76 +635,71 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
 }
 
 function makeDateHistogram(indata: Array<string>): HTMLElement {
-    const width = 800;
-    const height = 200;
-    const margin = { top: 20, right: 50, bottom: 30, left: 50 };
-    
-    // Parse dates
-    const parseDate = d3.timeParse("%Y-%m-%d");
-    indata.sort((a, b) => parseDate(a) - parseDate(b));
-    console.log(indata);
-    const dates = indata.map(d => parseDate(d));
-    
-    console.log(dates);
+  const width = 800;
+  const height = 200;
+  const margin = { top: 20, right: 50, bottom: 30, left: 50 };
 
-        // Setup scales
-        const x = d3.scaleTime()
-        .domain(d3.extent(dates)).nice()
-        .range([margin.left, width - margin.right]);
+  // Parse dates
+  const parseDate = d3.timeParse("%Y-%m-%d");
+  indata.sort((a, b) => parseDate(a) - parseDate(b));
+  const dates = indata.map(d => parseDate(d));
 
-    // Create histogram bins
-    const histogram = (d3.histogram()
+
+  // Setup scales
+  const x = d3.scaleTime()
+    .domain(d3.extent(dates)).nice()
+    .range([margin.left, width - margin.right]);
+
+  // Create histogram bins
+  const histogram = (d3.histogram()
     .value(d => d)
     .domain(x.domain())
-    .thresholds(x.ticks(8)))  (dates);
-    console.log(histogram);
+    .thresholds(x.ticks(8)))(dates);
 
 
 
-    const y = d3.scaleLinear()
-        .domain([0, d3.max(histogram, d => d.length)])
-        .nice()
-        .range([height - margin.bottom, margin.top]);
-    
-    // Create SVG and append axes and bars
-    const svg = d3.create("svg")
-        .attr("width", width)
-        .attr("height", height);
-       // Append y axis
-       svg.append("g")
-       .attr("transform", `translate(${margin.left},0)`)
-       .call(d3.axisLeft(y).ticks(5));
+  const y = d3.scaleLinear()
+    .domain([0, d3.max(histogram, d => d.length)])
+    .nice()
+    .range([height - margin.bottom, margin.top]);
 
-    // Append bars
-    console.log("yo")
-    console.log(x(histogram[0].x1));
-    svg.selectAll("rect")
+  // Create SVG and append axes and bars
+  const svg = d3.create("svg")
+    .attr("width", width)
+    .attr("height", height);
+  // Append y axis
+  svg.append("g")
+    .attr("transform", `translate(${margin.left},0)`)
+    .call(d3.axisLeft(y).ticks(5));
+
+  // Append bars
+  svg.selectAll("rect")
     .data(histogram)
     .enter()
     .append("rect")
-    .attr("x", d => { const ret = x(d.x0) + 1; console.log(ret); return ret; })
+    .attr("x", d => { const ret = x(d.x0) + 1; return ret; })
     .attr("width", d => Math.max(0, x(d.x1) - x(d.x0) - 1))
-    .attr("y", d => { console.log(d.length); return y(d.length); })
+    .attr("y", d => {  return y(d.length); })
     .attr("height", d => y(0) - y(d.length))
     .attr("fill", "steelblue")
     .attr("stroke", "black") // Add a black border around the bars
     .attr("stroke-width", 1); // Adjust border width as needed
-    
-    // Append x axis
-    svg.append("g")
-        .attr("transform", `translate(0,${height - margin.bottom})`)
-        .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%Y-%m")));
-    
 
-    
-    // Add title
-    svg.append("text")
-        .attr("x", width / 2)
-        .attr("y", margin.top / 2)
-        .attr("text-anchor", "middle")
-        .style("font-size", "12px")
-        .text("Release Order");
-return svg;
+  // Append x axis
+  svg.append("g")
+    .attr("transform", `translate(0,${height - margin.bottom})`)
+    .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%Y-%m")));
+
+
+
+  // Add title
+  svg.append("text")
+    .attr("x", width / 2)
+    .attr("y", margin.top / 2)
+    .attr("text-anchor", "middle")
+    .style("font-size", "12px")
+    .text("Release Order");
+  return svg;
 }
 
 const maximalCards: Record<Direction, Array<Card>> = [[], []];
@@ -722,7 +720,6 @@ function initializeMaximalCards(dag: Record<string, Card>, toInit: Array<Card>, 
         toInit.push(card);
       }
     }
-    console.log(toInit.length);
   }
 }
 
@@ -788,13 +785,15 @@ class TableElem {
   public cmc: number;
   public type: string;
   public pt: string;
+  public pow: number;
+  public tou: number;
   public degree: number;
   public totalWorse: number;
 
   constructor(card: Card, oracle: any, dir: Direction) {
     const oDir = dir == Direction.Better ? Direction.Worse : Direction.Better;
     this.name = card.name;
-    this.colors = oracle.colors;
+    this.colors = oracle.colors ?? [];
     let cost = "";
     if (oracle.mana_cost) {
       cost = oracle.mana_cost;
@@ -814,6 +813,8 @@ class TableElem {
       this.type = this.type.substring(0, 20) + ". . . ";
     }
     this.pt = getPTString(oracle);
+    this.pow = +oracle.power || 0;
+    this.tou = oracle.toughness || 0;
     this.degree = card.stats(oDir).degree;
     this.totalWorse = card.stats(oDir).total;
   }
@@ -822,12 +823,12 @@ class TableElem {
 class FlagsState {
   private flags: Array<string> = []
   private flagValues: Array<boolean> = []
-  private onChangeCB: (p:HTMLElement) => void;
+  private onChangeCB: (p: HTMLElement) => void;
   private parent: HTMLElement | null;
   private colors = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}"];
-  private types = ["Creature","Instant","Sorcery","Enchantment","Artifact","Land"];
-  
-  constructor (ocb: (p:HTMLElement) => void = (x) => {}) {
+  private types = ["Creature", "Instant", "Sorcery", "Enchantment", "Artifact", "Land"];
+
+  constructor(ocb: (p: HTMLElement) => void = (x) => { }) {
     this.flags = [...this.colors, ...this.types];
     this.flagValues = new Array(this.flags.length);
     this.flagValues.fill(true);
@@ -860,7 +861,7 @@ class FlagsState {
         return rootNode;
       };
       const labelMaker = i < 6 ? renderCost : textLabel;
-      
+
       flagsDiv.appendChild(labelMaker(this.flags[i]));
       cbDiv.appendChild(checkbox);
       flagsDiv.appendChild(cbDiv);
@@ -874,7 +875,7 @@ class FlagsState {
   public getColorFlags(): Array<boolean> {
     return this.flagValues.slice(0, 6);
   }
-  public getTypeFlags() : Record<string, boolean> {
+  public getTypeFlags(): Record<string, boolean> {
     const ret: Record<string, boolean> = {};
     for (let i = 0; i < this.flags.length; ++i) {
       ret[this.flags[i]] = this.flagValues[i];
@@ -887,11 +888,10 @@ class TableMaker {
   private column: TableColumn = TableColumn.Cost;
   private increasing: boolean = true;
   private swData: Array<TableElem>;
-  private dag: Record<string, Card>;
   private dir: Direction;
   private flags: FlagsState;
-
-  constructor(cards: Array<Card>, oData: any, dg: Record<string, Card>, dir: Direction) {
+  private unmapped: boolean;
+  constructor(cards: Array<Card>, oData: any, dir: Direction) {
     this.swData = [];
     for (const card of cards) {
       const oracle = oData.all_cards[card.name];
@@ -901,9 +901,9 @@ class TableMaker {
 
       this.swData.push(new TableElem(card, oracle, dir));
     }
-    this.dag = dg;
     this.dir = dir;
-    this.flags = new FlagsState((p: HTMLElement) => {this.renderTable(p);});
+    this.flags = new FlagsState((p: HTMLElement) => { this.renderTable(p); });
+    this.unmapped = oData != oracleData;
   }
 
   private makeClickSort(elem: HTMLElement, parent: HTMLElement, column: TableColumn) {
@@ -946,8 +946,10 @@ class TableMaker {
       const nameRow = children[0] as HTMLElement;
       nameRow.textContent = card.name;
       imbueHoverImage(nameRow, getImageURL(card.name));
-      nameRow.onclick = () => {
-        displayCharts(parent, this.dag, card.name);
+      if (!this.unmapped) {
+        nameRow.onclick = () => {
+          displayCharts(card.name);
+        }
       }
       children[1].appendChild(card.cost);
       children[2].textContent = card.type;
@@ -964,7 +966,7 @@ class TableMaker {
   private passesFilter(card: TableElem): boolean {
     return this.passesColorFilter(card) && this.passesTypeFilter(card);
   }
-  private passesColorFilter(card: TableElem) : boolean {
+  private passesColorFilter(card: TableElem): boolean {
     const colors = card.colors ?? [];
     const includeColors = this.flags.getColorFlags();
     if (colors.length == 0) {
@@ -1037,21 +1039,24 @@ function extractDates(card: Card, dir: Direction): Array<string> {
 
   const ret: Array<string> = [];
   for (const name of collection) {
-      const data = oracle[name];
-      if (data === undefined) {
-        continue;
-      }
-      const ra = data["released_at"];
-      if (ra !== undefined) {
-        ret.push(ra);
-      }
+    const data = oracle[name];
+    if (data === undefined) {
+      continue;
+    }
+    const ra = data["released_at"];
+    if (ra !== undefined) {
+      ret.push(ra);
+    }
   }
   return ret;
 }
 
-function displayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: string): void {
-  outdiv.replaceChildren("");
+function displayCharts(name: string): void {
   window.location.hash = "card-" + name;
+}
+
+function doDisplayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: string): void {
+  outdiv.replaceChildren("");
 
   const card = dag[name];
   if (!card) {
@@ -1085,6 +1090,10 @@ function displayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: str
 }
 
 function displayTextWithCardLinks(elem: HTMLElement, text: string, setHash?: boolean) {
+  if (setHash) {
+    window.location.hash = "page-philosophy";
+    return;
+  }
   const timer = new Timer();
   const re = /\[\[([^\[\]]*)\]\]/g;
   text = text.replace(re, "<a class='cardlink'>$1</a>");
@@ -1095,9 +1104,6 @@ function displayTextWithCardLinks(elem: HTMLElement, text: string, setHash?: boo
     imbueHoverImage(o, getImageURL(o.textContent || ""));
   }
   timer.checkpoint("Display Text");
-  if (setHash) {
-    window.location.hash = "page-philosophy";
-  }
 }
 
 class Timer {
@@ -1119,18 +1125,112 @@ class Timer {
 };
 
 const tableMakers: Record<Direction, TableMaker | undefined> = [undefined, undefined];
-const renderTable = (outdiv: HTMLElement, dag: Record<string, Card>, dir: Direction) => {
+const doRenderTable = (outdiv: HTMLElement, dag: Record<string, Card>, dir: Direction) => {
   initializeMaximalCards(dag, maximalCards[dir], dir);
 
   const timer = new Timer();
   if (tableMakers[dir] === undefined) {
-    tableMakers[dir] = new TableMaker(maximalCards[dir], oracleData, dag, dir);
+    tableMakers[dir] = new TableMaker(maximalCards[dir], oracleData, dir);
   }
 
   tableMakers[dir]?.renderTable(outdiv);
   timer.checkpoint("Render Table");
+}
+
+function renderTable(dir: Direction) {
   window.location.hash = "table-" + Direction[dir];
 };
+
+function renderSearch(outdiv: HTMLElement, dag: Record<string, Card>) {
+  outdiv.replaceChildren("");
+  const pools = new Array<boolean>(4);
+  const addRadio = (i: number) => {
+    const checkbox = document.createElement("input");
+    checkbox.type = "radio";
+    checkbox.name = "search";
+    checkbox.onchange = () => {
+      pools[i] = checkbox.checked;
+    }
+    checkbox.checked = (i == 3);
+    return checkbox;
+  };
+  const labels = ["Best Cards", "Worst Cards", "Mapped Cards", "Unmapped Cards"];
+  for (let i = 0; i < 4; ++i) {
+  const rootNode = document.createElement("div");
+  rootNode.style.display = "inline-block";
+  const childNode = document.createElement("p");
+  childNode.innerText = labels[i];
+  rootNode.appendChild(childNode);
+  outdiv.appendChild(rootNode);
+  outdiv.appendChild(addRadio(i))
+  }
+  const inputElem = document.createElement("input");
+
+
+  inputElem.type = "text";
+  inputElem.placeholder = "Enter a Scryfall search query...";
+  inputElem.style.border = "1px solid transparent";
+  inputElem.style.backgroundColor = "#f1f1f1";
+  inputElem.style.padding = "10px";
+  inputElem.style.fontSize = "16px";
+  inputElem.style.width = "100%";
+  document.appendChild(inputElem);
+  inputElem.addEventListener("keydown", (event: any) => {
+    if (event.key != "Enter") {
+      return;
+    }
+    displaySearch(outdiv, dag, inputElem.value, pools);
+  });
+}
+
+const total_sets: Array<Array<Card>> = new Array(4);
+function initializeTotalSets(dag: Record<string, Card>) {
+  for (const dir of [Direction.Better, Direction.Worse]) {
+    initializeMaximalCards(dag, maximalCards[dir], dir); 
+  }
+
+  total_sets[0] = maximalCards[Direction.Better];
+  total_sets[1] = maximalCards[Direction.Worse];
+  total_sets[2] = Object.values(dag);
+ 
+  const unmappedOracle = Object.keys(oracleDataUnmapped);
+  const unmappedCards = new Array<Card>(unmappedOracle.length);
+  for (let i = 0; i < unmappedCards.length; ++i) {
+    unmappedCards[i] = new Card(unmappedOracle[i]);
+  }
+  total_sets[3] = unmappedCards;
+}
+
+class SearchMatcher {
+
+  constructor(query: string) {
+
+  }
+
+  public match(card: Card): boolean {
+    return true;
+  }
+};
+
+function displaySearch(outdiv: HTMLElement, dag: Record<string, Card>, searchQuery: string, pools: Array<boolean>) {
+  initializeTotalSets(dag);
+
+  const searchResults: Array<Card> = [];
+  const matcher = new SearchMatcher(searchQuery);
+  for (let i = 0; i < pools.length; ++i) {
+    if (!pools[i]) {
+      continue;
+    }
+    for (const card of total_sets[i]) {
+      if (matcher.match(card)) {
+        searchResults.push(card);
+      }
+    }
+  }
+  const tableMaker = new TableMaker(searchResults, pools[3] ? oracleData : oracleDataUnmapped, pools[0] ? Direction.Better : Direction.Worse);
+
+  tableMaker.renderTable(outdiv);
+}
 
 function initializePageFromHash(outdiv: HTMLElement, dag: Record<string, Card>) {
   const hash = window.location.hash;
@@ -1138,11 +1238,11 @@ function initializePageFromHash(outdiv: HTMLElement, dag: Record<string, Card>) 
   const key = hash.substring(1, loc);
   const val = decodeURI(hash.substring(loc + 1));
   if (key === "card") {
-    displayCharts(outdiv, dag, val);
+    doDisplayCharts(outdiv, dag, val);
   } else if (key === "table") {
-    renderTable(outdiv, dag, Direction[val as keyof typeof Direction])
+    doRenderTable(outdiv, dag, Direction[val as keyof typeof Direction])
   } else if (key === "page") {
-    displayTextWithCardLinks(outdiv, philosophy.pageSource, true);
+    displayTextWithCardLinks(outdiv, philosophy.pageSource, false);
   }
 }
 
@@ -1174,7 +1274,7 @@ function main(): void {
 
 
   inputElem.type = "text";
-  inputElem.placeholder = "Search for Card...";
+  inputElem.placeholder = "Search for a card to show its relations...";
   inputElem.style.border = "1px solid transparent";
   inputElem.style.backgroundColor = "#f1f1f1";
   inputElem.style.padding = "10px";
@@ -1226,14 +1326,17 @@ function main(): void {
     if (event.key != "Enter") {
       return;
     }
-    displayCharts(outdiv, dag, inputElem.value);
+    displayCharts(inputElem.value);
   });
 
-  button.onclick = () => renderTable(outdiv, dag, Direction.Worse);
-  button15.onclick = () => renderTable(outdiv, dag, Direction.Better);
+  button.onclick = () => renderTable(Direction.Worse);
+  button15.onclick = () => renderTable(Direction.Better);
   button2.onclick = () => displayTextWithCardLinks(outdiv, philosophy.pageSource, true);
   button3.onclick = () => displayTextWithCardLinks(outdiv, sq.pageSource, true);
   initializePageFromHash(outdiv, dag);
+  window.onpopstate = (evt) => {
+    initializePageFromHash(outdiv, dag);
+  }
 }
 
 main();
