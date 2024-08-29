@@ -1,4 +1,5 @@
-// Fuck fuck fuck fuck fuck
+// Author: Sam Donow, 2024
+// NB: Some really annoying stuff with typescript
 // So apparently these sorts of imports CANNOT be combine with typescript imports
 // e.g /// reference style
 // So options are to put additional code in the same file or write it untyped
