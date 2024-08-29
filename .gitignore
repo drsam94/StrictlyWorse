@@ -2,6 +2,6 @@
 res/oracle-cards.json
 res/filtered-oracle.js
 build/*
-res/unmatched-*.js
+res/unmatched-*
 res/*.svg
 src/Purchase*

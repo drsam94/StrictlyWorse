@@ -391,7 +391,19 @@ function recurAddChildren(rootNode: any, childList: Array<Card>, dir: Direction)
     recurAddChildren(newRoot, child.stats(dir).cards, dir);
   }
 }
+
 function recurCleanTree(rootNode: any, dir: Direction) {
+  // This cleans the tree to remove instances of
+  //
+  //    B
+  //   /
+  // A
+  //   \
+  //    C - B
+  //
+  // Because B is transitively related to A, we should not also claim it is directly a chidl of A.
+  // We generally keep the input data clean of these cases, but they can arise due to the collapsing
+  // of 
   const allDeeper = new Set<string>();
   const totalSet = getTotalChildSet(dir);
   for (const child of rootNode.children) {
@@ -414,8 +426,6 @@ function makeTree(rootNode: Card, dir: Direction) {
 
   recurCleanTree(data, dir);
 
-  // TODO: postprocess to remove instances of a card earlier in the tree that also occur later:
-  // the filtering in recurAddChildren already ensures we don't add multiples to the same level
   return data;
 }
 
