@@ -327,11 +327,18 @@ function processData(dag: Record<string, Card>, inData: any) {
 
 const worseSet: Record<string, Set<string>> = {};
 const betterSet: Record<string, Set<string>> = {};
+function getTotalChildSet(dir: Direction) {
+  return dir == Direction.Worse ? worseSet : betterSet;
+}
+function addUnion(src: Set<string>, added: Set<string>) {
+  for (const x of added) {
+    src.add(x);
+  }
+}
 
 function computeStats(dag: Record<string, Card>): void {
-  const getSet = (dir: Direction) => dir == Direction.Worse ? worseSet : betterSet;
   function computeStatsRecursive(card: Card, dir: Direction) {
-    const set = getSet(dir);
+    const set = getTotalChildSet(dir);
     if (set[card.name] === undefined) {
       set[card.name] = new Set();
       const ws = set[card.name];
@@ -339,10 +346,7 @@ function computeStats(dag: Record<string, Card>): void {
       for (const worse of card.stats(dir).cards) {
         computeStatsRecursive(worse, dir);
         ws.add(worse.name);
-        // union
-        for (const x of set[worse.name]) {
-          ws.add(x);
-        }
+        addUnion(ws, set[worse.name]);
         let childDegree = worse.stats(dir).degree + (worse.isPlaceholder() ? 0 : 1);
         maxDegree = Math.max(maxDegree, childDegree);
       }
@@ -368,16 +372,50 @@ function recurAddChildren(rootNode: any, childList: Array<Card>, dir: Direction)
       depth: child.stats(dir).degree,
       special: getPointerIfSpecial(rootNode.name, child.name, dir)
     };
-    rootNode.children.push(obj);
+    let newRoot = obj;
+    if (!child.isPlaceholder()) {
+      let childAlreadyExists = false;
+      for (const chi of rootNode.children) {
+        if (chi.name === child.name) {
+          childAlreadyExists = true;
+          break;
+        }
+      }
+      if (!childAlreadyExists) {
+        rootNode.children.push(obj);
+      }
+    } else {
+      newRoot = rootNode;
+    }
     // console.log(obj)
-    recurAddChildren(obj, child.stats(dir).cards, dir);
+    recurAddChildren(newRoot, child.stats(dir).cards, dir);
   }
 }
-
+function recurCleanTree(rootNode: any, dir: Direction) {
+  const allDeeper = new Set<string>();
+  const totalSet = getTotalChildSet(dir);
+  for (const child of rootNode.children) {
+    addUnion(allDeeper, totalSet[child.name])
+  }
+  const filteredChildren = [];
+  for (const child of rootNode.children) {
+    if (!allDeeper.has(child.name)) {
+      filteredChildren.push(child);
+    }
+    recurCleanTree(child, dir);
+  }
+  delete rootNode.children;
+  rootNode.children = filteredChildren;
+}
 function makeTree(rootNode: Card, dir: Direction) {
   const data = { name: rootNode.name, "children": [], value: rootNode.stats(dir).total, depth: rootNode.stats(dir).degree };
 
   recurAddChildren(data, rootNode.stats(dir).cards, dir);
+
+  recurCleanTree(data, dir);
+
+  // TODO: postprocess to remove instances of a card earlier in the tree that also occur later:
+  // the filtering in recurAddChildren already ensures we don't add multiples to the same level
   return data;
 }
 
@@ -823,7 +861,7 @@ class FlagsState {
   }
 
   public getColorFlags(): Array<boolean> {
-    return this.flagValues.slice(0, 5);
+    return this.flagValues.slice(0, 6);
   }
   public getTypeFlags() : Record<string, boolean> {
     const ret: Record<string, boolean> = {};
@@ -984,7 +1022,7 @@ class TableMaker {
 
 function extractDates(card: Card, dir: Direction): Array<string> {
   const oracle = oracleData.all_cards;
-  const collection = (dir == Direction.Better ? betterSet : worseSet)[card.name];
+  const collection = (getTotalChildSet(dir == Direction.Better ? Direction.Worse : Direction.Better))[card.name];
 
   const ret: Array<string> = [];
   for (const name of collection) {

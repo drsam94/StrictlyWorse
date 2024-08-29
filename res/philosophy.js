@@ -38,6 +38,10 @@ From the above, a lot of things are very loose, but I explicitly ignore analysis
 <li>Any "fun" cards that add "mattering" for things that otherwise don't matter in Magic, like [[Wordmail]]</li>
 <li>[[City in a Bottle]] and similar expansion-dependent effects</li>
 <li>The <b>Unleash</b> keyword is not viewed as a downside due to preventing the creature from blocking if it acquires counters outside the ability</li>
+<li><b>Clash</b> is viewed as a neutral with respect to its possibility to give either player card selection and is assessed more like a coin flip.</li>
+<li>Cards that gain <b>The Initiative</b> or make you <b>The Monarch</b> is viewed as incomparable and not as a benefit, as these statuses can be lost and become bad</li>
+<li>Despite being similar, <b>Daybound</b> cards and other cards that begin day/night tracker don't view this as a potential downside</li>
+<li>Some global effects that can be bad because of giving advantages to opponents are treated as still positive, such as classic Sliver abilities, so e.g [[Muscle Sliver]] is worse than [[Predatory Sliver]] but still better than [[Grizzly Bears]]</b>
 </ul>
 
 <h2> Two Player Games </h2>
@@ -137,11 +141,13 @@ Conspiracy Draft Cards
 Multiplayer Cards
 <ul>
 <li>[[Decoy Gambit]]</li>
-<li>[[Corporeal Projection]]</li>
+li>[[Corporeal Projection]]</li>
 <li>[[Legion Loyalty]]</li>
 <li>[[Blade of Selves]]</li>
 <li>[[Mystic Barrier]]</li>
 <li>[[Pendant of Prosperity]]</li>
+<li>[[Visions of Duplicity]]</li>
+<li>[[Cut a Deal]]</li>
 </ul>
 Ante Cards
 <ul>

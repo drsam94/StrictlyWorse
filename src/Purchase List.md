@@ -40,6 +40,7 @@ Dense Canopy
 Shivan Dragon
 Wrack with Madness
 Dissension in the Ranks
+Blood Feud
 Deep Reconnaissance
 Mageeta's Boon
 
@@ -57,3 +58,6 @@ Brimstone Dragon
 Mishra's Foundry,
 Hearthfire Hobgoblin
 Wasp Lancer
+Tidings
+Captivating Gyre
+Legerdemain

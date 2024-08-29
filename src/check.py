@@ -39,13 +39,13 @@ def search_query(card) -> bool:
         return False
     if 'type_line' not in card:
         return False
-    if 'Sorcery' not in card['type_line']:
+    if 'Creature' not in card['type_line']:
         return False
-    #if card['cmc'] > 4.0:
-    #    return False
-    color = 'R'
-    #if "oracle_text" not in card or 'flying' not in card["oracle_text"].lower():
-    #    return False
+    if card['cmc'] > 4.0:
+        return False
+    color = 'G'
+    #if "oracle_text"  in card and 'commander' in card["oracle_text"].lower():
+    #    return True
     if ('colors' in card and color in card['colors'] and len(card['colors']) == 1) or (
         'card_faces' in card and any('colors' in face and color in face['colors'] for face in card['card_faces'])
     ):
