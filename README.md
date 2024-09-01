@@ -12,8 +12,9 @@ If attempting to run this directly, rather than accessing a hosted version onlin
 - `src/d.py` downloads source data from Scryfall's API
 - `src/check.py` checks and updates `data.js` and associated files for relationships
 - `src/sw.ts` contains the code for the website, built with `tsc` (Typescript Compiler) to `res/sw.js`
-
-I am not very familiar with webdev and attempted to minimize dependencies here: the only build dependencies are `python` (tested with 3.9) and `tsc` (tested with 4.4.3)
+- `res/data.js` contains the mappings / source data. To add a new mapping, add an entry of the form `["worse card", "better card"]`
+- 
+I am not very familiar/interesting in web development and attempted to minimize dependencies here: the only build dependencies are `python` (tested with 3.9) and `tsc` (tested with 4.4.3)
 
 ## Resources
 
