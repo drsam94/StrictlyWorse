@@ -6,13 +6,18 @@
 // wtf is this fucking piece of shit system
 // At first the assumption was to put the json in json files -- already had to convert to json anyway
 // so probably long term should go completely to ts files and renew the reference style
+interface Oracle {
+  all_cards: Record<string, any>;
+}
+
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import * as rawData from '../res/data.js';
-import * as oracleData from '../res/filtered-oracle.js';
-import * as oracleDataUnmapped from '../res/filtered-oracle-unmatched.js'
+import * as _oracleData from '../res/filtered-oracle.js';
+import * as _oracleDataUnmapped from '../res/filtered-oracle-unmatched.js'
 import * as philosophy from '../res/philosophy.js';
-import * as sq from '../res/unmatched-search.js';
 
+const oracleData: Oracle = _oracleData;
+const oracleDataUnmapped: Oracle = _oracleDataUnmapped;
 /****    file hover.ts */
 
 const CARD_HEIGHT = "476";
@@ -178,6 +183,7 @@ function autocomplete(inp: HTMLInputElement, arr: string[], commaSeparated?: boo
 enum Direction {
   Worse, // Cards worse than this card, indicating this card is good
   Better, // Cards better than this card, indicating this card is bad
+  None, // Used for cards unafiliated with ordering
 };
 
 class DirStats {
@@ -206,6 +212,7 @@ class Card {
 };
 /****** end file */
 
+/** file Special.ts */
 // NB: feature I didn't implement, idea of specialness would be to document certain
 // edges as special
 const specialSet: Set<string> = new Set();
@@ -230,6 +237,41 @@ function getPointerIfSpecial(name1: string, name2: string, dir: Direction): stri
   }
   return "";
 }
+/** end file */
+
+/** file Set.ts */
+function addUnion(src: Set<string>, added: Set<string>): void {
+  for (const x of added) {
+    src.add(x);
+  }
+}
+
+function isSubsetOf(lhs: Set<any>, rhs: Set<any>): boolean{
+  for (const x of lhs) {
+    if (!rhs.has(x)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function isProperSubsetOf(lhs: Set<any>, rhs: Set<any>): boolean {
+  return isSubsetOf(lhs, rhs) && lhs.size < rhs.size;
+}
+
+function isDisjoint(lhs: Set<any>, rhs: Set<any>): boolean {
+  for (const x of lhs) {
+    if (rhs.has(x)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function isSetEqual(lhs: Set<any>, rhs: Set<any>): boolean {
+  return isSubsetOf(lhs, rhs) && lhs.size == rhs.size;
+}
+/** end file */
 
 function initNode(dag: any, key: string): Card {
   if (!(key in dag)) {
@@ -261,7 +303,6 @@ function deep_equal(arr1: Array<Card>, arr2: Array<Card>) {
 function processData(dag: Record<string, Card>, inData: any) {
   const top_level = [];
   for (const elem of inData) {
-    // console.log(elem);
     const worse = elem[0];
     const better = elem[1];
     const worseNode = initNode(dag, worse);
@@ -334,11 +375,7 @@ const betterSet: Record<string, Set<string>> = {};
 function getTotalChildSet(dir: Direction) {
   return dir == Direction.Worse ? worseSet : betterSet;
 }
-function addUnion(src: Set<string>, added: Set<string>) {
-  for (const x of added) {
-    src.add(x);
-  }
-}
+
 
 function computeStats(dag: Record<string, Card>): void {
   function computeStatsRecursive(card: Card, dir: Direction) {
@@ -364,7 +401,6 @@ function computeStats(dag: Record<string, Card>): void {
   for (const card of Object.values(dag)) {
     computeStatsRecursive(card, Direction.Worse);
     computeStatsRecursive(card, Direction.Better);
-    // console.log(card);
   }
 }
 function recurAddChildren(rootNode: any, childList: Array<Card>, dir: Direction) {
@@ -391,7 +427,6 @@ function recurAddChildren(rootNode: any, childList: Array<Card>, dir: Direction)
     } else {
       newRoot = rootNode;
     }
-    // console.log(obj)
     recurAddChildren(newRoot, child.stats(dir).cards, dir);
   }
 }
@@ -433,8 +468,8 @@ function makeTree(rootNode: Card, dir: Direction) {
   return data;
 }
 
-function getImageURL(name?: string) {
-  const card = oracleData.all_cards[name];
+function getImageURL(name: string, oracle: Oracle) {
+  const card = oracle.all_cards[name];
   if (card === undefined) {
     return "";
   }
@@ -444,7 +479,7 @@ function getImageURL(name?: string) {
 }
 
 
-function makeChart(data: any, rootName: string, startExpanded?: boolean) {
+function makeChart(data: any, rootName: string, startExpanded?: boolean): Node {
   data["name"] = rootName;
   // Specify the charts’ dimensions. The height is variable, depending on the layout.
   const width = 1300;
@@ -452,12 +487,12 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
   const marginRight = 10;
   const marginBottom = 10;
   const marginLeft = 200;
-  const fontHeight = 12;
+  const fontHeight = data.value > 30 ? 12 : 16;
   // Rows are separated by dx pixels, columns by dy pixels. These names can be counter-intuitive
   // (dx is a height, and dy a width). This because the tree must be viewed with the root at the
   // “bottom”, in the data domain. The width of a column is based on the tree’s height.
   const root = d3.hierarchy(data);
-  const dx = 14;
+  const dx = fontHeight + 2;
   const dy = (width - marginRight - marginLeft) / (1 + root.height);
 
   // Define the tree layout and the shape for links.
@@ -543,7 +578,7 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
       .attr("fill", (d: any) => d.data.special ? "#900" : "#555")
       .attr("paint-order", "stroke")
       .on("mouseover", (event: MouseEvent, d: any) => {
-        const imgURL = getImageURL(d.data.name);
+        const imgURL = getImageURL(d.data.name, oracleData);
         if (imgURL === "") {
           return;
         }
@@ -631,10 +666,10 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean) {
   });
 
   update(null, root);
-  return svg;
+  return svg.node();
 }
 
-function makeDateHistogram(indata: Array<string>): HTMLElement {
+function makeDateHistogram(indata: Array<string>): Node {
   const width = 800;
   const height = 200;
   const margin = { top: 20, right: 50, bottom: 30, left: 50 };
@@ -644,22 +679,21 @@ function makeDateHistogram(indata: Array<string>): HTMLElement {
   indata.sort((a, b) => parseDate(a) - parseDate(b));
   const dates = indata.map(d => parseDate(d));
 
-
+  const alldates = ["1993-01-01", "2025-01-01"].map(d => parseDate(d);
   // Setup scales
   const x = d3.scaleTime()
-    .domain(d3.extent(dates)).nice()
-    .range([margin.left, width - margin.right]);
+    .domain(d3.extent(alldates))
+    .range([margin.left, width - margin.right]).nice(15);
 
   // Create histogram bins
   const histogram = (d3.histogram()
-    .value(d => d)
+    .value((d: any) => d)
     .domain(x.domain())
-    .thresholds(x.ticks(8)))(dates);
-
+    .thresholds(x.ticks(15)))(dates);
 
 
   const y = d3.scaleLinear()
-    .domain([0, d3.max(histogram, d => d.length)])
+    .domain([0, d3.max(histogram, (d: any) => d.length)])
     .nice()
     .range([height - margin.bottom, margin.top]);
 
@@ -672,15 +706,16 @@ function makeDateHistogram(indata: Array<string>): HTMLElement {
     .attr("transform", `translate(${margin.left},0)`)
     .call(d3.axisLeft(y).ticks(5));
 
+  console.log(histogram);
   // Append bars
   svg.selectAll("rect")
     .data(histogram)
     .enter()
     .append("rect")
-    .attr("x", d => { const ret = x(d.x0) + 1; return ret; })
-    .attr("width", d => Math.max(0, x(d.x1) - x(d.x0) - 1))
-    .attr("y", d => {  return y(d.length); })
-    .attr("height", d => y(0) - y(d.length))
+    .attr("x", (d: any) => { const ret = x(d.x0) + 1; return ret; })
+    .attr("width", (d: any) => Math.max(0, x(d.x1) - x(d.x0) - 1))
+    .attr("y", (d: any) => {  return y(d.length); })
+    .attr("height", (d: any) => y(0) - y(d.length))
     .attr("fill", "steelblue")
     .attr("stroke", "black") // Add a black border around the bars
     .attr("stroke-width", 1); // Adjust border width as needed
@@ -699,10 +734,10 @@ function makeDateHistogram(indata: Array<string>): HTMLElement {
     .attr("text-anchor", "middle")
     .style("font-size", "12px")
     .text("Release Order");
-  return svg;
+  return svg.node();
 }
 
-const maximalCards: Record<Direction, Array<Card>> = [[], []];
+const maximalCards: Record<Direction, Array<Card>> = [[], [], []];
 function initializeMaximalCards(dag: Record<string, Card>, toInit: Array<Card>, dir: Direction) {
   if (toInit.length == 0) {
     for (const [cardName, card] of Object.entries(dag)) {
@@ -761,7 +796,7 @@ function renderCost(cost: string): HTMLElement {
   const re = /\{([^{}]*)\}([^{}]*)/g;
   for (const match of cost.matchAll(re)) {
     // naming convention to avoid / in filenames
-    const sym = match[1].replace('/', '_');
+    const sym = match[1].replace(/\//g, '_');
     const img = document.createElement("img");
     img.src = "res/" + sym + ".svg";
     img.style.width = "15";
@@ -891,15 +926,18 @@ class TableMaker {
   private dir: Direction;
   private flags: FlagsState;
   private unmapped: boolean;
+  private oracle: any;
+
   constructor(cards: Array<Card>, oData: any, dir: Direction) {
     this.swData = [];
+    this.oracle = oData;
     for (const card of cards) {
-      const oracle = oData.all_cards[card.name];
-      if (!oracle) {
+      const orcle = this.oracle.all_cards[card.name];
+      if (!orcle) {
         continue;
       }
 
-      this.swData.push(new TableElem(card, oracle, dir));
+      this.swData.push(new TableElem(card, orcle, dir));
     }
     this.dir = dir;
     this.flags = new FlagsState((p: HTMLElement) => { this.renderTable(p); });
@@ -927,12 +965,14 @@ class TableMaker {
     this.makeClickSort(makeElement("th", hdrRow, "Cost"), parent, TableColumn.Cost);
     makeElement("th", hdrRow, "Type");
     makeElement("th", hdrRow, "P / T");
+    if (this.dir != Direction.None) {
     this.makeClickSort(makeElement("th", hdrRow, "Degree"), parent, TableColumn.Degree);
     this.makeClickSort(makeElement("th", hdrRow, "Total " + (this.dir == Direction.Worse ? "Worse" : "Better")), parent, TableColumn.TotalWorse);
+    }
 
     // Making a template row and cloning it substantially speeds up DOM creation here
     // (something like 5-10x)
-    const numColumns = 6;
+    const numColumns = 6 - 2 * +(this.dir == Direction.None);
     const templateRow = makeElement("tr");
     for (let i = 0; i < numColumns; ++i) {
       makeElement("td", templateRow);
@@ -945,7 +985,7 @@ class TableMaker {
       const children = elemRow.children;
       const nameRow = children[0] as HTMLElement;
       nameRow.textContent = card.name;
-      imbueHoverImage(nameRow, getImageURL(card.name));
+      imbueHoverImage(nameRow, getImageURL(card.name, this.oracle));
       if (!this.unmapped) {
         nameRow.onclick = () => {
           displayCharts(card.name);
@@ -954,9 +994,10 @@ class TableMaker {
       children[1].appendChild(card.cost);
       children[2].textContent = card.type;
       children[3].textContent = card.pt;
-      children[4].textContent = card.degree + "";
-      children[5].textContent = card.totalWorse + "";
-
+      if (this.dir != Direction.None) {
+        children[4].textContent = card.degree + "";
+        children[5].textContent = card.totalWorse + "";
+      }
       table.appendChild(elemRow);
     }
     parent.appendChild(flagsDiv);
@@ -1035,7 +1076,7 @@ class TableMaker {
 
 function extractDates(card: Card, dir: Direction): Array<string> {
   const oracle = oracleData.all_cards;
-  const collection = (getTotalChildSet(dir == Direction.Better ? Direction.Worse : Direction.Better))[card.name];
+  const collection = getTotalChildSet(dir)[card.name];
 
   const ret: Array<string> = [];
   for (const name of collection) {
@@ -1081,9 +1122,9 @@ function doDisplayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: s
       const dateChart = makeDateHistogram(dateData);
       outdiv.appendChild(label);
       displayTextWithCardLinks(label, textContent);
-      outdiv.appendChild(chart.node());
+      outdiv.appendChild(chart);
       if (dateData.length > 1) {
-        outdiv.appendChild(dateChart.node());
+        outdiv.appendChild(dateChart);
       }
     }
   }
@@ -1101,7 +1142,7 @@ function displayTextWithCardLinks(elem: HTMLElement, text: string, setHash?: boo
   elem.innerHTML = text;
   for (const obj of document.getElementsByClassName("cardlink")) {
     const o = obj as HTMLElement;
-    imbueHoverImage(o, getImageURL(o.textContent || ""));
+    imbueHoverImage(o, getImageURL(o.textContent || "", oracleData));
   }
   timer.checkpoint("Display Text");
 }
@@ -1124,7 +1165,7 @@ class Timer {
   }
 };
 
-const tableMakers: Record<Direction, TableMaker | undefined> = [undefined, undefined];
+const tableMakers: Record<Direction, TableMaker | undefined> = [undefined, undefined, undefined];
 const doRenderTable = (outdiv: HTMLElement, dag: Record<string, Card>, dir: Direction) => {
   initializeMaximalCards(dag, maximalCards[dir], dir);
 
@@ -1141,31 +1182,36 @@ function renderTable(dir: Direction) {
   window.location.hash = "table-" + Direction[dir];
 };
 
-function renderSearch(outdiv: HTMLElement, dag: Record<string, Card>) {
+let globalSuppressOnHashChange = false;
+function renderSearch(query: string) {
+  window.location.hash = "search-" + query;
+}
+
+function doRenderSearch(outdiv: HTMLElement, dag: Record<string, Card>, query: string) {
   outdiv.replaceChildren("");
-  const pools = new Array<boolean>(4);
+  // captured in multiple closures below
+  let poolIndex = 3;
   const addRadio = (i: number) => {
-    const checkbox = document.createElement("input");
-    checkbox.type = "radio";
-    checkbox.name = "search";
-    checkbox.onchange = () => {
-      pools[i] = checkbox.checked;
+    const rad = document.createElement("input");
+    rad.type = "radio";
+    rad.name = "search";
+    rad.onchange = () => {
+      poolIndex = i;
     }
-    checkbox.checked = (i == 3);
-    return checkbox;
+    rad.checked = (i == poolIndex);
+    return rad;
   };
   const labels = ["Best Cards", "Worst Cards", "Mapped Cards", "Unmapped Cards"];
   for (let i = 0; i < 4; ++i) {
-  const rootNode = document.createElement("div");
-  rootNode.style.display = "inline-block";
-  const childNode = document.createElement("p");
-  childNode.innerText = labels[i];
-  rootNode.appendChild(childNode);
-  outdiv.appendChild(rootNode);
-  outdiv.appendChild(addRadio(i))
+    const rootNode = document.createElement("div");
+    rootNode.style.display = "inline-block";
+    const childNode = document.createElement("p");
+    childNode.innerText = labels[i];
+    rootNode.appendChild(childNode);
+    outdiv.appendChild(rootNode);
+    outdiv.appendChild(addRadio(i))
   }
   const inputElem = document.createElement("input");
-
 
   inputElem.type = "text";
   inputElem.placeholder = "Enter a Scryfall search query...";
@@ -1174,26 +1220,34 @@ function renderSearch(outdiv: HTMLElement, dag: Record<string, Card>) {
   inputElem.style.padding = "10px";
   inputElem.style.fontSize = "16px";
   inputElem.style.width = "100%";
-  document.appendChild(inputElem);
+  outdiv.appendChild(inputElem);
+  const tableDiv = document.createElement("div");
+  outdiv.appendChild(tableDiv);
   inputElem.addEventListener("keydown", (event: any) => {
     if (event.key != "Enter") {
       return;
     }
-    displaySearch(outdiv, dag, inputElem.value, pools);
+    globalSuppressOnHashChange = true;
+    window.location.hash = "search-" + inputElem.value;
+    displaySearch(tableDiv, dag, inputElem.value, poolIndex);
   });
+  if (query != "") {
+    inputElem.value = query;
+    displaySearch(tableDiv, dag, query, poolIndex);
+  }
 }
 
 const total_sets: Array<Array<Card>> = new Array(4);
 function initializeTotalSets(dag: Record<string, Card>) {
   for (const dir of [Direction.Better, Direction.Worse]) {
-    initializeMaximalCards(dag, maximalCards[dir], dir); 
+    initializeMaximalCards(dag, maximalCards[dir], dir);
   }
 
   total_sets[0] = maximalCards[Direction.Better];
   total_sets[1] = maximalCards[Direction.Worse];
   total_sets[2] = Object.values(dag);
- 
-  const unmappedOracle = Object.keys(oracleDataUnmapped);
+
+  const unmappedOracle = Object.keys(oracleDataUnmapped.all_cards);
   const unmappedCards = new Array<Card>(unmappedOracle.length);
   for (let i = 0; i < unmappedCards.length; ++i) {
     unmappedCards[i] = new Card(unmappedOracle[i]);
@@ -1201,38 +1255,221 @@ function initializeTotalSets(dag: Record<string, Card>) {
   total_sets[3] = unmappedCards;
 }
 
-class SearchMatcher {
+/** file Search.ts */
+enum SearchKey {
+  CMC,
+  Color,
+  Type,
+  Power,
+  Toughness,
+  Error
+};
 
-  constructor(query: string) {
+enum SearchOperator {
+  LT,
+  LE,
+  GT,
+  GE,
+  EQ,
+  EX,
+  Error,
+};
+type SearchValue = number | Set<string>
+class SearchComponent {
 
+  private key: SearchKey;
+  private operator: SearchOperator;
+  private value: SearchValue;
+  private negated: boolean;
+  private static readonly re = /(-?)([^!:<>=]*)([!:<>=]*)"?(.*)"?/g;
+
+  constructor(part: string) {
+      const matches = [...part.matchAll(SearchComponent.re)][0];
+      const neg: boolean = matches[1] == "-";
+      this.key = SearchComponent.getSearchKey(matches[2]??"");
+      const op = SearchComponent.getOperator(matches[3]??"");
+      this.value = SearchComponent.extractValueFromComponent(matches[4]??"", this.key);
+      const consol = SearchComponent.consolidateNegation(op, neg);
+      this.operator = consol[0];
+      this.negated = consol[1];
   }
 
-  public match(card: Card): boolean {
-    return true;
+  public matches(card: TableElem) {
+    const cv = SearchComponent.extractValueFromCard(card, this.key);
+
+    const baseMatch = SearchComponent.compareValues(cv, this.value, this.key, this.operator);
+    return baseMatch != this.negated;
+  }
+
+  private static readonly numberFuncs: Partial<Record<SearchOperator, (x:number, y:number)=>boolean>> = {
+    [SearchOperator.EQ] : (x, y) => (x == y),
+    [SearchOperator.LE] : (x, y) => (x <= y),
+    [SearchOperator.LT] : (x, y) => (x < y),
+    [SearchOperator.EX] : (x, y) => (x == y)
+  }
+  private static readonly setFuncs: Partial<Record<SearchOperator, (x:Set<string>, y:Set<string>)=>boolean>> = {
+    [SearchOperator.EQ] : (x, y) => (isSetEqual(x,y)),
+    [SearchOperator.LT] : (x, y) => (isProperSubsetOf(x, y)),
+    [SearchOperator.LE] : (x, y) => (isSubsetOf(x, y)),
+    [SearchOperator.EX] : (x, y) => (isSetEqual(x, y))
+  }
+  private static compareValues(lhs: SearchValue, rhs: SearchValue, key: SearchKey, op: SearchOperator): boolean {
+    type Funcs = Record<SearchOperator, (x:SearchValue,y:SearchValue)=>boolean>;
+    let funcs = SearchComponent.numberFuncs as Funcs;
+    switch (key) {
+      case SearchKey.Color:
+      case SearchKey.Type:
+        funcs = SearchComponent.setFuncs as Funcs;
+    }
+    return funcs[op](lhs, rhs);
+  }
+
+  private static decomposeTypeLine(line: string): Array<string> {
+      const parts = line.split(" ");
+      const ret: Array<string> = [];
+      for (const part of parts) {
+        if (part.length == 0) {
+          // em dash
+          continue
+        }
+        ret.push(part.toLowerCase());
+      }
+      return ret;
+  }
+  private static parseColorValue(value: string): Set<string> {
+    const uc = value.toUpperCase();
+    if (uc == "C") {
+      return new Set();
+    }
+    // Special case of "M" not supported here
+    return new Set(value.toUpperCase().split(""));
+  }
+  private static extractValueFromComponent(value: string, key: SearchKey) : SearchValue {
+    switch (key) {
+      case SearchKey.CMC:
+      case SearchKey.Power:
+      case SearchKey.Toughness:
+        return +value;
+      case SearchKey.Color:
+        return SearchComponent.parseColorValue(value);
+      case SearchKey.Type:
+        return new Set([value.toLowerCase()]);
+    }
+    return 0;
+  }
+  private static extractValueFromCard(card: TableElem, key: SearchKey): SearchValue  {
+    switch (key) {
+      case SearchKey.CMC:
+        return card.cmc;
+      case SearchKey.Color:
+        return new Set(card.colors);
+      case SearchKey.Type:
+        return new Set(SearchComponent.decomposeTypeLine(card.type));
+      case SearchKey.Power:
+        return card.pow;
+      case SearchKey.Toughness:
+        return card.tou;
+    }
+    return 0;
+  }
+
+  private static getOperator(key: string) : SearchOperator {
+    if ([":", "="].indexOf(key) != -1) {
+      return SearchOperator.EQ;
+    } else if ([">=", "=>"].indexOf(key) != -1) {
+      return SearchOperator.GE; 
+    } else if (["<=", "=<"].indexOf(key) != -1) {
+      return SearchOperator.LE;
+    } else if (key == "<") {
+      return SearchOperator.LT;
+    } else if (key == ">") {
+      return SearchOperator.GT;
+    } else if (key == "!") {
+      return SearchOperator.EX;
+    } else {
+      return SearchOperator.Error;
+    }
+  }
+
+  private static consolidateNegation(op: SearchOperator, neg: boolean): [SearchOperator, boolean] {
+    if (op == SearchOperator.GT) {
+      return [SearchOperator.LE, !neg];
+    } else if(op == SearchOperator.GE) {
+      return [SearchOperator.LT, !neg];
+    } else {
+      return [op, neg];
+    }
+  }
+  private static getSearchKey(key: string): SearchKey {
+    if (["c", "color", "colour"].indexOf(key) != -1) {
+      return SearchKey.Color
+    }
+    if (["cmc", "mv", "manavalue"].indexOf(key) != -1) {
+      return SearchKey.CMC;
+    }
+    if (["t", "type"].indexOf(key) != -1) {
+      return SearchKey.Type;
+    }
+    if (["p", "pow", "power"].indexOf(key) != -1) {
+      return SearchKey.Power;
+    }
+    if (["tou", "toughness"].indexOf(key) != -1) {
+      return SearchKey.Toughness;
+    }
+    return SearchKey.Error;
   }
 };
 
-function displaySearch(outdiv: HTMLElement, dag: Record<string, Card>, searchQuery: string, pools: Array<boolean>) {
+class SearchMatcher {
+  private oracle: Record<string, any>;
+  private components: Array<SearchComponent>;
+  constructor(query: string, oData: Oracle) {
+    this.oracle = oData.all_cards;
+
+    const parts = query.match(/\S+|"[^"]+"/g) ?? [];
+    this.components = [];
+    for (const part of parts) {
+      if (!part) {
+        continue;
+      }
+      this.components.push(new SearchComponent(part));
+    }
+  }
+
+  public match(card: Card): boolean {
+    const elem = new TableElem(card, this.oracle[card.name], Direction.None);
+    for (const component of this.components) {
+      if (!component.matches(elem)) {
+        return false;
+      }
+    }
+    return true;
+  }
+};
+/** end file */
+function displaySearch(outdiv: HTMLElement, dag: Record<string, Card>, searchQuery: string, poolIndex: number) {
   initializeTotalSets(dag);
 
   const searchResults: Array<Card> = [];
-  const matcher = new SearchMatcher(searchQuery);
-  for (let i = 0; i < pools.length; ++i) {
-    if (!pools[i]) {
-      continue;
-    }
-    for (const card of total_sets[i]) {
-      if (matcher.match(card)) {
-        searchResults.push(card);
-      }
+  const oracle = poolIndex < 3 ? oracleData : oracleDataUnmapped;
+  const matcher = new SearchMatcher(searchQuery, oracle);
+  const set = total_sets[poolIndex];
+  for (const card of set) {
+    if (matcher.match(card)) {
+      searchResults.push(card);
     }
   }
-  const tableMaker = new TableMaker(searchResults, pools[3] ? oracleData : oracleDataUnmapped, pools[0] ? Direction.Better : Direction.Worse);
+  
+  const tableMaker = new TableMaker(searchResults, oracle, [Direction.Better, Direction.Worse][poolIndex] ?? Direction.None);
 
   tableMaker.renderTable(outdiv);
 }
 
 function initializePageFromHash(outdiv: HTMLElement, dag: Record<string, Card>) {
+  if (globalSuppressOnHashChange) {
+    globalSuppressOnHashChange = false;
+    return;
+  }
   const hash = window.location.hash;
   const loc = hash.indexOf('-');
   const key = hash.substring(1, loc);
@@ -1243,6 +1480,8 @@ function initializePageFromHash(outdiv: HTMLElement, dag: Record<string, Card>) 
     doRenderTable(outdiv, dag, Direction[val as keyof typeof Direction])
   } else if (key === "page") {
     displayTextWithCardLinks(outdiv, philosophy.pageSource, false);
+  } else if (key === "search") {
+    doRenderSearch(outdiv, dag, val);
   }
 }
 
@@ -1300,7 +1539,7 @@ function main(): void {
 
   const button2 = makeButton("#AF504C", "Read about the process");
 
-  const button3 = makeButton("#ABCDEF", "<TEST> Search Query Output");
+  const button3 = makeButton("#ABCDEF", "Search card groups");
 
   const div = document.createElement("div");
 
@@ -1332,7 +1571,7 @@ function main(): void {
   button.onclick = () => renderTable(Direction.Worse);
   button15.onclick = () => renderTable(Direction.Better);
   button2.onclick = () => displayTextWithCardLinks(outdiv, philosophy.pageSource, true);
-  button3.onclick = () => displayTextWithCardLinks(outdiv, sq.pageSource, true);
+  button3.onclick = () => renderSearch("");
   initializePageFromHash(outdiv, dag);
   window.onpopstate = (evt) => {
     initializePageFromHash(outdiv, dag);

@@ -1,2 +1,21 @@
 # StrictlyWorse
- 
+
+(c) Sam Donow 2024
+
+This repository contains the code, data, and tools for recording an enumeration of Magic: the Gethering
+card relationships, in particular which cards are "strictly worse" than others.
+
+## Use
+
+If attempting to run this directly, rather than accessing a hosted version online, the key components are:
+
+- `src/d.py` downloads source data from Scryfall's API
+- `src/check.py` checks and updates `data.js` and associated files for relationships
+- `src/sw.ts` contains the code for the website, built with `tsc` (Typescript Compiler) to `res/sw.js`
+
+I am not very familiar with webdev and attempted to minimize dependencies here: the only build dependencies are `python` (tested with 3.9) and `tsc` (tested with 4.4.3)
+
+## Resources
+
+Thanks to Scryall, whose resources were both critical to research of this project, as well as whose data serves to 
+enhance the presentation of data

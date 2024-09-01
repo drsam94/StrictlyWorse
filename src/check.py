@@ -59,11 +59,21 @@ def simplify_obj(card):
         normal = ret["image_uris"]["normal"]
         ret["image_uris"] = {"normal": normal}
     if "card_faces" in ret:
+        faces = []
         for face in ret["card_faces"]:
             if "image_uris" in face:
                 normal = face["image_uris"]["normal"]
                 face["image_uris"] = {"normal": normal}
+                faces.append(face)
+        ret["card_faces"] = faces
     return ret 
+
+def is_real_card(obj):
+    if obj['layout'] in ['token', 'reversible_card', "art_series"]:
+        return False 
+    if 'Token' in obj['type_line'] or obj['digital'] == True:
+        return False
+    return True 
 
 if __name__ == "__main__":
     sw_file = 'res/data.js' if len(sys.argv) < 2 else sys.argv[1]
@@ -88,7 +98,7 @@ if __name__ == "__main__":
     sw = filtered_sw
 
     sf = parse_sf(sf_file)
-    official_names = {obj["name"] : obj for obj in sf if obj['layout'] != 'token'}
+    official_names = {obj["name"] : obj for obj in sf if is_real_card(obj)}
     sw_names = set()
     for elem in sw:
         try:
@@ -120,7 +130,7 @@ if __name__ == "__main__":
                 outf.write(f"<li>[[{name}]]</li>\n")
             outf.write("</ul>`;\n")
         with open('res/filtered-oracle-unmatched.js', "w+") as outf:
-            outf.write('export const all_cars = \n')
+            outf.write('export const all_cards = \n')
             filtered_names = {name: simplify_obj(obj) for name,obj in official_names.items() if name in non_sw_names}
             json.dump(filtered_names, outf)
         sw.sort(key=lambda x: x[0]+x[1])
