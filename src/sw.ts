@@ -15,6 +15,7 @@ import * as rawData from '../res/data.js';
 import * as _oracleData from '../res/filtered-oracle.js';
 import * as _oracleDataUnmapped from '../res/filtered-oracle-unmatched.js'
 import * as philosophy from '../res/philosophy.js';
+import * as help from '../res/help.js';
 
 const oracleData: Oracle = _oracleData;
 const oracleDataUnmapped: Oracle = _oracleDataUnmapped;
@@ -105,11 +106,14 @@ function autocomplete(inp: HTMLInputElement, arr: string[], commaSeparated?: boo
           /*close the list of autocompleted values,
           (or any other open lists of autocompleted values:*/
           closeAllLists(null);
+          // TODO: non-generic autocomplete code here
+          displayCharts(inp.value);
         });
         b.style.padding = "10px";
         b.style.cursor = "pointer";
         b.style.backgroundColor = "#fff";
         b.style.borderBottom = "1px solid #d8d4d4";
+        b.style.textAlign = "left";
         a.appendChild(b);
       }
     }
@@ -246,7 +250,7 @@ function addUnion(src: Set<string>, added: Set<string>): void {
   }
 }
 
-function isSubsetOf(lhs: Set<any>, rhs: Set<any>): boolean{
+function isSubsetOf(lhs: Set<any>, rhs: Set<any>): boolean {
   for (const x of lhs) {
     if (!rhs.has(x)) {
       return false;
@@ -479,7 +483,7 @@ function getImageURL(name: string, oracle: Oracle) {
 }
 
 
-function makeChart(data: any, rootName: string, startExpanded?: boolean): Node {
+function makeChart(data: any, rootName: string, startExpanded: boolean, fontSize: number): Node {
   data["name"] = rootName;
   // Specify the charts’ dimensions. The height is variable, depending on the layout.
   const width = 1300;
@@ -487,7 +491,7 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean): Node {
   const marginRight = 10;
   const marginBottom = 10;
   const marginLeft = 200;
-  const fontHeight = data.value > 30 ? 12 : 16;
+  const fontHeight = fontSize;
   // Rows are separated by dx pixels, columns by dy pixels. These names can be counter-intuitive
   // (dx is a height, and dy a width). This because the tree must be viewed with the root at the
   // “bottom”, in the data domain. The width of a column is based on the tree’s height.
@@ -669,17 +673,16 @@ function makeChart(data: any, rootName: string, startExpanded?: boolean): Node {
   return svg.node();
 }
 
-function makeDateHistogram(indata: Array<string>): Node {
+function makeDateHistogram(indata: Array<DateHistogramEntry>): Node {
   const width = 800;
   const height = 200;
   const margin = { top: 20, right: 50, bottom: 30, left: 50 };
 
   // Parse dates
   const parseDate = d3.timeParse("%Y-%m-%d");
-  indata.sort((a, b) => parseDate(a) - parseDate(b));
-  const dates = indata.map(d => parseDate(d));
+  indata.sort((a, b) => parseDate(a.date) - parseDate(b.date));
 
-  const alldates = ["1993-01-01", "2025-01-01"].map(d => parseDate(d);
+  const alldates = ["1993-01-01", "2025-01-01"].map(d => parseDate(d));
   // Setup scales
   const x = d3.scaleTime()
     .domain(d3.extent(alldates))
@@ -687,9 +690,9 @@ function makeDateHistogram(indata: Array<string>): Node {
 
   // Create histogram bins
   const histogram = (d3.histogram()
-    .value((d: any) => d)
+    .value((d: any) => parseDate(d.date))
     .domain(x.domain())
-    .thresholds(x.ticks(15)))(dates);
+    .thresholds(x.ticks(15)))(indata);
 
 
   const y = d3.scaleLinear()
@@ -706,7 +709,6 @@ function makeDateHistogram(indata: Array<string>): Node {
     .attr("transform", `translate(${margin.left},0)`)
     .call(d3.axisLeft(y).ticks(5));
 
-  console.log(histogram);
   // Append bars
   svg.selectAll("rect")
     .data(histogram)
@@ -714,7 +716,7 @@ function makeDateHistogram(indata: Array<string>): Node {
     .append("rect")
     .attr("x", (d: any) => { const ret = x(d.x0) + 1; return ret; })
     .attr("width", (d: any) => Math.max(0, x(d.x1) - x(d.x0) - 1))
-    .attr("y", (d: any) => {  return y(d.length); })
+    .attr("y", (d: any) => { return y(d.length); })
     .attr("height", (d: any) => y(0) - y(d.length))
     .attr("fill", "steelblue")
     .attr("stroke", "black") // Add a black border around the bars
@@ -966,8 +968,8 @@ class TableMaker {
     makeElement("th", hdrRow, "Type");
     makeElement("th", hdrRow, "P / T");
     if (this.dir != Direction.None) {
-    this.makeClickSort(makeElement("th", hdrRow, "Degree"), parent, TableColumn.Degree);
-    this.makeClickSort(makeElement("th", hdrRow, "Total " + (this.dir == Direction.Worse ? "Worse" : "Better")), parent, TableColumn.TotalWorse);
+      this.makeClickSort(makeElement("th", hdrRow, "Degree"), parent, TableColumn.Degree);
+      this.makeClickSort(makeElement("th", hdrRow, "Total " + (this.dir == Direction.Worse ? "Worse" : "Better")), parent, TableColumn.TotalWorse);
     }
 
     // Making a template row and cloning it substantially speeds up DOM creation here
@@ -1073,12 +1075,21 @@ class TableMaker {
     this.swData.sort(compare);
   }
 }
+class DateHistogramEntry {
+  public date: string;
+  public card: string;
 
-function extractDates(card: Card, dir: Direction): Array<string> {
+  constructor(d: string, c: string) {
+    this.date = d;
+    this.card = c;
+  }
+};
+
+function extractDates(card: Card, dir: Direction): Array<DateHistogramEntry> {
   const oracle = oracleData.all_cards;
   const collection = getTotalChildSet(dir)[card.name];
 
-  const ret: Array<string> = [];
+  const ret: Array<DateHistogramEntry> = [];
   for (const name of collection) {
     const data = oracle[name];
     if (data === undefined) {
@@ -1086,7 +1097,7 @@ function extractDates(card: Card, dir: Direction): Array<string> {
     }
     const ra = data["released_at"];
     if (ra !== undefined) {
-      ret.push(ra);
+      ret.push(new DateHistogramEntry(ra, name));
     }
   }
   return ret;
@@ -1096,7 +1107,7 @@ function displayCharts(name: string): void {
   window.location.hash = "card-" + name;
 }
 
-function doDisplayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: string): void {
+function doDisplayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: string, fontSize = 14): void {
   outdiv.replaceChildren("");
 
   const card = dag[name];
@@ -1106,12 +1117,12 @@ function doDisplayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: s
     outdiv.appendChild(text);
     return;
   }
-
+  let renderedFont = false;
   for (const dir of [Direction.Better, Direction.Worse]) {
 
     if (card.stats(dir).cards.length > 0) {
       const tree = makeTree(card, dir);
-      const chart = makeChart(tree, card.name, true);
+      const chart = makeChart(tree, card.name, true, fontSize);
       const label = document.createElement("p");
       let nameStr = "[[" + name + "]]";
       if (card.name !== name) {
@@ -1120,8 +1131,27 @@ function doDisplayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: s
       const textContent = nameStr + " is <strong>" + (dir == Direction.Better ? "worse" : "better") + "</strong> than...";
       const dateData = extractDates(card, dir);
       const dateChart = makeDateHistogram(dateData);
-      outdiv.appendChild(label);
       displayTextWithCardLinks(label, textContent);
+      if (!renderedFont) {
+        const fontLabel = document.createElement("p");
+        fontLabel.style.display = "inline-block";
+        fontLabel.style.margin = "4px";
+        const fontInput = document.createElement("input");
+        fontLabel.innerHTML = "Font Size: "
+        fontInput.value = "" + fontSize;
+        fontInput.style.display = "inline-block";
+        fontInput.style.width = "40px";
+        fontInput.addEventListener("keydown", (event: any) => {
+          if (event.key != "Enter") {
+            return;
+          }
+          doDisplayCharts(outdiv, dag, name, +fontInput.value);
+        });
+        renderedFont = true;
+        outdiv.appendChild(fontLabel);
+        outdiv.appendChild(fontInput);
+      }
+      outdiv.appendChild(label);
       outdiv.appendChild(chart);
       if (dateData.length > 1) {
         outdiv.appendChild(dateChart);
@@ -1130,9 +1160,9 @@ function doDisplayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: s
   }
 }
 
-function displayTextWithCardLinks(elem: HTMLElement, text: string, setHash?: boolean) {
-  if (setHash) {
-    window.location.hash = "page-philosophy";
+function displayTextWithCardLinks(elem: HTMLElement, text: string, setHashTo: string) {
+  if (setHashTo) {
+    window.location.hash = "page-" + setHashTo;
     return;
   }
   const timer = new Timer();
@@ -1284,14 +1314,14 @@ class SearchComponent {
   private static readonly re = /(-?)([^!:<>=]*)([!:<>=]*)"?(.*)"?/g;
 
   constructor(part: string) {
-      const matches = [...part.matchAll(SearchComponent.re)][0];
-      const neg: boolean = matches[1] == "-";
-      this.key = SearchComponent.getSearchKey(matches[2]??"");
-      const op = SearchComponent.getOperator(matches[3]??"");
-      this.value = SearchComponent.extractValueFromComponent(matches[4]??"", this.key);
-      const consol = SearchComponent.consolidateNegation(op, neg);
-      this.operator = consol[0];
-      this.negated = consol[1];
+    const matches = [...part.matchAll(SearchComponent.re)][0];
+    const neg: boolean = matches[1] == "-";
+    this.key = SearchComponent.getSearchKey(matches[2] ?? "");
+    const op = SearchComponent.getOperator(matches[3] ?? "");
+    this.value = SearchComponent.extractValueFromComponent(matches[4] ?? "", this.key);
+    const consol = SearchComponent.consolidateNegation(op, neg);
+    this.operator = consol[0];
+    this.negated = consol[1];
   }
 
   public matches(card: TableElem) {
@@ -1301,20 +1331,20 @@ class SearchComponent {
     return baseMatch != this.negated;
   }
 
-  private static readonly numberFuncs: Partial<Record<SearchOperator, (x:number, y:number)=>boolean>> = {
-    [SearchOperator.EQ] : (x, y) => (x == y),
-    [SearchOperator.LE] : (x, y) => (x <= y),
-    [SearchOperator.LT] : (x, y) => (x < y),
-    [SearchOperator.EX] : (x, y) => (x == y)
+  private static readonly numberFuncs: Partial<Record<SearchOperator, (x: number, y: number) => boolean>> = {
+    [SearchOperator.EQ]: (x, y) => (x == y),
+    [SearchOperator.LE]: (x, y) => (x <= y),
+    [SearchOperator.LT]: (x, y) => (x < y),
+    [SearchOperator.EX]: (x, y) => (x == y)
   }
-  private static readonly setFuncs: Partial<Record<SearchOperator, (x:Set<string>, y:Set<string>)=>boolean>> = {
-    [SearchOperator.EQ] : (x, y) => (isSetEqual(x,y)),
-    [SearchOperator.LT] : (x, y) => (isProperSubsetOf(x, y)),
-    [SearchOperator.LE] : (x, y) => (isSubsetOf(x, y)),
-    [SearchOperator.EX] : (x, y) => (isSetEqual(x, y))
+  private static readonly setFuncs: Partial<Record<SearchOperator, (x: Set<string>, y: Set<string>) => boolean>> = {
+    [SearchOperator.EQ]: (x, y) => (isSetEqual(x, y)),
+    [SearchOperator.LT]: (x, y) => (isProperSubsetOf(x, y)),
+    [SearchOperator.LE]: (x, y) => (isSubsetOf(x, y)),
+    [SearchOperator.EX]: (x, y) => (isSetEqual(x, y))
   }
   private static compareValues(lhs: SearchValue, rhs: SearchValue, key: SearchKey, op: SearchOperator): boolean {
-    type Funcs = Record<SearchOperator, (x:SearchValue,y:SearchValue)=>boolean>;
+    type Funcs = Record<SearchOperator, (x: SearchValue, y: SearchValue) => boolean>;
     let funcs = SearchComponent.numberFuncs as Funcs;
     switch (key) {
       case SearchKey.Color:
@@ -1325,16 +1355,16 @@ class SearchComponent {
   }
 
   private static decomposeTypeLine(line: string): Array<string> {
-      const parts = line.split(" ");
-      const ret: Array<string> = [];
-      for (const part of parts) {
-        if (part.length == 0) {
-          // em dash
-          continue
-        }
-        ret.push(part.toLowerCase());
+    const parts = line.split(" ");
+    const ret: Array<string> = [];
+    for (const part of parts) {
+      if (part.length == 0) {
+        // em dash
+        continue
       }
-      return ret;
+      ret.push(part.toLowerCase());
+    }
+    return ret;
   }
   private static parseColorValue(value: string): Set<string> {
     const uc = value.toUpperCase();
@@ -1344,7 +1374,7 @@ class SearchComponent {
     // Special case of "M" not supported here
     return new Set(value.toUpperCase().split(""));
   }
-  private static extractValueFromComponent(value: string, key: SearchKey) : SearchValue {
+  private static extractValueFromComponent(value: string, key: SearchKey): SearchValue {
     switch (key) {
       case SearchKey.CMC:
       case SearchKey.Power:
@@ -1357,7 +1387,7 @@ class SearchComponent {
     }
     return 0;
   }
-  private static extractValueFromCard(card: TableElem, key: SearchKey): SearchValue  {
+  private static extractValueFromCard(card: TableElem, key: SearchKey): SearchValue {
     switch (key) {
       case SearchKey.CMC:
         return card.cmc;
@@ -1373,11 +1403,11 @@ class SearchComponent {
     return 0;
   }
 
-  private static getOperator(key: string) : SearchOperator {
+  private static getOperator(key: string): SearchOperator {
     if ([":", "="].indexOf(key) != -1) {
       return SearchOperator.EQ;
     } else if ([">=", "=>"].indexOf(key) != -1) {
-      return SearchOperator.GE; 
+      return SearchOperator.GE;
     } else if (["<=", "=<"].indexOf(key) != -1) {
       return SearchOperator.LE;
     } else if (key == "<") {
@@ -1394,7 +1424,7 @@ class SearchComponent {
   private static consolidateNegation(op: SearchOperator, neg: boolean): [SearchOperator, boolean] {
     if (op == SearchOperator.GT) {
       return [SearchOperator.LE, !neg];
-    } else if(op == SearchOperator.GE) {
+    } else if (op == SearchOperator.GE) {
       return [SearchOperator.LT, !neg];
     } else {
       return [op, neg];
@@ -1459,13 +1489,56 @@ function displaySearch(outdiv: HTMLElement, dag: Record<string, Card>, searchQue
       searchResults.push(card);
     }
   }
-  
+
   const tableMaker = new TableMaker(searchResults, oracle, [Direction.Better, Direction.Worse][poolIndex] ?? Direction.None);
 
   tableMaker.renderTable(outdiv);
 }
 
-function initializePageFromHash(outdiv: HTMLElement, dag: Record<string, Card>) {
+function doRenderHome(outdiv: HTMLDivElement, dag: Record<string, Card>) {
+  outdiv.replaceChildren("");
+  const containerDiv = document.createElement("div");
+  outdiv.appendChild(containerDiv);
+  containerDiv.style.display = "flex";
+  containerDiv.style.textAlign = "center";
+  containerDiv.style.justifyContent = "center";
+  containerDiv.style.flexDirection = "column";
+  const [bigSearchBarDiv, bigSearchBar] = makeSearchBar(dag);
+  bigSearchBar.style.fontSize = "18px";
+
+  const headerDiv = document.createElement("div");
+  const h1 = document.createElement("h1");
+  h1.textContent = "Strictly Worse MTG";
+  headerDiv.appendChild(h1);
+  const subhead = document.createElement("p");
+  const numRelations = rawData.all_relations.length;
+  const countMapped = Object.keys(oracleData.all_cards).length;
+  const countTotal = countMapped + Object.keys(oracleDataUnmapped.all_cards).length;
+  subhead.textContent = `Discover ${numRelations} relations between ${countMapped} cards out of Magic's ${countTotal}`;
+  headerDiv.appendChild(subhead);
+  const footerDiv = document.createElement("div");
+  const footerDivContents = document.createElement("p");
+  footerDivContents.innerHTML = `
+    <a href="https://github.com/drsam94/StrictlyWorse/">GitHub</a>
+&nbsp &nbsp
+    <a href="/#page-philosophy">Philosophy</a>
+&nbsp &nbsp   
+    <a href="/#page-help">Help</a>
+`;
+
+  footerDiv.appendChild(footerDivContents);
+  headerDiv.style.display = "inline-block";
+  bigSearchBarDiv.style.position = "inline-block";
+  bigSearchBarDiv.style.width = "100%";
+  bigSearchBar.style.width = "80%";
+  footerDiv.style.display = "inline-block";
+  footerDiv.style.width = "100%";
+  containerDiv.appendChild(headerDiv);
+  containerDiv.appendChild(bigSearchBarDiv);
+  containerDiv.appendChild(footerDiv);
+}
+
+function initializePageFromHash(outdiv: HTMLDivElement, searchBar: HTMLDivElement, dag: Record<string, Card>) {
   if (globalSuppressOnHashChange) {
     globalSuppressOnHashChange = false;
     return;
@@ -1475,18 +1548,25 @@ function initializePageFromHash(outdiv: HTMLElement, dag: Record<string, Card>) 
   const key = hash.substring(1, loc);
   const val = decodeURI(hash.substring(loc + 1));
   if (key === "card") {
+    searchBar.style.visibility = "visible";
     doDisplayCharts(outdiv, dag, val);
   } else if (key === "table") {
+    searchBar.style.visibility = "hidden";
     doRenderTable(outdiv, dag, Direction[val as keyof typeof Direction])
   } else if (key === "page") {
-    displayTextWithCardLinks(outdiv, philosophy.pageSource, false);
+    searchBar.style.visibility = "hidden";
+    const pageSource: string = val == "philosophy" ? philosophy.pageSource : help.pageSource;
+    displayTextWithCardLinks(outdiv, pageSource , "");
   } else if (key === "search") {
+    searchBar.style.visibility = "hidden";
     doRenderSearch(outdiv, dag, val);
+  } else {
+    searchBar.style.visibility = "hidden";
+    doRenderHome(outdiv, dag);
   }
 }
 
-function main(): void {
-  const timer = new Timer();
+function globalSetup(): void {
   const style = document.createElement("style");
   let cssText = ".mytable { border: 1px solid black; }";
   const cssStyleNode = document.createTextNode(cssText);
@@ -1497,20 +1577,47 @@ function main(): void {
   cssText2 += "\n* { box-sizing: border-box; }";
   const cssStyleNode2 = document.createTextNode(cssText2);
   style.appendChild(cssStyleNode2);
+}
 
-  const dag: Record<string, Card> = {};
-  processData(dag, rawData.all_relations);
+function makeHeaderButtons(headerDiv: HTMLDivElement, outdiv: HTMLDivElement): void {
+  const makeButton = (color: string, text: string): HTMLElement => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.style.border = "2px solid black";
+    button.style.textAlign = "center";
+    button.style.cursor = "pointer";
+    button.style.display = "inline-block";
+    button.style.backgroundColor = color;
+    button.innerText = text;
+    return button;
+  };
 
-  timer.checkpoint("Initial Data Ingest");
-  computeStats(dag);
-  timer.checkpoint("Stats Computation");
+  const homeButton = makeButton("#ABCDEF", "Home");
+  const philButton = makeButton("#ABCDEF", "Philosophy");
+  const searchButton = makeButton("#ABCDEF", "Adv. Search");
+  const worstButton = makeButton("#ABCDEF", "All Worst Cards");
+  const bestButton = makeButton("#ABCDEF", "All Best Cards")
 
+  headerDiv.appendChild(homeButton);
+  headerDiv.appendChild(philButton);
+  headerDiv.appendChild(searchButton);
+  headerDiv.appendChild(worstButton);
+  headerDiv.appendChild(bestButton);
+
+  homeButton.onclick = () => { window.location.hash = "home"; };
+  worstButton.onclick = () => renderTable(Direction.Worse);
+  bestButton.onclick = () => renderTable(Direction.Better);
+  philButton.onclick = () => displayTextWithCardLinks(outdiv, philosophy.pageSource, "philosophy");
+  searchButton.onclick = () => renderSearch("");
+}
+
+function makeSearchBar(dag: Record<string, Card>): [HTMLDivElement, HTMLInputElement] {
   const wrapperDiv = document.createElement("div");
   wrapperDiv.style.position = "relative";
   wrapperDiv.style.display = "inline-block";
   wrapperDiv.style.width = "300px";
+  wrapperDiv.style.padding = "5px";
   const inputElem = document.createElement("input");
-
 
   inputElem.type = "text";
   inputElem.placeholder = "Search for a card to show its relations...";
@@ -1519,37 +1626,37 @@ function main(): void {
   inputElem.style.padding = "10px";
   inputElem.style.fontSize = "16px";
   inputElem.style.width = "100%";
+  autocomplete(inputElem, Object.keys(dag), false);
+  inputElem.addEventListener("keydown", (event: any) => {
+    if (event.key != "Enter") {
+      return;
+    }
+    displayCharts(inputElem.value);
+  });
+
   wrapperDiv.appendChild(inputElem);
+  return [wrapperDiv, inputElem];
+}
 
-  const makeButton = (color: string, text: string): HTMLElement => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.style.display = "block";
-    button.style.border = "2px solid black";
-    button.style.textAlign = "center";
-    button.style.cursor = "pointer";
-    button.style.backgroundColor = color;
-    button.innerText = text;
-    return button;
-  };
+function main(): void {
+  globalSetup();
 
-  const button = makeButton("#4CAF50", "Generate Table of SW Cards");
+  const dag: Record<string, Card> = {};
+  processData(dag, rawData.all_relations);
+  computeStats(dag);
 
-  const button15 = makeButton("#4CF0AF", "Generate Table of Best Cards")
-
-  const button2 = makeButton("#AF504C", "Read about the process");
-
-  const button3 = makeButton("#ABCDEF", "Search card groups");
-
-  const div = document.createElement("div");
-
-  div.appendChild(wrapperDiv);
-  div.appendChild(button);
-  div.appendChild(button15);
-  div.appendChild(button2);
-  div.appendChild(button3);
+  const searchBar = makeSearchBar(dag)[0];
 
   const outdiv = document.createElement("div");
+  const headerDiv = document.createElement("div");
+
+  makeHeaderButtons(headerDiv, outdiv);
+
+  document.body.appendChild(headerDiv);
+  const div = document.createElement("div");
+
+  div.appendChild(searchBar);
+
   div.appendChild(outdiv);
   document.body.appendChild(div);
 
@@ -1558,23 +1665,10 @@ function main(): void {
   trailerDiv.style.height = CARD_HEIGHT;
 
   document.body.appendChild(trailerDiv);
-  timer.checkpoint("Button Init");
-  autocomplete(inputElem, Object.keys(dag), false);
-  timer.checkpoint("Autocomplete Computation");
-  inputElem.addEventListener("keydown", (event: any) => {
-    if (event.key != "Enter") {
-      return;
-    }
-    displayCharts(inputElem.value);
-  });
 
-  button.onclick = () => renderTable(Direction.Worse);
-  button15.onclick = () => renderTable(Direction.Better);
-  button2.onclick = () => displayTextWithCardLinks(outdiv, philosophy.pageSource, true);
-  button3.onclick = () => renderSearch("");
-  initializePageFromHash(outdiv, dag);
+  initializePageFromHash(outdiv, searchBar, dag);
   window.onpopstate = (evt) => {
-    initializePageFromHash(outdiv, dag);
+    initializePageFromHash(outdiv, searchBar, dag);
   }
 }
 

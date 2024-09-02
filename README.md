@@ -13,10 +13,16 @@ If attempting to run this directly, rather than accessing a hosted version onlin
 - `src/check.py` checks and updates `data.js` and associated files for relationships
 - `src/sw.ts` contains the code for the website, built with `tsc` (Typescript Compiler) to `res/sw.js`
 - `res/data.js` contains the mappings / source data. To add a new mapping, add an entry of the form `["worse card", "better card"]`
-- 
+
 I am not very familiar/interesting in web development and attempted to minimize dependencies here: the only build dependencies are `python` (tested with 3.9) and `tsc` (tested with 4.4.3)
 
 ## Resources
 
 Thanks to Scryall, whose resources were both critical to research of this project, as well as whose data serves to 
 enhance the presentation of data
+
+## Contact
+
+I do not have a structured way for people to e.g send suggestions for new mappings, but I can generally be reached for comment on this site at
+
+mtgsw@samdonow.com
