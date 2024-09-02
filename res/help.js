@@ -24,7 +24,7 @@ lists truly all cards.
 The advanced search feature allows you to first choose a card pool (mapped cards, unmapped cards, or best or worst cards), then enter
 a search query, and see what cards match.
 
-This search query is based on <a href="https://scryfall.io">Scryfall's</a> search syntax, but is more limited, in particular it 
+This search query is based on <a href="https://scryfall.com">Scryfall's</a> search syntax, but is more limited, in particular it 
 supports only keys for color (c), cmc, power (pow), toughness (tou), and type (t). 
 
 I may implement further terms in the future, but the main missing feature is searching oracle text, which I avoid for now to avoid

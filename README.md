@@ -9,7 +9,7 @@ card relationships, in particular which cards are "strictly worse" than others.
 
 If attempting to run this directly, rather than accessing a hosted version online, the key components are:
 
-- `src/d.py` downloads source data from Scryfall's API
+- `src/dl.py` downloads source data from Scryfall's API
 - `src/check.py` checks and updates `data.js` and associated files for relationships
 - `src/sw.ts` contains the code for the website, built with `tsc` (Typescript Compiler) to `res/sw.js`
 - `res/data.js` contains the mappings / source data. To add a new mapping, add an entry of the form `["worse card", "better card"]`

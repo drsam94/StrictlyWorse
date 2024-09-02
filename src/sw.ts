@@ -709,6 +709,9 @@ function makeDateHistogram(indata: Array<DateHistogramEntry>): Node {
     .attr("transform", `translate(${margin.left},0)`)
     .call(d3.axisLeft(y).ticks(5));
 
+    const hoverDiv = d3.select("body").append("div")
+    .attr("class", "hoverImage-chart")
+    .style("opacity", 0);
   // Append bars
   svg.selectAll("rect")
     .data(histogram)
@@ -720,7 +723,36 @@ function makeDateHistogram(indata: Array<DateHistogramEntry>): Node {
     .attr("height", (d: any) => y(0) - y(d.length))
     .attr("fill", "steelblue")
     .attr("stroke", "black") // Add a black border around the bars
-    .attr("stroke-width", 1); // Adjust border width as needed
+    .attr("stroke-width", 1) // Adjust border width as needed
+      .on("mouseover", (event: MouseEvent, d: any) => {
+        const bottomEdge = window.innerHeight + window.scrollY;
+        let top = event.clientY + window.scrollY - 15;
+        if (event.clientY + +CARD_HEIGHT > window.innerHeight) {
+          top = (bottomEdge + (-CARD_HEIGHT));
+        }
+        hoverDiv
+          .style("position", "absolute")
+          .style("left", (event.clientX + 10) + "px")
+          .style("top", top + "px")
+          .style("text-align", "left")
+          .style("border", "2px solid blue")
+          .style("background", "#FFFFFF");
+
+        hoverDiv.transition()
+          .style("opacity", 1)
+        let cardList = '<ul style="margin-left: -10px; margin-right: 10px">';
+        for (let i = 0; i < d.length; ++i) {
+          cardList += `<li> ${d[i].card} </li>`;
+        }
+        cardList += "</ul>";
+        hoverDiv.html(cardList)
+          .style("zIndex", "1");
+      })
+      .on("mouseout", (event: MouseEvent) => {
+        hoverDiv.html("");
+        hoverDiv.transition()
+          .style("opacity", 0);
+      });
 
   // Append x axis
   svg.append("g")
@@ -1160,7 +1192,7 @@ function doDisplayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: s
   }
 }
 
-function displayTextWithCardLinks(elem: HTMLElement, text: string, setHashTo: string) {
+function displayTextWithCardLinks(elem: HTMLElement, text: string, setHashTo?: string) {
   if (setHashTo) {
     window.location.hash = "page-" + setHashTo;
     return;
