@@ -1663,7 +1663,6 @@ export const all_relations = [
 ["Boreal Shelf", "Glacial Floodplain"],
 ["Boros Cluestone", "Letter of Acceptance"],
 ["Boros Mastiff", "Mesa Unicorn"],
-["Borrowing 100,000 Arrows", "Theft of Dreams"],
 ["Bottomless Vault", "Subterranean Hangar"],
 ["Boulder Salvo", "Flame Slash"],
 ["Boulder Salvo", "Lava Coil"],
