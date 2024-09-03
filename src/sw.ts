@@ -1550,14 +1550,26 @@ function doRenderHome(outdiv: HTMLDivElement, dag: Record<string, Card>) {
   headerDiv.appendChild(subhead);
   const footerDiv = document.createElement("div");
   const footerDivContents = document.createElement("p");
-  footerDivContents.innerHTML = `
-    <a href="https://github.com/drsam94/StrictlyWorse/">GitHub</a>
-&nbsp &nbsp
-    <a href="/#page-philosophy">Philosophy</a>
-&nbsp &nbsp   
-    <a href="/#page-help">Help</a>
-`;
-
+  const a1 = document.createElement("a");
+  a1.href = "https://github.com/drsam94/StrictlyWorse/";
+  a1.textContent = "GitHub";
+  const a2 = document.createElement("span");
+  a2.textContent = "Philosophy";
+  a2.style.marginLeft = "30px";
+  a2.style.marginRight = "30px";
+  a2.style.cursor = "pointer";
+  a2.style.color = "blue";
+  a2.style.textDecoration = "underline";
+  a2.onclick = () => window.location.hash = "page-philosophy";
+  const a3 = document.createElement("span");
+  a3.textContent = "Help";
+  a3.onclick = () => window.location.hash = "page-help";
+  a3.style.cursor = "pointer";
+  a3.style.color = "blue";
+  a3.style.textDecoration = "underline";
+  footerDivContents.appendChild(a1);
+  footerDivContents.appendChild(a2);
+  footerDivContents.appendChild(a3);
   footerDiv.appendChild(footerDivContents);
   headerDiv.style.display = "inline-block";
   bigSearchBarDiv.style.position = "inline-block";
