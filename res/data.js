@@ -2436,7 +2436,6 @@ export const all_relations = [
 ["Crush Underfoot", "Fall of the Hammer"],
 ["Crush", "Smelt"],
 ["Crushing Canopy", "Broken Wings"],
-["Crushing Vines", "Crushing Vines"],
 ["Crystal Quarry", "Cascading Cataracts"],
 ["Crystal Slipper", "Boots of Speed"],
 ["Cultist's Staff", "Vulshok Morningstar"],
