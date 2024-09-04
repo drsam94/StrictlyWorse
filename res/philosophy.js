@@ -158,7 +158,7 @@ Conspiracy Draft Cards
 Multiplayer Cards
 <ul>
 <li>[[Decoy Gambit]]</li>
-li>[[Corporeal Projection]]</li>
+<li>[[Corporeal Projection]]</li>
 <li>[[Legion Loyalty]]</li>
 <li>[[Blade of Selves]]</li>
 <li>[[Mystic Barrier]]</li>
