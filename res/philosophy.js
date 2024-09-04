@@ -11,6 +11,16 @@ For the purposes of this exercise, a card that costs less mana and does the same
 <p>
 Due to the mechanics of Chroma and Devotion, one could argue for playing [[Swordwise Centaur]] in a deck over [[Terrain Elemental]] if the goal was to combo with [[Primalcrux]] and [[Aspect of Hydra]]. However, for the purpose of this exercise, it is considered always bad to have a more restrictive cost. This means that colored pips are worse than hybrid pips, and hybrid pips are worse than generic mana costs.
 </p>
+<h2> Doing More is better </h2>
+<p>
+While it can be argued there are always exceptions, in almost all cases, more of a positive effect is better, some examples:
+<ul>
+<li> More power is better, also more toughness is better on a creature. A 2/3 is better than a 2/2 but incomparable to a 3/2. </li>
+<li> More damage is better, [[Lightning Bolt]] is better than [[Shock]], similarly more lifegain </li>
+<li> Drawing more cards, scrying more cards, making the opponent discard more cards, all better </li>
+<li> Mill is <b>not</b> universally positive: self mill is a strategy and a loss condition, and sometimes milling an opponent is good and sometimes bad </li>
+</ul>
+</p>
 <h2> Types, Subtypes, and Supertypes (mostly) don't matter </h2>
 <p>
 This one is perhaps a bit more controvertial, but doing this as a blanket rule leads to simpler evaluation. To start with probably the simplest example, we consider creature subtypes to be incomparable, with it not being worse to have one creature type or another. Sure, in many cases you might want [[Mons's Goblin Raiders]] over [[Dwarven Trader]] because one interacts with Goblin support like [[Goblin King]], but maybe you are comboing with [[Dwarven Pony]]. And even if you don't have the pony, you might want to dodge [[Tivadar of Thorn]]. So, creature types are ignored for purposes of card comparison. The only subtypes I have considered advantageous are land subtypes, despite there being some hate for basic land types, this is almost always an advantage, and e.g being a Gate is almost entirely upside (there are no explicit ways to punish your opponent for playing a gate, but maybe your opponent is playing [[Maze's End]] and [[Annex]]...).
@@ -25,7 +35,7 @@ In general, I assess strictly worse components based on average maintained board
 
 
 <h2>Some examples of counted interactions</h2>
-Per the above, there are some gameplay interactions that we count, and others we don't. In general, if normal properties of boardstates can distinguish cards without very specific cards, we consider it relevant. So for example I consider [[Festering Goblin]] to be strictly worse than [[Shambling Goblin]], because [[Shambling Goblin]] can never be forced to target your own creatures if your opponent has none. That said, it also <i>can't</i> target your own creatures, but for the purpose of strictly worse, I consider an effect like giving your own creature -1/-1 until end of turn sufficiently rare as a positive effect that we ignore it. So in about 95% of situations, the above two cards behave the same, but in something like 4.99% of situations [[Shambling Goblin]] is better, and the thought that Festering Goblin could be better has to be such a narrow situation we ignore it. 
+Per the above, there are some gameplay interactions that we count, and others we don't. In general, if normal properties of boardstates can distinguish cards without very specific cards, we consider it relevant. So for example I consider [[Festering Goblin]] to be strictly worse than [[Shambling Goblin]], because [[Shambling Goblin]] can never be forced to target your own creatures if your opponent has none. That said, it also <i>can't</i> target your own creatures, but for the purpose of strictly worse, I consider an effect like giving your own creature -1/-1 until end of turn sufficiently rare as a positive effect that we ignore it. So in about 95% of situations, the above two cards behave the same, but in something like 4.99% of situations [[Shambling Goblin]] is better, and the thought that Festering Goblin could be better has to be such a narrow situation we ignore it.
 
 <h2> Some Strictly Ignored Situations </h2>
 From the above, a lot of things are very loose, but I explicitly ignore analysis of the interaction with the following cards or classes of cards for analysis

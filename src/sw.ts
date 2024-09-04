@@ -446,7 +446,7 @@ function recurCleanTree(rootNode: any, dir: Direction) {
   //
   // Because B is transitively related to A, we should not also claim it is directly a chidl of A.
   // We generally keep the input data clean of these cases, but they can arise due to the collapsing
-  // of 
+  // of
   const allDeeper = new Set<string>();
   const totalSet = getTotalChildSet(dir);
   for (const child of rootNode.children) {
@@ -709,7 +709,7 @@ function makeDateHistogram(indata: Array<DateHistogramEntry>): Node {
     .attr("transform", `translate(${margin.left},0)`)
     .call(d3.axisLeft(y).ticks(5));
 
-    const hoverDiv = d3.select("body").append("div")
+  const hoverDiv = d3.select("body").append("div")
     .attr("class", "hoverImage-chart")
     .style("opacity", 0);
   // Append bars
@@ -724,35 +724,39 @@ function makeDateHistogram(indata: Array<DateHistogramEntry>): Node {
     .attr("fill", "steelblue")
     .attr("stroke", "black") // Add a black border around the bars
     .attr("stroke-width", 1) // Adjust border width as needed
-      .on("mouseover", (event: MouseEvent, d: any) => {
-        const bottomEdge = window.innerHeight + window.scrollY;
-        let top = event.clientY + window.scrollY - 15;
-        if (event.clientY + +CARD_HEIGHT > window.innerHeight) {
-          top = (bottomEdge + (-CARD_HEIGHT));
-        }
-        hoverDiv
-          .style("position", "absolute")
-          .style("left", (event.clientX + 10) + "px")
-          .style("top", top + "px")
-          .style("text-align", "left")
-          .style("border", "2px solid blue")
-          .style("background", "#FFFFFF");
+    .on("mouseover", (event: MouseEvent, d: any) => {
+      const bottomEdge = window.innerHeight + window.scrollY;
+      let top = event.clientY + window.scrollY - 15;
+      if (event.clientY + +CARD_HEIGHT > window.innerHeight) {
+        top = (bottomEdge + (-CARD_HEIGHT));
+      }
+      hoverDiv
+        .style("position", "absolute")
+        .style("left", (event.clientX + 10) + "px")
+        .style("top", top + "px")
+        .style("text-align", "left")
+        .style("border", "2px solid blue")
+        .style("background", "#FFFFFF");
 
-        hoverDiv.transition()
-          .style("opacity", 1)
-        let cardList = '<ul style="margin-left: -10px; margin-right: 10px">';
+      hoverDiv.transition()
+        .style("opacity", 1)
+      let cardList = '<ul style="margin-left: -10px; margin-right: 10px">';
+      if (d.length < 10) {
         for (let i = 0; i < d.length; ++i) {
           cardList += `<li> ${d[i].card} </li>`;
         }
-        cardList += "</ul>";
-        hoverDiv.html(cardList)
-          .style("zIndex", "1");
-      })
-      .on("mouseout", (event: MouseEvent) => {
-        hoverDiv.html("");
-        hoverDiv.transition()
-          .style("opacity", 0);
-      });
+      } else {
+        cardList += `<li> ${d.length} cards </li>`;
+      }
+      cardList += "</ul>";
+      hoverDiv.html(cardList)
+        .style("zIndex", "1");
+    })
+    .on("mouseout", (event: MouseEvent) => {
+      hoverDiv.html("");
+      hoverDiv.transition()
+        .style("opacity", 0);
+    });
 
   // Append x axis
   svg.append("g")
@@ -1117,12 +1121,14 @@ class DateHistogramEntry {
   }
 };
 
-function extractDates(card: Card, dir: Direction): Array<DateHistogramEntry> {
+function extractDates<T>(collection: Iterable<T>, extract?: (arg0: T) => string): Array<DateHistogramEntry> {
+  const doExtract = extract ?? ((x: string) => x);
+
   const oracle = oracleData.all_cards;
-  const collection = getTotalChildSet(dir)[card.name];
 
   const ret: Array<DateHistogramEntry> = [];
-  for (const name of collection) {
+  for (const preName of collection) {
+    const name = doExtract(preName as any);
     const data = oracle[name];
     if (data === undefined) {
       continue;
@@ -1161,7 +1167,7 @@ function doDisplayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: s
         nameStr += " (Equivalent to [[" + card.name + "]])";
       }
       const textContent = nameStr + " is <strong>" + (dir == Direction.Better ? "worse" : "better") + "</strong> than...";
-      const dateData = extractDates(card, dir);
+      const dateData = extractDates(getTotalChildSet(dir)[card.name]);
       const dateChart = makeDateHistogram(dateData);
       displayTextWithCardLinks(label, textContent);
       if (!renderedFont) {
@@ -1202,7 +1208,7 @@ function displayTextWithCardLinks(elem: HTMLElement, text: string, setHashTo?: s
   text = text.replace(re, "<a class='cardlink'>$1</a>");
   elem.replaceChildren("");
   elem.innerHTML = text;
-  for (const obj of document.getElementsByClassName("cardlink")) {
+  for (const obj of elem.getElementsByClassName("cardlink")) {
     const o = obj as HTMLElement;
     imbueHoverImage(o, getImageURL(o.textContent || "", oracleData));
   }
@@ -1527,6 +1533,52 @@ function displaySearch(outdiv: HTMLElement, dag: Record<string, Card>, searchQue
   tableMaker.renderTable(outdiv);
 }
 
+class Stats {
+  private readonly dag: Record<string, Card>;
+  private static singleton: Stats | null;
+  public constructor(dag: Record<string, Card>) {
+    this.dag = dag;
+  }
+  public static get(dag: Record<string, Card>): Stats {
+    if (Stats.singleton == null) {
+      Stats.singleton = new Stats(dag);
+    }
+    return Stats.singleton;
+  }
+  public getRelationsCount(): number {
+    return rawData.all_relations.length;
+  }
+  public getMappedCount(): number {
+    return Object.keys(oracleData.all_cards).length;
+  }
+  public getTotalCount(): number {
+    return this.getMappedCount() + Object.keys(oracleDataUnmapped.all_cards).length;
+  }
+
+  public getExtremeBy(dir: Direction, key: keyof DirStats): [Array<Card>, number] {
+    let maxDegree = 0;
+    let ret: Array<Card> = [];
+    for (const card of Object.values(this.dag)) {
+      const thisDegree = card.stats(dir)[key] as number;
+      if (thisDegree > maxDegree) {
+        ret = [];
+      }
+      if (thisDegree >= maxDegree) {
+        maxDegree = thisDegree;
+        ret.push(card)
+      }
+    }
+    return [ret, maxDegree];
+  }
+
+  public getExtremeByDegree(dir: Direction): [Array<Card>, number] {
+    return this.getExtremeBy(dir, "degree");
+  }
+  public getExtremeByTotal(dir: Direction): [Array<Card>, number] {
+    return this.getExtremeBy(dir, "total");
+  }
+};
+
 function doRenderHome(outdiv: HTMLDivElement, dag: Record<string, Card>) {
   outdiv.replaceChildren("");
   const containerDiv = document.createElement("div");
@@ -1543,9 +1595,10 @@ function doRenderHome(outdiv: HTMLDivElement, dag: Record<string, Card>) {
   h1.textContent = "Strictly Worse MTG";
   headerDiv.appendChild(h1);
   const subhead = document.createElement("p");
-  const numRelations = rawData.all_relations.length;
-  const countMapped = Object.keys(oracleData.all_cards).length;
-  const countTotal = countMapped + Object.keys(oracleDataUnmapped.all_cards).length;
+  const stats = Stats.get(dag);
+  const numRelations = stats.getRelationsCount();
+  const countMapped = stats.getMappedCount();
+  const countTotal = stats.getTotalCount();
   subhead.textContent = `Discover ${numRelations} relations between ${countMapped} cards out of Magic's ${countTotal}`;
   headerDiv.appendChild(subhead);
   const footerDiv = document.createElement("div");
@@ -1582,6 +1635,69 @@ function doRenderHome(outdiv: HTMLDivElement, dag: Record<string, Card>) {
   containerDiv.appendChild(footerDiv);
 }
 
+function doRenderStats(outdiv: HTMLDivElement, dag: Record<string, Card>) {
+  outdiv.replaceChildren("");
+  const stats = Stats.get(dag);
+
+  const h1 = document.createElement("h1");
+  h1.textContent = "Stats";
+  outdiv.appendChild(h1);
+  const initStatsDiv = document.createElement("div");
+  const initText = document.createElement("p");
+  initText.textContent = "Here are some interesting overall statistics from our data:";
+  const thisList = document.createElement("ul");
+  const addLi = (content: string): void => {
+    const li = document.createElement("li");
+    const innerDiv = document.createElement("div");
+    li.appendChild(innerDiv);
+    displayTextWithCardLinks(innerDiv, content);
+    thisList.appendChild(li);
+  };
+  const expandCardNames = (cards: Array<Card>): string => {
+    let ret = "";
+    for (let i = 0; i < cards.length; ++i) {
+      ret += `[[${cards[i].name}]]`;
+      if (i != cards.length - 1) {
+        ret += ", ";
+      }
+    }
+    return ret;
+  };
+  addLi(`${stats.getMappedCount()} / ${stats.getTotalCount()} cards mapped with ${stats.getRelationsCount()} relations`);
+  for (const dir of [Direction.Worse, Direction.Better]) {
+    for (const key of ["degree", "total"]) {
+      const [xCards, xVal] = stats.getExtremeBy(dir, key as keyof DirStats);
+      addLi(`Most extreme by ${key} of cards ${Direction[dir]}: ${expandCardNames(xCards)} (${xVal})`);
+    }
+  }
+
+
+  initStatsDiv.appendChild(initText);
+  initStatsDiv.appendChild(thisList);
+
+  outdiv.appendChild(initStatsDiv);
+
+  const h2 = document.createElement("h2");
+  h2.textContent = "Release Date Histograms";
+  outdiv.appendChild(h2);
+
+  const doChart = (desc: string, cardSet: Iterable<Card>) => {
+    const label = document.createElement("p");
+    label.textContent = desc;
+    const dateData = extractDates(cardSet, (card: Card) => card.name);
+    const dateChart = makeDateHistogram(dateData);
+
+    outdiv.appendChild(label);
+    outdiv.appendChild(dateChart);
+  }
+  // TODO: lazy initialize to avoid multiple calls to this
+  initializeMaximalCards(dag, maximalCards[Direction.Worse], Direction.Worse);
+  initializeMaximalCards(dag, maximalCards[Direction.Better], Direction.Better);
+  doChart("All Mapped Cards", Object.values(dag));
+  doChart("All Worst Cards", maximalCards[Direction.Worse]);
+  doChart("All Best Cards", maximalCards[Direction.Better]);
+}
+
 function initializePageFromHash(outdiv: HTMLDivElement, searchBar: HTMLDivElement, dag: Record<string, Card>) {
   if (globalSuppressOnHashChange) {
     globalSuppressOnHashChange = false;
@@ -1599,8 +1715,12 @@ function initializePageFromHash(outdiv: HTMLDivElement, searchBar: HTMLDivElemen
     doRenderTable(outdiv, dag, Direction[val as keyof typeof Direction])
   } else if (key === "page") {
     searchBar.style.visibility = "hidden";
-    const pageSource: string = val == "philosophy" ? philosophy.pageSource : help.pageSource;
-    displayTextWithCardLinks(outdiv, pageSource , "");
+    if (val == "stats") {
+      doRenderStats(outdiv, dag);
+    } else {
+      const pageSource: string = val == "philosophy" ? philosophy.pageSource : help.pageSource;
+      displayTextWithCardLinks(outdiv, pageSource, "");
+    }
   } else if (key === "search") {
     searchBar.style.visibility = "hidden";
     doRenderSearch(outdiv, dag, val);
@@ -1624,7 +1744,7 @@ function globalSetup(): void {
 }
 
 function makeHeaderButtons(headerDiv: HTMLDivElement, outdiv: HTMLDivElement): void {
-  const makeButton = (color: string, text: string): HTMLElement => {
+  const makeButton = (color: string, text: string, action: () => void): void => {
     const button = document.createElement("button");
     button.type = "button";
     button.style.border = "2px solid black";
@@ -1633,26 +1753,16 @@ function makeHeaderButtons(headerDiv: HTMLDivElement, outdiv: HTMLDivElement): v
     button.style.display = "inline-block";
     button.style.backgroundColor = color;
     button.innerText = text;
-    return button;
+    headerDiv.appendChild(button);
+    button.onclick = action;
   };
 
-  const homeButton = makeButton("#ABCDEF", "Home");
-  const philButton = makeButton("#ABCDEF", "Philosophy");
-  const searchButton = makeButton("#ABCDEF", "Adv. Search");
-  const worstButton = makeButton("#ABCDEF", "All Worst Cards");
-  const bestButton = makeButton("#ABCDEF", "All Best Cards")
-
-  headerDiv.appendChild(homeButton);
-  headerDiv.appendChild(philButton);
-  headerDiv.appendChild(searchButton);
-  headerDiv.appendChild(worstButton);
-  headerDiv.appendChild(bestButton);
-
-  homeButton.onclick = () => { window.location.hash = "home"; };
-  worstButton.onclick = () => renderTable(Direction.Worse);
-  bestButton.onclick = () => renderTable(Direction.Better);
-  philButton.onclick = () => displayTextWithCardLinks(outdiv, philosophy.pageSource, "philosophy");
-  searchButton.onclick = () => renderSearch("");
+  makeButton("#ABCDEF", "Home", () => { window.location.hash = "home"; });
+  makeButton("#ABCDEF", "Philosophy", () => { displayTextWithCardLinks(outdiv, philosophy.pageSource, "philosophy"); });
+  makeButton("#ABCDEF", "Adv. Search", () => { renderSearch(""); });
+  makeButton("#ABCDEF", "All Worst Cards", () => { renderTable(Direction.Worse); });
+  makeButton("#ABCDEF", "All Best Cards", () => { renderTable(Direction.Better); })
+  makeButton("#ABCDEF", "Stats", () => { window.location.hash = "page-stats"; });
 }
 
 function makeSearchBar(dag: Record<string, Card>): [HTMLDivElement, HTMLInputElement] {
