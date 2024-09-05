@@ -6,276 +6,32 @@
 // wtf is this fucking piece of shit system
 // At first the assumption was to put the json in json files -- already had to convert to json anyway
 // so probably long term should go completely to ts files and renew the reference style
-interface Oracle {
-  all_cards: Record<string, any>;
-}
 
-import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+// @ts-ignore
 import * as rawData from '../res/data.js';
-import * as _oracleData from '../res/filtered-oracle.js';
-import * as _oracleDataUnmapped from '../res/filtered-oracle-unmatched.js'
+// @ts-ignore
 import * as philosophy from '../res/philosophy.js';
+// @ts-ignore
 import * as help from '../res/help.js';
-
-const oracleData: Oracle = _oracleData;
-const oracleDataUnmapped: Oracle = _oracleDataUnmapped;
-/****    file hover.ts */
-
-const CARD_HEIGHT = "476";
-const CARD_WIDTH = "342";
-function showImage(elem: HTMLElement, imgSrc: string) {
-  const popImage = new Image();
-  popImage.src = imgSrc;
-  popImage.style.position = "absolute";
-  popImage.style.zIndex = "1";
-  popImage.style.width = CARD_WIDTH;
-  popImage.style.height = CARD_HEIGHT;
-  const sourceLoc = elem.getBoundingClientRect();
-
-  if (sourceLoc.left > window.innerWidth / 2) {
-    // pop up image to the left
-    popImage.style.left = "" + (sourceLoc.left + (-CARD_WIDTH));
-  }
-  const bottomEdge = window.innerHeight + window.scrollY;
-  if (sourceLoc.top + +CARD_HEIGHT > window.innerHeight) {
-    popImage.style.top = "" + (bottomEdge + (-CARD_HEIGHT));
-  }
-  elem.appendChild(popImage);
-}
-function hideImage(elem: HTMLElement) {
-  if (!elem.lastChild) { return; }
-  elem.removeChild(elem.lastChild);
-}
-
-function imbueHoverImage(elem: HTMLElement, imgSrc: string) {
-  elem.onmouseover = () => { showImage(elem, imgSrc); }
-  elem.onmouseout = () => { hideImage(elem); };
-}
-
-/*****   end file */
-
-
-/*****   file autocomplete.ts */
-function autocomplete(inp: HTMLInputElement, arr: string[], commaSeparated?: boolean) {
-  /*the autocomplete function takes two arguments,
-  the text field element and an array of possible autocompleted values:*/
-  let currentFocus: number = -1;
-  /*execute a function when someone writes in the text field:*/
-  inp.addEventListener("input", function (e) {
-    let val = this.value;
-    /*close any already open lists of autocompleted values*/
-    closeAllLists(null);
-    if (!val) { return false; }
-    currentFocus = -1;
-    /*create a DIV element that will contain the items (values):*/
-    let a = document.createElement("DIV");
-    a.setAttribute("id", this.id + "autocomplete-list");
-    a.setAttribute("class", "autocomplete-items");
-    a.style.position = "absolute";
-    a.style.border = "1px solid #d4d4d4";
-    a.style.zIndex = "99";
-    a.style.top = "100%";
-    a.style.left = "0";
-    a.style.right = "0";
-
-    /*append the DIV element as a child of the autocomplete container:*/
-    this.parentNode!.appendChild(a);
-    /*for each item in the array...*/
-    for (const elem of arr) {
-      /*check if the item starts with the same letters as the text field value:*/
-      const baseIndex = commaSeparated ? val.lastIndexOf(',') + 1 : 0;
-      const modifiedVal = val.substring(baseIndex).trim();
-      let prefix = elem.substring(0, modifiedVal.length);
-      if (prefix.toUpperCase() == modifiedVal.toUpperCase()) {
-        /*create a DIV element for each matching element:*/
-        let b = document.createElement("div");
-        /*make the matching letters bold:*/
-        b.innerHTML += "<strong>" + prefix + "</strong>";
-        b.innerHTML += elem.substring(modifiedVal.length);
-        /*insert a input field that will hold the current array item's value:*/
-        b.innerHTML += "<input type='hidden' value=\"" + elem + "\">";
-        /*execute a function when someone clicks on the item value (DIV element):*/
-        b.addEventListener("click", function () {
-          /*insert the value for the autocomplete text field:*/
-          let keptBase = "";
-          if (commaSeparated) {
-            const commaI = inp.value.lastIndexOf(',');
-            keptBase = commaI == -1 ? "" : inp.value.substring(0, commaI + 1).trim() + " ";
-          }
-          inp.value = keptBase + this.getElementsByTagName("input")[0].value;
-          /*close the list of autocompleted values,
-          (or any other open lists of autocompleted values:*/
-          closeAllLists(null);
-          // TODO: non-generic autocomplete code here
-          displayCharts(inp.value);
-        });
-        b.style.padding = "10px";
-        b.style.cursor = "pointer";
-        b.style.backgroundColor = "#fff";
-        b.style.borderBottom = "1px solid #d8d4d4";
-        b.style.textAlign = "left";
-        a.appendChild(b);
-      }
-    }
-    return true;
-  });
-  /*execute a function presses a key on the keyboard:*/
-  inp.addEventListener("keydown", function (e) {
-    let fullList = document.getElementById(this.id + "autocomplete-list");
-    if (!fullList) {
-      return;
-    }
-    let x = fullList.getElementsByTagName("div");
-    if (e.key == "ArrowDown") {
-      /*If the arrow DOWN key is pressed,
-      increase the currentFocus variable:*/
-      currentFocus++;
-      /*and and make the current item more visible:*/
-      addActive(x);
-    } else if (e.key == "ArrowUp") {
-      /*If the arrow UP key is pressed,
-      decrease the currentFocus variable:*/
-      currentFocus--;
-      /*and and make the current item more visible:*/
-      addActive(x);
-    } else if (e.key == "Enter") {
-      /*If the ENTER key is pressed, prevent the form from being submitted,*/
-      e.preventDefault();
-      if (currentFocus > -1) {
-        /*and simulate a click on the "active" item:*/
-        if (x) x[currentFocus].click();
-      }
-    }
-  });
-  function addActive(x: HTMLCollectionOf<HTMLDivElement>) {
-    /*a function to classify an item as "active":*/
-    if (!x) return;
-    /*start by removing the "active" class on all items:*/
-    removeActive(x);
-    if (currentFocus >= x.length) currentFocus = 0;
-    if (currentFocus < 0) currentFocus = x.length - 1;
-    /*add class "autocomplete-active":*/
-    x[currentFocus].classList.add("autocomplete-active");
-  }
-
-  function removeActive(x: HTMLCollectionOf<HTMLDivElement>) {
-    /*a function to remove the "active" class from all autocomplete items:*/
-    for (let i = 0; i < x.length; ++i) {
-      x[i].classList.remove("autocomplete-active");
-    }
-  }
-
-  function closeAllLists(elmnt: EventTarget | null) {
-    /*close all autocomplete lists in the document,
-    except the one passed as an argument:*/
-    let x = document.getElementsByClassName("autocomplete-items");
-    for (let i = 0; i < x.length; ++i) {
-      if (elmnt != x[i] && elmnt != inp) {
-        x[i].parentNode!.removeChild(x[i]);
-      }
-    }
-  }
-
-  /*execute a function when someone clicks in the document:*/
-  document.addEventListener("click", function (e) {
-    closeAllLists(e.target);
-  });
-}
-/*****    end file */
-
-/*****   file Card.ts */
-enum Direction {
-  Worse, // Cards worse than this card, indicating this card is good
-  Better, // Cards better than this card, indicating this card is bad
-  None, // Used for cards unafiliated with ordering
-};
-
-class DirStats {
-  public cards: Array<Card> = [];
-  public degree: number = 0;
-  public total: number = 0;
-};
-
-class Card {
-  public name: string;
-  private worseStats: DirStats = new DirStats();
-  private betterStats: DirStats = new DirStats();
-
-
-  constructor(nm: string) {
-    this.name = nm;
-  }
-
-  public isPlaceholder(): boolean {
-    return (this.name.indexOf('/') > 0 && this.name.indexOf('//') < 0) || this.name == "MORPH";
-  }
-
-  public stats(dir: Direction): DirStats {
-    return dir == Direction.Worse ? this.worseStats : this.betterStats;
-  }
-};
-/****** end file */
-
-/** file Special.ts */
-// NB: feature I didn't implement, idea of specialness would be to document certain
-// edges as special
-const specialSet: Set<string> = new Set();
-
-function concatSpecial(name1: string, name2: string): string {
-  return name1 + "__" + name2;
-}
-function isSpecial(name1: string, name2: string): boolean {
-  return specialSet.has(concatSpecial(name1, name2));
-}
-function addSpecialPair(name1: string, name2: string): void {
-  specialSet.add(concatSpecial(name1, name2));
-}
-function getPointerIfSpecial(name1: string, name2: string, dir: Direction): string {
-  if (dir === Direction.Worse) {
-    const temp = name1;
-    name1 = name2;
-    name2 = temp;
-  }
-  if (isSpecial(name1, name2)) {
-    return name1;
-  }
-  return "";
-}
-/** end file */
-
-/** file Set.ts */
-function addUnion(src: Set<string>, added: Set<string>): void {
-  for (const x of added) {
-    src.add(x);
-  }
-}
-
-function isSubsetOf(lhs: Set<any>, rhs: Set<any>): boolean {
-  for (const x of lhs) {
-    if (!rhs.has(x)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function isProperSubsetOf(lhs: Set<any>, rhs: Set<any>): boolean {
-  return isSubsetOf(lhs, rhs) && lhs.size < rhs.size;
-}
-
-function isDisjoint(lhs: Set<any>, rhs: Set<any>): boolean {
-  for (const x of lhs) {
-    if (rhs.has(x)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function isSetEqual(lhs: Set<any>, rhs: Set<any>): boolean {
-  return isSubsetOf(lhs, rhs) && lhs.size == rhs.size;
-}
-/** end file */
+// After months of working on this project having no clue how to harmonize the d3 import
+// syntax above which I didn't want to touch, the json importing syntax, and a typescript
+// import syntax, it turns out that the secret is that you have to lie about filenames in 
+// the import.
+// Despite the fact these are imports from typescript files with the ".ts" extension, the
+// import statement needs to be based on the compiled name of the file, and the relative path
+// from the compiled form of this file to the compiled form of the imported
+import { CARD_HEIGHT, imbueHoverImage } from './hover.js';
+import { autocomplete } from './autocomplete.js';
+import { Direction, DirStats, Card } from './card.js';
+import { addUnion } from './set.js';
+import { SearchMatcher } from './search.js';
+import { oracleData, oracleDataUnmapped } from './oracle.js';
+import { TableElem, renderCost } from './table_elem.js';
+import { Timer } from './timer.js';
+import { getImageURL } from './image_url.js';
+import { makeChart } from './chart.js';
+import { makeDateHistogram, DateHistogramEntry } from './histogram.js';
 
 function initNode(dag: any, key: string): Card {
   if (!(key in dag)) {
@@ -315,8 +71,6 @@ function processData(dag: Record<string, Card>, inData: any) {
       if (elem[2] === '=') {
         dag[better] = worseNode;
         continue;
-      } else if (elem[2] === '!') {
-        addSpecialPair(elem[0], elem[1]);
       }
     }
     worseNode.stats(Direction.Better).cards.push(betterNode);
@@ -414,7 +168,6 @@ function recurAddChildren(rootNode: any, childList: Array<Card>, dir: Direction)
       children: [],
       value: child.stats(dir).total,
       depth: child.stats(dir).degree,
-      special: getPointerIfSpecial(rootNode.name, child.name, dir)
     };
     let newRoot = obj;
     if (!child.isPlaceholder()) {
@@ -472,308 +225,7 @@ function makeTree(rootNode: Card, dir: Direction) {
   return data;
 }
 
-function getImageURL(name: string, oracle: Oracle) {
-  const card = oracle.all_cards[name];
-  if (card === undefined) {
-    return "";
-  }
-  const faces = card["card_faces"];
-  const face = card["image_uris"] === undefined ? faces[0] : card;
-  return face["image_uris"]["normal"];
-}
 
-
-function makeChart(data: any, rootName: string, startExpanded: boolean, fontSize: number): Node {
-  data["name"] = rootName;
-  // Specify the charts’ dimensions. The height is variable, depending on the layout.
-  const width = 1300;
-  const marginTop = 10;
-  const marginRight = 10;
-  const marginBottom = 10;
-  const marginLeft = 200;
-  const fontHeight = fontSize;
-  // Rows are separated by dx pixels, columns by dy pixels. These names can be counter-intuitive
-  // (dx is a height, and dy a width). This because the tree must be viewed with the root at the
-  // “bottom”, in the data domain. The width of a column is based on the tree’s height.
-  const root = d3.hierarchy(data);
-  const dx = fontHeight + 2;
-  const dy = (width - marginRight - marginLeft) / (1 + root.height);
-
-  // Define the tree layout and the shape for links.
-  const tree = d3.tree().nodeSize([dx, dy]);
-  const diagonal = d3.linkHorizontal().x((d: any) => d.y).y((d: any) => d.x);
-
-  // Create the SVG container, a layer for the links and a layer for the nodes.
-  const svg = d3.create("svg")
-    .attr("width", width)
-    .attr("height", dx)
-    .attr("viewBox", [-marginLeft, -marginTop, width, dx])
-    .attr("style", "max-width: 100%; height: auto; font: " + fontHeight + "px sans-serif; user-select: none;");
-
-  const gLink = svg.append("g")
-    .attr("fill", "none")
-    .attr("stroke", "#555")
-    .attr("stroke-opacity", 0.4)
-    .attr("stroke-width", 1.5);
-
-  const gNode = svg.append("g")
-    .attr("cursor", "pointer")
-    .attr("pointer-events", "all");
-
-  function update(event: any, source: any) {
-    const duration = event?.altKey ? 2500 : 250; // hold the alt key to slow down the transition
-    const nodes = root.descendants().reverse();
-    const links = root.links();
-
-    // Compute the new tree layout.
-    tree(root);
-
-    let left = root;
-    let right = root;
-    root.eachBefore((node: any) => {
-      if (node.x < left.x) left = node;
-      if (node.x > right.x) right = node;
-    });
-
-    const height = right.x - left.x + marginTop + marginBottom;
-
-    const transition = svg.transition()
-      .duration(duration)
-      .attr("height", height)
-      .attr("viewBox", [-marginLeft, left.x - marginTop, width, height])
-      .tween("resize", window.ResizeObserver ? null : () => () => svg.dispatch("toggle"));
-
-    // Update the nodes…
-    const node = gNode.selectAll("g")
-      .data(nodes, (d: any) => d.id);
-
-    // Enter any new nodes at the parent's previous position.
-    const nodeEnter = node.enter().append("g")
-      .attr("transform", (d: any) => `translate(${source.y0},${source.x0})`)
-      .attr("fill-opacity", 0)
-      .attr("stroke-opacity", 0)
-      .on("click", (event: any, d: any) => {
-        d.children = d.children ? null : d._children;
-        update(event, d);
-      });
-
-    nodeEnter.append("circle")
-      .attr("r", 2.5)
-      .attr("fill", (d: any) => d.data.value > 5 ? "#900" : d._children ? "#555" : "#999")
-      .attr("stroke-width", 10);
-
-    const getLabel = (data: any) => {
-      if (data.value <= 1) { return data.name; }
-      else { return data.name + " " + data.value + "(" + data.depth + ")"; }
-    };
-    const hoverDiv = d3.select("body").append("div")
-      .attr("class", "hoverImage-chart")
-      .style("opacity", 0);
-
-
-    nodeEnter.append("text")
-      .attr("dy", "0.31em")
-      .attr("x", (d: any) => d._children ? -6 : 6)
-      .attr("text-anchor", (d: any) => d._children ? "end" : "start")
-      .text((d: any) => getLabel(d.data))
-      .attr("stroke-linejoin", "round")
-      .attr("stroke-width", 3)
-      .attr("stroke", "white")
-      .attr("fill", (d: any) => d.data.special ? "#900" : "#555")
-      .attr("paint-order", "stroke")
-      .on("mouseover", (event: MouseEvent, d: any) => {
-        const imgURL = getImageURL(d.data.name, oracleData);
-        if (imgURL === "") {
-          return;
-        }
-        const bottomEdge = window.innerHeight + window.scrollY;
-        let top = event.clientY + window.scrollY - 15;
-        if (event.clientY + +CARD_HEIGHT > window.innerHeight) {
-          top = (bottomEdge + (-CARD_HEIGHT));
-        }
-        hoverDiv
-          .style("position", "absolute")
-          .style("left", (event.clientX + 10) + "px")
-          .style("top", top + "px");
-
-        const rect = (event.target as HTMLElement).getBoundingClientRect();
-        const distanceWithinText = event.clientX - rect.left;
-        hoverDiv.transition()
-          .style("opacity", 1)
-        hoverDiv.append("img")
-          .attr("src", imgURL)
-          .style("width", CARD_WIDTH)
-          .style("height", CARD_HEIGHT)
-          .style("position", "absolute")
-          .style("left", (event.clientX > window.innerWidth / 2 ? (-CARD_WIDTH) - distanceWithinText - 15 : "0") + "px")
-          .style("top", (fontHeight * 2) + "px")
-          .style("zIndex", "1");
-      })
-      .on("mouseout", (event: MouseEvent) => {
-        hoverDiv.transition()
-          .style("opacity", 0);
-        hoverDiv.html("");
-      });
-
-
-    // Transition nodes to their new position.
-    node.merge(nodeEnter).transition(transition)
-      .attr("transform", (d: any) => `translate(${d.y},${d.x})`)
-      .attr("fill-opacity", 1)
-      .attr("stroke-opacity", 1);
-
-    // Transition exiting nodes to the parent's new position.
-    node.exit().transition(transition).remove()
-      .attr("transform", (d: any) => `translate(${source.y},${source.x})`)
-      .attr("fill-opacity", 0)
-      .attr("stroke-opacity", 0);
-
-    // Update the links…
-    const link = gLink.selectAll("path")
-      .data(links, (d: any) => d.target.id);
-
-    // Enter any new links at the parent's previous position.
-    const linkEnter = link.enter().append("path")
-      .attr("d", (d: any) => {
-        const o = { x: source.x0, y: source.y0 };
-        return diagonal({ source: o, target: o });
-      });
-
-    // Transition links to their new position.
-    link.merge(linkEnter).transition(transition)
-      .attr("d", diagonal);
-
-    // Transition exiting nodes to the parent's new position.
-    link.exit().transition(transition).remove()
-      .attr("d", (d: any) => {
-        const o = { x: source.x, y: source.y };
-        return diagonal({ source: o, target: o });
-      });
-
-    // Stash the old positions for transition.
-    root.eachBefore((d: any) => {
-      d.x0 = d.x;
-      d.y0 = d.y;
-    });
-  }
-
-  // Do the first update to the initial configuration of the tree — where a number of nodes
-  // are open (arbitrarily selected as the root, plus nodes with 7 letters).
-  root.x0 = dy / 2;
-  root.y0 = 0;
-  root.descendants().forEach((d: any, i: any) => {
-    d.id = i;
-    d._children = d.children;
-    if (!startExpanded) {
-      d.children = null;
-    }
-  });
-
-  update(null, root);
-  return svg.node();
-}
-
-function makeDateHistogram(indata: Array<DateHistogramEntry>): Node {
-  const width = 800;
-  const height = 200;
-  const margin = { top: 20, right: 50, bottom: 30, left: 50 };
-
-  // Parse dates
-  const parseDate = d3.timeParse("%Y-%m-%d");
-  indata.sort((a, b) => parseDate(a.date) - parseDate(b.date));
-
-  const alldates = ["1993-01-01", "2025-01-01"].map(d => parseDate(d));
-  // Setup scales
-  const x = d3.scaleTime()
-    .domain(d3.extent(alldates))
-    .range([margin.left, width - margin.right]).nice(15);
-
-  // Create histogram bins
-  const histogram = (d3.histogram()
-    .value((d: any) => parseDate(d.date))
-    .domain(x.domain())
-    .thresholds(x.ticks(15)))(indata);
-
-
-  const y = d3.scaleLinear()
-    .domain([0, d3.max(histogram, (d: any) => d.length)])
-    .nice()
-    .range([height - margin.bottom, margin.top]);
-
-  // Create SVG and append axes and bars
-  const svg = d3.create("svg")
-    .attr("width", width)
-    .attr("height", height);
-  // Append y axis
-  svg.append("g")
-    .attr("transform", `translate(${margin.left},0)`)
-    .call(d3.axisLeft(y).ticks(5));
-
-  const hoverDiv = d3.select("body").append("div")
-    .attr("class", "hoverImage-chart")
-    .style("opacity", 0);
-  // Append bars
-  svg.selectAll("rect")
-    .data(histogram)
-    .enter()
-    .append("rect")
-    .attr("x", (d: any) => { const ret = x(d.x0) + 1; return ret; })
-    .attr("width", (d: any) => Math.max(0, x(d.x1) - x(d.x0) - 1))
-    .attr("y", (d: any) => { return y(d.length); })
-    .attr("height", (d: any) => y(0) - y(d.length))
-    .attr("fill", "steelblue")
-    .attr("stroke", "black") // Add a black border around the bars
-    .attr("stroke-width", 1) // Adjust border width as needed
-    .on("mouseover", (event: MouseEvent, d: any) => {
-      const bottomEdge = window.innerHeight + window.scrollY;
-      let top = event.clientY + window.scrollY - 15;
-      if (event.clientY + +CARD_HEIGHT > window.innerHeight) {
-        top = (bottomEdge + (-CARD_HEIGHT));
-      }
-      hoverDiv
-        .style("position", "absolute")
-        .style("left", (event.clientX + 10) + "px")
-        .style("top", top + "px")
-        .style("text-align", "left")
-        .style("border", "2px solid blue")
-        .style("background", "#FFFFFF");
-
-      hoverDiv.transition()
-        .style("opacity", 1)
-      let cardList = '<ul style="margin-left: -10px; margin-right: 10px">';
-      if (d.length < 10) {
-        for (let i = 0; i < d.length; ++i) {
-          cardList += `<li> ${d[i].card} </li>`;
-        }
-      } else {
-        cardList += `<li> ${d.length} cards </li>`;
-      }
-      cardList += "</ul>";
-      hoverDiv.html(cardList)
-        .style("zIndex", "1");
-    })
-    .on("mouseout", (event: MouseEvent) => {
-      hoverDiv.html("");
-      hoverDiv.transition()
-        .style("opacity", 0);
-    });
-
-  // Append x axis
-  svg.append("g")
-    .attr("transform", `translate(0,${height - margin.bottom})`)
-    .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%Y-%m")));
-
-
-
-  // Add title
-  svg.append("text")
-    .attr("x", width / 2)
-    .attr("y", margin.top / 2)
-    .attr("text-anchor", "middle")
-    .style("font-size", "12px")
-    .text("Release Order");
-  return svg.node();
-}
 
 const maximalCards: Record<Direction, Array<Card>> = [[], [], []];
 function initializeMaximalCards(dag: Record<string, Card>, toInit: Array<Card>, dir: Direction) {
@@ -813,84 +265,6 @@ enum TableColumn {
   Cost,
   Degree,
   TotalWorse,
-}
-
-
-const getPTString = (oracle: any): string => {
-  if (oracle.power === undefined) {
-    return "";
-  }
-  return oracle.power + " / " + oracle.toughness;
-};
-
-const costCache: Record<string, HTMLElement> = {};
-function renderCost(cost: string): HTMLElement {
-  if (costCache[cost] !== undefined) {
-    return costCache[cost].cloneNode(true) as HTMLElement;
-  }
-  const rootNode = document.createElement("div");
-  rootNode.style.display = "inline-block";
-  // Grab all the pieces in {}
-  const re = /\{([^{}]*)\}([^{}]*)/g;
-  for (const match of cost.matchAll(re)) {
-    // naming convention to avoid / in filenames
-    const sym = match[1].replace(/\//g, '_');
-    const img = document.createElement("img");
-    img.src = "res/" + sym + ".svg";
-    img.style.width = "15";
-    img.style.height = "15";
-    img.style.position = "float";
-    rootNode.appendChild(img);
-    if (match[2]) {
-      const p = document.createElement("span");
-      p.textContent = match[2];
-      p.style.position = "float";
-      rootNode.appendChild(p);
-    }
-  }
-  return rootNode;
-}
-
-class TableElem {
-  public name: string;
-  public colors: Array<string>;
-  public cost: HTMLElement;
-  public cmc: number;
-  public type: string;
-  public pt: string;
-  public pow: number;
-  public tou: number;
-  public degree: number;
-  public totalWorse: number;
-
-  constructor(card: Card, oracle: any, dir: Direction) {
-    const oDir = dir == Direction.Better ? Direction.Worse : Direction.Better;
-    this.name = card.name;
-    this.colors = oracle.colors ?? [];
-    let cost = "";
-    if (oracle.mana_cost) {
-      cost = oracle.mana_cost;
-    } else if (oracle.card_faces) {
-      cost = oracle.card_faces[0].mana_cost;
-      if (oracle.card_faces[1].mana_cost) {
-        cost += "//" + oracle.card_faces[1].mana_cost;
-      }
-    }
-    this.cost = renderCost(cost);
-    this.cmc = oracle.cmc;
-    this.type = oracle.type_line;
-    const emDash = '—';
-    const enDash = '-';
-    this.type = this.type.replace(emDash, enDash);
-    if (this.type.length > 20) {
-      this.type = this.type.substring(0, 20) + ". . . ";
-    }
-    this.pt = getPTString(oracle);
-    this.pow = +oracle.power || 0;
-    this.tou = oracle.toughness || 0;
-    this.degree = card.stats(oDir).degree;
-    this.totalWorse = card.stats(oDir).total;
-  }
 }
 
 class FlagsState {
@@ -1111,15 +485,6 @@ class TableMaker {
     this.swData.sort(compare);
   }
 }
-class DateHistogramEntry {
-  public date: string;
-  public card: string;
-
-  constructor(d: string, c: string) {
-    this.date = d;
-    this.card = c;
-  }
-};
 
 function extractDates<T>(collection: Iterable<T>, extract?: (arg0: T) => string): Array<DateHistogramEntry> {
   const doExtract = extract ?? ((x: string) => x);
@@ -1179,12 +544,12 @@ function doDisplayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: s
         fontInput.value = "" + fontSize;
         fontInput.style.display = "inline-block";
         fontInput.style.width = "40px";
-        fontInput.addEventListener("keydown", (event: any) => {
+        fontInput.onkeydown = (event: any) => {
           if (event.key != "Enter") {
             return;
           }
           doDisplayCharts(outdiv, dag, name, +fontInput.value);
-        });
+        };
         renderedFont = true;
         outdiv.appendChild(fontLabel);
         outdiv.appendChild(fontInput);
@@ -1215,23 +580,7 @@ function displayTextWithCardLinks(elem: HTMLElement, text: string, setHashTo?: s
   timer.checkpoint("Display Text");
 }
 
-class Timer {
-  private currentMs: number;
 
-  constructor() {
-    this.currentMs = performance.now();
-  }
-
-  public reset(): void {
-    this.currentMs = performance.now();
-  }
-  public checkpoint(desc: string): void {
-    const now = performance.now();
-    const delta = now - this.currentMs;
-    console.log(desc + ": " + delta + "ms");
-    this.currentMs = now;
-  }
-};
 
 const tableMakers: Record<Direction, TableMaker | undefined> = [undefined, undefined, undefined];
 const doRenderTable = (outdiv: HTMLElement, dag: Record<string, Card>, dir: Direction) => {
@@ -1323,198 +672,6 @@ function initializeTotalSets(dag: Record<string, Card>) {
   total_sets[3] = unmappedCards;
 }
 
-/** file Search.ts */
-enum SearchKey {
-  CMC,
-  Color,
-  Type,
-  Power,
-  Toughness,
-  Error
-};
-
-enum SearchOperator {
-  LT,
-  LE,
-  GT,
-  GE,
-  EQ,
-  EX,
-  Error,
-};
-type SearchValue = number | Set<string>
-class SearchComponent {
-
-  private key: SearchKey;
-  private operator: SearchOperator;
-  private value: SearchValue;
-  private negated: boolean;
-  private static readonly re = /(-?)([^!:<>=]*)([!:<>=]*)"?(.*)"?/g;
-
-  constructor(part: string) {
-    const matches = [...part.matchAll(SearchComponent.re)][0];
-    const neg: boolean = matches[1] == "-";
-    this.key = SearchComponent.getSearchKey(matches[2] ?? "");
-    const op = SearchComponent.getOperator(matches[3] ?? "");
-    this.value = SearchComponent.extractValueFromComponent(matches[4] ?? "", this.key);
-    const consol = SearchComponent.consolidateNegation(op, neg);
-    this.operator = consol[0];
-    this.negated = consol[1];
-  }
-
-  public matches(card: TableElem) {
-    const cv = SearchComponent.extractValueFromCard(card, this.key);
-
-    const baseMatch = SearchComponent.compareValues(cv, this.value, this.key, this.operator);
-    return baseMatch != this.negated;
-  }
-
-  private static readonly numberFuncs: Partial<Record<SearchOperator, (x: number, y: number) => boolean>> = {
-    [SearchOperator.EQ]: (x, y) => (x == y),
-    [SearchOperator.LE]: (x, y) => (x <= y),
-    [SearchOperator.LT]: (x, y) => (x < y),
-    [SearchOperator.EX]: (x, y) => (x == y)
-  }
-  private static readonly setFuncs: Partial<Record<SearchOperator, (x: Set<string>, y: Set<string>) => boolean>> = {
-    [SearchOperator.EQ]: (x, y) => (isSetEqual(x, y)),
-    [SearchOperator.LT]: (x, y) => (isProperSubsetOf(x, y)),
-    [SearchOperator.LE]: (x, y) => (isSubsetOf(x, y)),
-    [SearchOperator.EX]: (x, y) => (isSetEqual(x, y))
-  }
-  private static compareValues(lhs: SearchValue, rhs: SearchValue, key: SearchKey, op: SearchOperator): boolean {
-    type Funcs = Record<SearchOperator, (x: SearchValue, y: SearchValue) => boolean>;
-    let funcs = SearchComponent.numberFuncs as Funcs;
-    switch (key) {
-      case SearchKey.Color:
-      case SearchKey.Type:
-        funcs = SearchComponent.setFuncs as Funcs;
-    }
-    return funcs[op](lhs, rhs);
-  }
-
-  private static decomposeTypeLine(line: string): Array<string> {
-    const parts = line.split(" ");
-    const ret: Array<string> = [];
-    for (const part of parts) {
-      if (part.length == 0) {
-        // em dash
-        continue
-      }
-      ret.push(part.toLowerCase());
-    }
-    return ret;
-  }
-  private static parseColorValue(value: string): Set<string> {
-    const uc = value.toUpperCase();
-    if (uc == "C") {
-      return new Set();
-    }
-    // Special case of "M" not supported here
-    return new Set(value.toUpperCase().split(""));
-  }
-  private static extractValueFromComponent(value: string, key: SearchKey): SearchValue {
-    switch (key) {
-      case SearchKey.CMC:
-      case SearchKey.Power:
-      case SearchKey.Toughness:
-        return +value;
-      case SearchKey.Color:
-        return SearchComponent.parseColorValue(value);
-      case SearchKey.Type:
-        return new Set([value.toLowerCase()]);
-    }
-    return 0;
-  }
-  private static extractValueFromCard(card: TableElem, key: SearchKey): SearchValue {
-    switch (key) {
-      case SearchKey.CMC:
-        return card.cmc;
-      case SearchKey.Color:
-        return new Set(card.colors);
-      case SearchKey.Type:
-        return new Set(SearchComponent.decomposeTypeLine(card.type));
-      case SearchKey.Power:
-        return card.pow;
-      case SearchKey.Toughness:
-        return card.tou;
-    }
-    return 0;
-  }
-
-  private static getOperator(key: string): SearchOperator {
-    if ([":", "="].indexOf(key) != -1) {
-      return SearchOperator.EQ;
-    } else if ([">=", "=>"].indexOf(key) != -1) {
-      return SearchOperator.GE;
-    } else if (["<=", "=<"].indexOf(key) != -1) {
-      return SearchOperator.LE;
-    } else if (key == "<") {
-      return SearchOperator.LT;
-    } else if (key == ">") {
-      return SearchOperator.GT;
-    } else if (key == "!") {
-      return SearchOperator.EX;
-    } else {
-      return SearchOperator.Error;
-    }
-  }
-
-  private static consolidateNegation(op: SearchOperator, neg: boolean): [SearchOperator, boolean] {
-    if (op == SearchOperator.GT) {
-      return [SearchOperator.LE, !neg];
-    } else if (op == SearchOperator.GE) {
-      return [SearchOperator.LT, !neg];
-    } else {
-      return [op, neg];
-    }
-  }
-  private static getSearchKey(key: string): SearchKey {
-    if (["c", "color", "colour"].indexOf(key) != -1) {
-      return SearchKey.Color
-    }
-    if (["cmc", "mv", "manavalue"].indexOf(key) != -1) {
-      return SearchKey.CMC;
-    }
-    if (["t", "type"].indexOf(key) != -1) {
-      return SearchKey.Type;
-    }
-    if (["p", "pow", "power"].indexOf(key) != -1) {
-      return SearchKey.Power;
-    }
-    if (["tou", "toughness"].indexOf(key) != -1) {
-      return SearchKey.Toughness;
-    }
-    return SearchKey.Error;
-  }
-};
-
-class SearchMatcher {
-  private oracle: Record<string, any>;
-  private components: Array<SearchComponent>;
-  constructor(query: string, oData: Oracle) {
-    this.oracle = oData.all_cards;
-
-    const parts = query.match(/\S+|"[^"]+"/g) ?? [];
-    this.components = [];
-    for (const part of parts) {
-      if (!part) {
-        continue;
-      }
-      this.components.push(new SearchComponent(part));
-    }
-  }
-
-  public match(card: Card): boolean {
-    const elem = new TableElem(card, this.oracle[card.name], Direction.None);
-    for (const component of this.components) {
-      if (!component.matches(elem)) {
-        return false;
-      }
-    }
-    return true;
-  }
-};
-/** end file */
 function displaySearch(outdiv: HTMLElement, dag: Record<string, Card>, searchQuery: string, poolIndex: number) {
   initializeTotalSets(dag);
 
@@ -1671,7 +828,6 @@ function doRenderStats(outdiv: HTMLDivElement, dag: Record<string, Card>) {
     }
   }
 
-
   initStatsDiv.appendChild(initText);
   initStatsDiv.appendChild(thisList);
 
@@ -1763,6 +919,7 @@ function makeHeaderButtons(headerDiv: HTMLDivElement, outdiv: HTMLDivElement): v
   makeButton("#ABCDEF", "All Worst Cards", () => { renderTable(Direction.Worse); });
   makeButton("#ABCDEF", "All Best Cards", () => { renderTable(Direction.Better); })
   makeButton("#ABCDEF", "Stats", () => { window.location.hash = "page-stats"; });
+  // TODO Check List page
 }
 
 function makeSearchBar(dag: Record<string, Card>): [HTMLDivElement, HTMLInputElement] {
@@ -1780,13 +937,14 @@ function makeSearchBar(dag: Record<string, Card>): [HTMLDivElement, HTMLInputEle
   inputElem.style.padding = "10px";
   inputElem.style.fontSize = "16px";
   inputElem.style.width = "100%";
-  autocomplete(inputElem, Object.keys(dag), false);
-  inputElem.addEventListener("keydown", (event: any) => {
+  const cb = (event: any) => {
     if (event.key != "Enter") {
       return;
     }
     displayCharts(inputElem.value);
-  });
+  };
+  autocomplete(inputElem, Object.keys(dag), cb);
+  inputElem.addEventListener("keydown", cb);
 
   wrapperDiv.appendChild(inputElem);
   return [wrapperDiv, inputElem];

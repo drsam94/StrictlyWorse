@@ -19,5 +19,7 @@
     },
     "files" : [
         "src/sw.ts",
+        "src/hover.ts",
+        "src/autocomplete.ts"
     ]
 }
