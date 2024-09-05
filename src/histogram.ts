@@ -65,8 +65,8 @@ export function makeDateHistogram(indata: Array<DateHistogramEntry>): Node {
     .on("mouseover", (event: MouseEvent, d: any) => {
       const bottomEdge = window.innerHeight + window.scrollY;
       let top = event.clientY + window.scrollY - 15;
-      if (event.clientY + +CARD_HEIGHT > window.innerHeight) {
-        top = (bottomEdge + (-CARD_HEIGHT));
+      if (event.clientY + 100 > window.innerHeight) {
+        top = (bottomEdge + (-100));
       }
       hoverDiv
         .style("position", "absolute")
