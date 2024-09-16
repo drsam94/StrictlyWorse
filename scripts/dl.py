@@ -1,5 +1,5 @@
 #!/usr/bin/python3.9
-import requests
+import requests # type: ignore
 import datetime
 import json
 
@@ -42,7 +42,7 @@ def main():
         uri = datum["svg_uri"]
         img = requests.get(uri)
         name = datum['symbol'][1:-1].replace('/', '_')
-        with open(f'res/{name}.svg', 'wb+') as f:
+        with open(f'res/ico/{name}.svg', 'wb+') as f:
             f.write(img.content)
         
 if __name__ == "__main__":

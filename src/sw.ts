@@ -40,28 +40,7 @@ function initNode(dag: any, key: string): Card {
   return dag[key];
 }
 
-function deep_equal(arr1: Array<Card>, arr2: Array<Card>) {
-  if (arr1.length != arr2.length) {
-    return false;
-  }
-  const sani1 = [];
-  const sani2 = [];
-  for (let i = 0; i < arr1.length; ++i) {
-    sani1.push(arr1[i].name);
-    sani2.push(arr2[i].name);
-  }
-  sani1.sort();
-  sani2.sort();
-  for (let i = 0; i < arr1.length; ++i) {
-    if (sani1[i] != sani2[i]) {
-      return false;
-    }
-  }
-  return true;
-}
-
 function processData(dag: Record<string, Card>, inData: any) {
-  const top_level = [];
   for (const elem of inData) {
     const worse = elem[0];
     const better = elem[1];
@@ -76,55 +55,7 @@ function processData(dag: Record<string, Card>, inData: any) {
     worseNode.stats(Direction.Better).cards.push(betterNode);
     const betterCards = betterNode.stats(Direction.Worse).cards;
     betterCards.push(worseNode);
-    if (betterCards.length == 0) {
-      top_level.push(betterNode);
-    }
   }
-
-  // Prune top level
-  for (let i = top_level.length - 1; i >= 0; --i) {
-    if (top_level[i].stats(Direction.Better).cards.length > 0) {
-      top_level.splice(i, 1);
-    }
-  }
-
-  const to_remove = [];
-  for (let i = 0; i < top_level.length; ++i) {
-    for (let j = i + 1; j < top_level.length; ++j) {
-      if ((deep_equal(top_level[i].stats(Direction.Worse).cards, top_level[j].stats(Direction.Worse).cards) &&
-        deep_equal(top_level[i].stats(Direction.Better).cards, top_level[j].stats(Direction.Better).cards))) {
-        to_remove.push(j);
-      }
-    }
-  }
-
-  to_remove.sort((a, b) => b - a);
-  let last = 0;
-
-  for (let i = 0; i < to_remove.length; ++i) {
-    if (to_remove[i] != last) {
-      top_level.splice(to_remove[i], 1);
-      last = to_remove[i];
-    }
-  }
-
-
-  // Optional filter(s)
-
-  // remove 1:1 mappers
-  for (let i = top_level.length - 1; i >= 0; --i) {
-
-    const worse = top_level[i].stats(Direction.Worse).cards;
-    if (worse.length == 1 && worse[0].stats(Direction.Worse).cards.length == 0) {
-      top_level.splice(i, 1);
-    }
-  }
-  //
-
-  const data = { "name": "root", "children": [], value: 1, depth: 1, specialPointer: "" };
-  recurAddChildren(data, top_level, Direction.Worse);
-
-  return data;
 }
 
 
@@ -174,6 +105,9 @@ function recurAddChildren(rootNode: any, childList: Array<Card>, dir: Direction)
       let childAlreadyExists = false;
       for (const chi of rootNode.children) {
         if (chi.name === child.name) {
+          if (child.name == "Goblin Piker") {
+            console.log(rootNode, childList, chi);
+          }
           childAlreadyExists = true;
           break;
         }
@@ -197,7 +131,7 @@ function recurCleanTree(rootNode: any, dir: Direction) {
   //   \
   //    C - B
   //
-  // Because B is transitively related to A, we should not also claim it is directly a chidl of A.
+  // Because B is transitively related to A, we should not also claim it is directly a child of A.
   // We generally keep the input data clean of these cases, but they can arise due to the collapsing
   // of
   const allDeeper = new Set<string>();
@@ -209,6 +143,8 @@ function recurCleanTree(rootNode: any, dir: Direction) {
   for (const child of rootNode.children) {
     if (!allDeeper.has(child.name)) {
       filteredChildren.push(child);
+    } else {
+      console.log("Culling redundant child", child.name);
     }
     recurCleanTree(child, dir);
   }
@@ -217,7 +153,6 @@ function recurCleanTree(rootNode: any, dir: Direction) {
 }
 function makeTree(rootNode: Card, dir: Direction) {
   const data = { name: rootNode.name, "children": [], value: rootNode.stats(dir).total, depth: rootNode.stats(dir).degree };
-
   recurAddChildren(data, rootNode.stats(dir).cards, dir);
 
   recurCleanTree(data, dir);

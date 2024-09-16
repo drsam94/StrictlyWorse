@@ -20,7 +20,7 @@ export function renderCost(cost: string): HTMLElement {
     // naming convention to avoid / in filenames
     const sym = match[1].replace(/\//g, '_');
     const img = document.createElement("img");
-    img.src = "res/" + sym + ".svg";
+    img.src = "res/ico/" + sym + ".svg";
     img.style.width = "15";
     img.style.height = "15";
     img.style.position = "float";

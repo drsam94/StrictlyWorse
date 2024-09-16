@@ -2,6 +2,7 @@
 
 import sys
 import json
+from card import Card, CardDesc, Compare, construct_relationship_tree
 
 def parse_sw(file: str):
     content = '['
@@ -34,24 +35,6 @@ def any_prop(card, key: str, val: str) -> bool:
         return True
     return False
 
-def search_query(card) -> bool:
-    if any_prop(card, 'digital', True) or any_prop(card, 'layout', 'token'):
-        return False
-    if 'type_line' not in card:
-        return False
-    if 'Creature' not in card['type_line']:
-        return False
-    if card['cmc'] > 4.0:
-        return False
-    color = 'G'
-    #if "oracle_text"  in card and 'commander' in card["oracle_text"].lower():
-    #    return True
-    if ('colors' in card and color in card['colors'] and len(card['colors']) == 1) or (
-        'card_faces' in card and any('colors' in face and color in face['colors'] for face in card['card_faces'])
-    ):
-        return True
-    return False
-
 def simplify_obj(card):
     preserved_keys = ["card_faces", "image_uris", "colors", "mana_cost", "cmc", "type_line", "power", "toughness", "released_at"]
     ret = {key: value for key, value in card.items() if key in preserved_keys}
@@ -75,6 +58,79 @@ def is_real_card(obj):
         return False
     return True 
 
+
+def augment_rules(sw, sw_names, vanilla):
+    # map from card name to vanilla spec
+    invert_vanilla = {v: k for k,v in vanilla.items() }
+    all_placeholders = set()
+    for name in sw_names:
+        if is_placeholder(name):
+            all_placeholders.add(name)
+        if name in invert_vanilla:
+            all_placeholders.add(invert_vanilla[name])
+  
+    placeholder_descs = [CardDesc(desc) for desc in all_placeholders if all(kw not in desc for kw in ["MORPH", "Instant"])]
+    total_descs = len(placeholder_descs)
+    suggestions = []
+    reduce_name = lambda desc: vanilla.get(desc, desc)
+    for i in range(0, total_descs):
+        for j in range(i + 1, total_descs):
+            descs = placeholder_descs[i], placeholder_descs[j]
+            comp = descs[0].compare(descs[1])
+            first, second = (0, 1) if comp == Compare.Less else (1, 0)
+            names = [reduce_name(descs[first].desc), reduce_name(descs[second].desc)]
+            if comp in [Compare.Equal, Compare.Incomparable]:
+                continue
+            suggestions.append(names)
+    rel_tree = construct_relationship_tree(sw)
+    def is_redundant(sugg: tuple[str, str], min_level = 0):
+        def is_name_in(lhs: Card, rhs: str, min_level):
+            for card in lhs.worse_than:
+                if card.name == rhs and min_level == 0:
+                    return True 
+                if is_name_in(card, rhs, max(min_level - 1, 0)):
+                    return True 
+            return False
+        return is_name_in(rel_tree[sugg[0]], sugg[1], min_level)
+
+    def print_item(item: tuple[str, str]):
+        return f'["{item[0]}", "{item[1]}"]'
+    for sugg in suggestions:
+        import bisect
+        loc = bisect.bisect_left(sw, sugg)
+        if sw[loc] == sugg:
+            continue
+        if is_redundant(sugg):
+            continue 
+        print(f"Adding Inferred Rule: {print_item(sugg)}")
+        sw.insert(loc, sugg)
+
+    rel_tree = construct_relationship_tree(sw)
+    ret_sw = []
+    for item in sw:
+        if len(item) > 2:
+            pass
+        elif is_redundant(item, 1):
+            print(f"Removing redundant item {print_item(item)}")
+            continue 
+        ret_sw.append(item)
+    return ret_sw
+
+def get_error_aliases(sw: list[list[str]]):
+    error_aliases: set[str] = set()
+    all_aliases: list[str] = []
+    for item in sw:
+        if len(item) == 2 or item[2] != '=':
+            continue
+        all_aliases.append(item[1])
+    for item in sw:
+        if len(item) > 2:
+            continue 
+        for elem in item:
+            if elem in all_aliases:
+                error_aliases.add(elem)
+    return error_aliases 
+
 if __name__ == "__main__":
     sw_file = 'res/data.js' if len(sys.argv) < 2 else sys.argv[1]
     sf_file = 'res/oracle-cards.json' if len(sys.argv) < 3 else sys.argv[2]
@@ -82,7 +138,7 @@ if __name__ == "__main__":
     vanilla = json.load(open(vanilla_file))
     sw = parse_sw(sw_file)
     filtered_sw = []
-    lastItem = []
+    lastItem: list[str] = []
     filtered_items = []
     for item in sw:
         for i in range(len(item)):
@@ -99,24 +155,27 @@ if __name__ == "__main__":
 
     sf = parse_sf(sf_file)
     official_names = {obj["name"] : obj for obj in sf if is_real_card(obj)}
-    sw_names = set()
+    raw_sw_names = set()
     for elem in sw:
         try:
-            sw_names.add(elem[0])
-            sw_names.add(elem[1])
+            raw_sw_names.add(elem[0])
+            raw_sw_names.add(elem[1])
         except IndexError as e:
             print(elem)
             raise e
-
-    sw_names = sw_names.union(get_text_names())
-    error_names = []
-    ph_names = []
+    sw_names = raw_sw_names.union(get_text_names())
+    error_names: list[str] = []
+    ph_names: list[str] = []
     for name in sw_names - set(official_names.keys()):
         (ph_names if is_placeholder(name) else error_names).append(name)
-    sq_names = {name for name, obj in official_names.items() if name not in sw_names and search_query(obj)}
     non_sw_names = {name for name, obj in official_names.items() if name not in sw_names}
-    sw_names = sw_names.union(sq_names)
-    if len(error_names) > 0:
+    sw.sort()
+    sw = augment_rules(sw, sw_names, vanilla)
+    error_aliases = get_error_aliases(sw)
+    if len(error_aliases) > 0:
+        print("The Following are used as aliases and also first class names:")
+        print('\n'.join(error_aliases))
+    elif len(error_names) > 0:
         print("The Following are not actual mtg card names:")
         print('\n'.join(error_names))
     else:
@@ -124,16 +183,10 @@ if __name__ == "__main__":
             outf.write('export const all_cards = \n')
             filtered_names = {name: simplify_obj(obj) for name,obj in official_names.items() if name in sw_names}
             json.dump(filtered_names, outf)
-        with open('res/unmatched-search.js', "w+") as outf:
-            outf.write('export const pageSource = `\n<h1>Search Query Cards</h1>\n<ul>\n')
-            for name in sq_names:
-                outf.write(f"<li>[[{name}]]</li>\n")
-            outf.write("</ul>`;\n")
         with open('res/filtered-oracle-unmatched.js', "w+") as outf:
             outf.write('export const all_cards = \n')
             filtered_names = {name: simplify_obj(obj) for name,obj in official_names.items() if name in non_sw_names}
             json.dump(filtered_names, outf)
-        sw.sort(key=lambda x: x[0]+x[1])
         with open('res/data.js', "w+") as outf:
             outf.write('export const all_relations = [\n')
             first = True

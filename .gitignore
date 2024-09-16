@@ -3,6 +3,6 @@ res/oracle-cards.json
 res/filtered-oracle.js
 build/*
 res/unmatched-*
-res/*.svg
+*.svg
 src/Purchase*
 res/filtered-oracle-unmatched.js
