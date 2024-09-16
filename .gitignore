@@ -4,5 +4,6 @@ res/filtered-oracle.js
 build/*
 res/unmatched-*
 *.svg
+*.pyc
 src/Purchase*
 res/filtered-oracle-unmatched.js

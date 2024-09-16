@@ -5,6 +5,7 @@
 This repository contains the code, data, and tools for recording an enumeration of Magic: the Gethering
 card relationships, in particular which cards are "strictly worse" than others.
 
+The site is live at [mtg.blue](http://mtg.blue)
 ## Use
 
 If attempting to run this directly, rather than accessing a hosted version online, the key components are:
