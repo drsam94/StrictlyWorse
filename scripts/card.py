@@ -30,7 +30,7 @@ class Compare(Enum):
 
 # TODO: use attrs? might make it harder for others to use
 class CardDesc:
-    positive_kw = ["Trample", "Flying", "Lifelink", "Haste", "Reach", "Vigilance", "Deathtouch"]
+    positive_kw = ["Trample", "Flying", "Lifelink", "Haste", "Reach", "Vigilance", "Deathtouch", "Menace"]
     two_word_positive_kw = ["Add", "First"]
     two_word_negative_kw = ["Can't"]
     def __init__(self, placeholder_name: str):

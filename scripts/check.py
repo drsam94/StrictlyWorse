@@ -56,6 +56,8 @@ def is_real_card(obj):
         return False 
     if 'Token' in obj['type_line'] or obj['digital'] == True:
         return False
+    if 'Scheme' in obj['type_line']:
+        return False
     return True 
 
 
@@ -66,8 +68,8 @@ def augment_rules(sw, sw_names, vanilla):
     for name in sw_names:
         if is_placeholder(name):
             all_placeholders.add(name)
-        if name in invert_vanilla:
-            all_placeholders.add(invert_vanilla[name])
+    for name in invert_vanilla:
+        all_placeholders.add(invert_vanilla[name])
   
     placeholder_descs = [CardDesc(desc) for desc in all_placeholders if all(kw not in desc for kw in ["MORPH", "Instant"])]
     total_descs = len(placeholder_descs)
@@ -91,7 +93,7 @@ def augment_rules(sw, sw_names, vanilla):
                 if is_name_in(card, rhs, max(min_level - 1, 0)):
                     return True 
             return False
-        return is_name_in(rel_tree[sugg[0]], sugg[1], min_level)
+        return sugg[0] in rel_tree and is_name_in(rel_tree[sugg[0]], sugg[1], min_level)
 
     def print_item(item: tuple[str, str]):
         return f'["{item[0]}", "{item[1]}"]'
@@ -187,6 +189,7 @@ if __name__ == "__main__":
             outf.write('export const all_cards = \n')
             filtered_names = {name: simplify_obj(obj) for name,obj in official_names.items() if name in non_sw_names}
             json.dump(filtered_names, outf)
+        all_data_items = set()
         with open('res/data.js', "w+") as outf:
             outf.write('export const all_relations = [\n')
             first = True
@@ -194,6 +197,24 @@ if __name__ == "__main__":
                 if not first: outf.write(",\n")
                 json.dump(item, outf)
                 first = False
+                all_data_items.add(item[0])
+                all_data_items.add(item[1])
             outf.write("\n];")
-            print(f"Relation Count: {len(sw)}")
+        all_data_list = list(all_data_items)
+        index_map = {}
+        index = 0
+        for item in all_data_list:
+            index_map[item] = index
+            index += 1
+        with open('res/compressed_data.js', "w+") as outf:
+            outf.write(f'export const all_names = {str(all_data_list)};\n')
+            outf.write(f'export const all_relations = [\n')
+            first = True
+            for item in sw:
+                if not first: outf.write(",")
+                first = False 
+                outf.write(f"[{index_map[item[0]]},{index_map[item[1]]}{',=' if len(item) == 3 else ''}]")
+            outf.write(";\n")
+            
+        print(f"Relation Count: {len(sw)}")
         print("All Good! Exported Files")

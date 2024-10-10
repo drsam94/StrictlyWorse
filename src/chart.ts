@@ -2,9 +2,9 @@
 import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
 import { CARD_HEIGHT, CARD_WIDTH } from './hover.js'
 import { getImageURL } from './image_url.js'
-import { oracleData } from './oracle.js'
+import { Oracle } from './oracle.js'
 
-export function makeChart(data: any, rootName: string, startExpanded: boolean, fontSize: number): Node {
+export function makeChart(data: any, rootName: string, startExpanded: boolean, fontSize: number, oracleData: Oracle): Node {
   data["name"] = rootName;
   // Specify the charts’ dimensions. The height is variable, depending on the layout.
   const width = 1300;

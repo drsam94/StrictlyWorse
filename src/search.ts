@@ -9,6 +9,7 @@ enum SearchKey {
   Type,
   Power,
   Toughness,
+  Date,
   Error
 };
 
@@ -91,12 +92,27 @@ class SearchComponent {
     // Special case of "M" not supported here
     return new Set(value.toUpperCase().split(""));
   }
+  /// Interpret a date YYYY[-MM[-DD]] as a integral months since 0 AD
+  /// and a fractional component for date
+  private static parseTimeValue(value: string): number {
+    const splits = value.split("-");
+    let ret = +splits[0] * 12;
+    if (splits.length > 1) {
+      ret += +splits[1] - 1;
+    }
+    if (splits.length > 2) {
+      ret += .01 * +splits[2];
+    }
+    return ret;
+  }
   private static extractValueFromComponent(value: string, key: SearchKey): SearchValue {
     switch (key) {
       case SearchKey.CMC:
       case SearchKey.Power:
       case SearchKey.Toughness:
         return +value;
+      case SearchKey.Date:
+        return SearchComponent.parseTimeValue(value);
       case SearchKey.Color:
         return SearchComponent.parseColorValue(value);
       case SearchKey.Type:
@@ -116,6 +132,8 @@ class SearchComponent {
         return card.pow;
       case SearchKey.Toughness:
         return card.tou;
+      case SearchKey.Date:
+        return SearchComponent.parseTimeValue(card.release);
     }
     return 0;
   }
@@ -162,6 +180,9 @@ class SearchComponent {
     }
     if (["tou", "toughness"].indexOf(key) != -1) {
       return SearchKey.Toughness;
+    }
+    if (["date", "year"].indexOf(key) != -1) {
+      return SearchKey.Date;
     }
     return SearchKey.Error;
   }

@@ -1,11 +1,4 @@
 // Author: Sam Donow, 2024
-// NB: Some really annoying stuff with typescript
-// So apparently these sorts of imports CANNOT be combine with typescript imports
-// e.g /// reference style
-// So options are to put additional code in the same file or write it untyped
-// wtf is this fucking piece of shit system
-// At first the assumption was to put the json in json files -- already had to convert to json anyway
-// so probably long term should go completely to ts files and renew the reference style
 
 
 // @ts-ignore
@@ -26,21 +19,21 @@ import { autocomplete } from './autocomplete.js';
 import { Direction, DirStats, Card } from './card.js';
 import { addUnion } from './set.js';
 import { SearchMatcher } from './search.js';
-import { oracleData, oracleDataUnmapped } from './oracle.js';
+import { oracleData, oracleDataUnmapped, Oracle } from './oracle.js';
 import { TableElem, renderCost } from './table_elem.js';
 import { Timer } from './timer.js';
 import { getImageURL } from './image_url.js';
 import { makeChart } from './chart.js';
 import { makeDateHistogram, DateHistogramEntry } from './histogram.js';
 
-function initNode(dag: any, key: string): Card {
+function initNode(dag: Record<string, Card>, key: string): Card {
   if (!(key in dag)) {
     dag[key] = new Card(key);
   }
   return dag[key];
 }
 
-function processData(dag: Record<string, Card>, inData: any) {
+function processData(dag: Record<string, Card>, inData: Array<Array<string>>) {
   for (const elem of inData) {
     const worse = elem[0];
     const better = elem[1];
@@ -92,22 +85,30 @@ function computeStats(dag: Record<string, Card>): void {
     computeStatsRecursive(card, Direction.Better);
   }
 }
-function recurAddChildren(rootNode: any, childList: Array<Card>, dir: Direction) {
+// { name: rootNode.name, "children": [], value: rootNode.stats(dir).total, depth: rootNode.stats(dir).degree };
+class TreeNode {
+  public readonly name: string;
+  public children: Array<TreeNode>;
+  public readonly value: number;
+  public readonly depth: number;
+
+  public constructor(sourceNode: Card, dir: Direction) {
+    this.name = sourceNode.name;
+    this.children = [];
+    const stats = sourceNode.stats(dir)
+    this.value = stats.total;
+    this.depth = stats.degree
+  }
+};
+
+function recurAddChildren(rootNode: TreeNode, childList: Array<Card>, dir: Direction) {
   for (const child of childList) {
-    const obj = {
-      name: child.name,
-      children: [],
-      value: child.stats(dir).total,
-      depth: child.stats(dir).degree,
-    };
+    const obj = new TreeNode(child, dir);
     let newRoot = obj;
     if (!child.isPlaceholder()) {
       let childAlreadyExists = false;
       for (const chi of rootNode.children) {
         if (chi.name === child.name) {
-          if (child.name == "Goblin Piker") {
-            console.log(rootNode, childList, chi);
-          }
           childAlreadyExists = true;
           break;
         }
@@ -122,7 +123,7 @@ function recurAddChildren(rootNode: any, childList: Array<Card>, dir: Direction)
   }
 }
 
-function recurCleanTree(rootNode: any, dir: Direction) {
+function recurCleanTree(rootNode: TreeNode, dir: Direction) {
   // This cleans the tree to remove instances of
   //
   //    B
@@ -143,24 +144,19 @@ function recurCleanTree(rootNode: any, dir: Direction) {
   for (const child of rootNode.children) {
     if (!allDeeper.has(child.name)) {
       filteredChildren.push(child);
-    } else {
-      console.log("Culling redundant child", child.name);
     }
     recurCleanTree(child, dir);
   }
-  delete rootNode.children;
   rootNode.children = filteredChildren;
 }
 function makeTree(rootNode: Card, dir: Direction) {
-  const data = { name: rootNode.name, "children": [], value: rootNode.stats(dir).total, depth: rootNode.stats(dir).degree };
+  const data = new TreeNode(rootNode, dir);
   recurAddChildren(data, rootNode.stats(dir).cards, dir);
 
   recurCleanTree(data, dir);
 
   return data;
 }
-
-
 
 const maximalCards: Record<Direction, Array<Card>> = [[], [], []];
 function initializeMaximalCards(dag: Record<string, Card>, toInit: Array<Card>, dir: Direction) {
@@ -273,9 +269,9 @@ class TableMaker {
   private dir: Direction;
   private flags: FlagsState;
   private unmapped: boolean;
-  private oracle: any;
+  private oracle: Oracle;
 
-  constructor(cards: Array<Card>, oData: any, dir: Direction) {
+  constructor(cards: Array<Card>, oData: Oracle, dir: Direction) {
     this.swData = [];
     this.oracle = oData;
     for (const card of cards) {
@@ -422,13 +418,13 @@ class TableMaker {
 }
 
 function extractDates<T>(collection: Iterable<T>, extract?: (arg0: T) => string): Array<DateHistogramEntry> {
-  const doExtract = extract ?? ((x: string) => x);
+  const doExtract = extract ?? ((x: T) => x as string);
 
   const oracle = oracleData.all_cards;
 
   const ret: Array<DateHistogramEntry> = [];
   for (const preName of collection) {
-    const name = doExtract(preName as any);
+    const name = doExtract(preName as T);
     const data = oracle[name];
     if (data === undefined) {
       continue;
@@ -460,7 +456,7 @@ function doDisplayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: s
 
     if (card.stats(dir).cards.length > 0) {
       const tree = makeTree(card, dir);
-      const chart = makeChart(tree, card.name, true, fontSize);
+      const chart = makeChart(tree, card.name, true, fontSize, oracleData);
       const label = document.createElement("p");
       let nameStr = "[[" + name + "]]";
       if (card.name !== name) {
@@ -479,7 +475,7 @@ function doDisplayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: s
         fontInput.value = "" + fontSize;
         fontInput.style.display = "inline-block";
         fontInput.style.width = "40px";
-        fontInput.onkeydown = (event: any) => {
+        fontInput.onkeydown = (event: KeyboardEvent) => {
           if (event.key != "Enter") {
             return;
           }
@@ -575,7 +571,7 @@ function doRenderSearch(outdiv: HTMLElement, dag: Record<string, Card>, query: s
   outdiv.appendChild(inputElem);
   const tableDiv = document.createElement("div");
   outdiv.appendChild(tableDiv);
-  inputElem.addEventListener("keydown", (event: any) => {
+  inputElem.addEventListener("keydown", (event: KeyboardEvent) => {
     if (event.key != "Enter") {
       return;
     }
@@ -856,6 +852,9 @@ function makeHeaderButtons(headerDiv: HTMLDivElement, outdiv: HTMLDivElement): v
   makeButton("#ABCDEF", "Stats", () => { window.location.hash = "page-stats"; });
   // TODO Check List page
 }
+interface PseudoKeyboardEvent {
+  key: string
+};
 
 function makeSearchBar(dag: Record<string, Card>): [HTMLDivElement, HTMLInputElement] {
   const wrapperDiv = document.createElement("div");
@@ -872,7 +871,7 @@ function makeSearchBar(dag: Record<string, Card>): [HTMLDivElement, HTMLInputEle
   inputElem.style.padding = "10px";
   inputElem.style.fontSize = "16px";
   inputElem.style.width = "100%";
-  const cb = (event: any) => {
+  const cb = (event: PseudoKeyboardEvent) => {
     if (event.key != "Enter") {
       return;
     }
