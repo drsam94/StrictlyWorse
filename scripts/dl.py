@@ -26,7 +26,8 @@ def main():
     uri = oracle["download_uri"]
     file_request = requests.get(uri)
     kept_entries = {}
-    for entry in file_request.json():
+    all_json = file_request.json()
+    for entry in all_json:
         name = entry["name"]
         if ("layout" in entry and "token" in entry["layout"]):
             continue
@@ -35,7 +36,8 @@ def main():
     
     with open('res/oracle-cards.json', "w+") as f:
         json.dump(list(kept_entries.values()), f)
-
+    with open('res/oracle-allcards.json', "w+") as f:
+        json.dump(all_json, f)
     sym = requests.get('https://api.scryfall.com/symbology')
     j = sym.json()
     for datum in j['data']:

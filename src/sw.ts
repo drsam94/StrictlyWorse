@@ -19,7 +19,7 @@ import { autocomplete } from './autocomplete.js';
 import { Direction, DirStats, Card } from './card.js';
 import { addUnion } from './set.js';
 import { SearchMatcher } from './search.js';
-import { oracleData, oracleDataUnmapped, Oracle } from './oracle.js';
+import { oracleData, oracleDataUnmapped, Oracle, OracleItem } from './oracle.js';
 import { TableElem, renderCost } from './table_elem.js';
 import { Timer } from './timer.js';
 import { getImageURL } from './image_url.js';
@@ -196,6 +196,7 @@ enum TableColumn {
   Cost,
   Degree,
   TotalWorse,
+  Category,
 }
 
 class FlagsState {
@@ -268,14 +269,11 @@ class TableMaker {
   private swData: Array<TableElem>;
   private dir: Direction;
   private flags: FlagsState;
-  private unmapped: boolean;
-  private oracle: Oracle;
 
-  constructor(cards: Array<Card>, oData: Oracle, dir: Direction) {
+  constructor(cards: Array<Card>, dir: Direction) {
     this.swData = [];
-    this.oracle = oData;
     for (const card of cards) {
-      const orcle = this.oracle.all_cards[card.name];
+      const orcle = getOracleData(card.name);
       if (!orcle) {
         continue;
       }
@@ -284,7 +282,6 @@ class TableMaker {
     }
     this.dir = dir;
     this.flags = new FlagsState((p: HTMLElement) => { this.renderTable(p); });
-    this.unmapped = oData != oracleData;
   }
 
   private makeClickSort(elem: HTMLElement, parent: HTMLElement, column: TableColumn) {
@@ -311,11 +308,13 @@ class TableMaker {
     if (this.dir != Direction.None) {
       this.makeClickSort(makeElement("th", hdrRow, "Degree"), parent, TableColumn.Degree);
       this.makeClickSort(makeElement("th", hdrRow, "Total " + (this.dir == Direction.Worse ? "Worse" : "Better")), parent, TableColumn.TotalWorse);
+    } else {
+      this.makeClickSort(makeElement("th", hdrRow, "Category"), parent, TableColumn.Category);
     }
 
     // Making a template row and cloning it substantially speeds up DOM creation here
     // (something like 5-10x)
-    const numColumns = 6 - 2 * +(this.dir == Direction.None);
+    const numColumns = 6 - +(this.dir == Direction.None);
     const templateRow = makeElement("tr");
     for (let i = 0; i < numColumns; ++i) {
       makeElement("td", templateRow);
@@ -328,8 +327,10 @@ class TableMaker {
       const children = elemRow.children;
       const nameRow = children[0] as HTMLElement;
       nameRow.textContent = card.name;
-      imbueHoverImage(nameRow, getImageURL(card.name, this.oracle));
-      if (!this.unmapped) {
+
+      const category = getCategory(card.name);
+      imbueHoverImage(nameRow, getImageURL(card.name, getOracle(category)));
+      if (category != CardCategory.Unmapped) {
         nameRow.onclick = () => {
           displayCharts(card.name);
         }
@@ -340,6 +341,15 @@ class TableMaker {
       if (this.dir != Direction.None) {
         children[4].textContent = card.degree + "";
         children[5].textContent = card.totalWorse + "";
+      } else {
+        children[4].textContent = CardCategory[category];
+        elemRow.style.backgroundColor = {
+          [CardCategory.Best]: "#2A9D8F",
+          [CardCategory.Worst]: "#E76F51",
+          [CardCategory.Mapped]: "#F4A261",
+          [CardCategory.Unmapped]: "#E9C46A",
+          [CardCategory.Unknown]: "#2646F3",
+        }[category];
       }
       table.appendChild(elemRow);
     }
@@ -408,6 +418,7 @@ class TableMaker {
           return (a: TableElem, b: TableElem) => {
             return (a.totalWorse - b.totalWorse) * (this.increasing ? 1 : -1);
           }
+        // TODO: sort by category
         default:
           return costCompare;
       }
@@ -516,10 +527,11 @@ function displayTextWithCardLinks(elem: HTMLElement, text: string, setHashTo?: s
 const tableMakers: Record<Direction, TableMaker | undefined> = [undefined, undefined, undefined];
 const doRenderTable = (outdiv: HTMLElement, dag: Record<string, Card>, dir: Direction) => {
   initializeMaximalCards(dag, maximalCards[dir], dir);
+  initializeTotalSets(dag);
 
   const timer = new Timer();
   if (tableMakers[dir] === undefined) {
-    tableMakers[dir] = new TableMaker(maximalCards[dir], oracleData, dir);
+    tableMakers[dir] = new TableMaker(maximalCards[dir], dir);
   }
 
   tableMakers[dir]?.renderTable(outdiv);
@@ -533,6 +545,63 @@ function renderTable(dir: Direction) {
 let globalSuppressOnHashChange = false;
 function renderSearch(query: string) {
   window.location.hash = "search-" + query;
+}
+function renderChecker() {
+  window.location.hash = "page-checker"
+}
+
+function doRenderCheck(outdiv: HTMLElement, dag: Record<string, Card>) {
+  initializeTotalSets(dag);
+  outdiv.replaceChildren("");
+  const label = document.createElement("p");
+  label.textContent = "Enter card names, one per line";
+  const textInput = document.createElement("textarea");
+  textInput.rows = 25;
+  textInput.cols = 80;
+  textInput.style.display = "inline-block";
+  textInput.style.width = "100%";
+  outdiv.appendChild(label);
+
+  outdiv.appendChild(textInput);
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.style.border = "2px solid black";
+  button.style.textAlign = "center";
+  button.style.cursor = "pointer";
+  button.style.display = "inline-block";
+  button.innerText = "Generate Table";
+  outdiv.appendChild(button);
+  const errordiv = document.createElement("div");
+  const tablediv = document.createElement("div");
+  outdiv.appendChild(errordiv);
+  outdiv.appendChild(tablediv);
+  button.onclick = () => {
+    displayCheck(textInput.value, errordiv, tablediv, dag)
+  }
+}
+
+function displayCheck(inputText: string, errordiv: HTMLDivElement, tablediv: HTMLDivElement, dag: Record<string, Card>) {
+    const lines = inputText.split('\n');
+    const matchedCards: Array<Card> = [];
+    const errorCards: Array<string> = [];
+    for (let line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.indexOf('#') >= 0) {
+        continue;
+      }
+      if (trimmed.length == 0) {
+        continue;
+      }
+      if (trimmed in dag) {
+        matchedCards.push(dag[trimmed]);
+      } else {
+        errorCards.push(trimmed);
+      }
+    }
+    const tableMaker = new TableMaker(matchedCards, Direction.None);
+    
+    tableMaker.renderTable(tablediv);
 }
 
 function doRenderSearch(outdiv: HTMLElement, dag: Record<string, Card>, query: string) {
@@ -585,8 +654,19 @@ function doRenderSearch(outdiv: HTMLElement, dag: Record<string, Card>, query: s
   }
 }
 
+enum CardCategory {
+  Worst,
+  Best,
+  Mapped,
+  Unmapped, 
+  Unknown
+};
 const total_sets: Array<Array<Card>> = new Array(4);
+const total_map: Record<string, CardCategory> = {};
 function initializeTotalSets(dag: Record<string, Card>) {
+  if (total_sets[0] !== undefined) {
+    return;
+  }
   for (const dir of [Direction.Better, Direction.Worse]) {
     initializeMaximalCards(dag, maximalCards[dir], dir);
   }
@@ -601,6 +681,29 @@ function initializeTotalSets(dag: Record<string, Card>) {
     unmappedCards[i] = new Card(unmappedOracle[i]);
   }
   total_sets[3] = unmappedCards;
+  // do better enum stuff
+  const categories = [CardCategory.Best, CardCategory.Worst, CardCategory.Mapped, CardCategory.Unmapped];
+  for (const i of [0, 1, 3]) {
+    for (const card of total_sets[i]) {
+      total_map[card.name] = categories[i];
+    }
+  }
+  for (const card of total_sets[2]) {
+    if (!(card.name in total_map)) {
+      total_map[card.name] = CardCategory.Mapped;
+    }
+  }
+}
+
+function getCategory(name: string): CardCategory {
+  return total_map[name] ?? CardCategory.Unknown;
+}
+function getOracle(cat: CardCategory): Oracle {
+  return cat == CardCategory.Unmapped ? oracleDataUnmapped : oracleData;
+}
+function getOracleData(name: string): OracleItem {
+  const cat = getCategory(name);
+  return getOracle(cat).all_cards[name];
 }
 
 function displaySearch(outdiv: HTMLElement, dag: Record<string, Card>, searchQuery: string, poolIndex: number) {
@@ -616,7 +719,7 @@ function displaySearch(outdiv: HTMLElement, dag: Record<string, Card>, searchQue
     }
   }
 
-  const tableMaker = new TableMaker(searchResults, oracle, [Direction.Better, Direction.Worse][poolIndex] ?? Direction.None);
+  const tableMaker = new TableMaker(searchResults, [Direction.Better, Direction.Worse][poolIndex] ?? Direction.None);
 
   tableMaker.renderTable(outdiv);
 }
@@ -804,6 +907,8 @@ function initializePageFromHash(outdiv: HTMLDivElement, searchBar: HTMLDivElemen
     searchBar.style.visibility = "hidden";
     if (val == "stats") {
       doRenderStats(outdiv, dag);
+    } else if (val === "checker") {
+      doRenderCheck(outdiv, dag);
     } else {
       const pageSource: string = val == "philosophy" ? philosophy.pageSource : help.pageSource;
       displayTextWithCardLinks(outdiv, pageSource, "");
@@ -811,7 +916,7 @@ function initializePageFromHash(outdiv: HTMLDivElement, searchBar: HTMLDivElemen
   } else if (key === "search") {
     searchBar.style.visibility = "hidden";
     doRenderSearch(outdiv, dag, val);
-  } else {
+  } else { // if (key === "home") but also want this as the default
     searchBar.style.visibility = "hidden";
     doRenderHome(outdiv, dag);
   }
@@ -850,6 +955,7 @@ function makeHeaderButtons(headerDiv: HTMLDivElement, outdiv: HTMLDivElement): v
   makeButton("#ABCDEF", "All Worst Cards", () => { renderTable(Direction.Worse); });
   makeButton("#ABCDEF", "All Best Cards", () => { renderTable(Direction.Better); })
   makeButton("#ABCDEF", "Stats", () => { window.location.hash = "page-stats"; });
+  makeButton("#ABCDEF", "Check Cards", () => { renderChecker(); });
   // TODO Check List page
 }
 interface PseudoKeyboardEvent {

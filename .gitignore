@@ -1,5 +1,7 @@
 
 res/oracle-cards.json
+res/oracle-allcards.json
+res/compressed_data.js
 res/filtered-oracle.js
 build/*
 res/unmatched-*

@@ -56,18 +56,25 @@ class SearchComponent {
     [SearchOperator.EX]: (x, y) => (x == y)
   }
   private static readonly setFuncs: Partial<Record<SearchOperator, (x: Set<string>, y: Set<string>) => boolean>> = {
-    [SearchOperator.EQ]: (x, y) => (isSetEqual(x, y)),
-    [SearchOperator.LT]: (x, y) => (isProperSubsetOf(x, y)),
-    [SearchOperator.LE]: (x, y) => (isSubsetOf(x, y)),
-    [SearchOperator.EX]: (x, y) => (isSetEqual(x, y))
+    [SearchOperator.EQ]: isSetEqual,
+    [SearchOperator.LT]: isProperSubsetOf,
+    [SearchOperator.LE]: isSubsetOf,
+    [SearchOperator.EX]: isSetEqual,
+  }
+  private static readonly typeFuncs: Partial<Record<SearchOperator, (x: Set<string>, y: Set<string>) => boolean>> = {
+    [SearchOperator.EQ]: (x, y) => isSubsetOf(y, x),
+    [SearchOperator.LT]: isProperSubsetOf,
+    [SearchOperator.LE]: isSubsetOf,
+    [SearchOperator.EX]: isSetEqual,
   }
   private static compareValues(lhs: SearchValue, rhs: SearchValue, key: SearchKey, op: SearchOperator): boolean {
     type Funcs = Record<SearchOperator, (x: SearchValue, y: SearchValue) => boolean>;
     let funcs = SearchComponent.numberFuncs as Funcs;
     switch (key) {
       case SearchKey.Color:
-      case SearchKey.Type:
         funcs = SearchComponent.setFuncs as Funcs;
+      case SearchKey.Type:
+        funcs = SearchComponent.typeFuncs as Funcs;
     }
     return funcs[op](lhs, rhs);
   }

@@ -36,27 +36,38 @@ def any_prop(card, key: str, val: str) -> bool:
     return False
 
 def simplify_obj(card):
-    preserved_keys = ["card_faces", "image_uris", "colors", "mana_cost", "cmc", "type_line", "power", "toughness", "released_at"]
-    ret = {key: value for key, value in card.items() if key in preserved_keys}
-    if "image_uris" in ret:
-        normal = ret["image_uris"]["normal"]
-        ret["image_uris"] = {"normal": normal}
-    if "card_faces" in ret:
-        faces = []
-        for face in ret["card_faces"]:
+    preserved_keys = ["colors", "mana_cost", "cmc", "type_line", "power", "toughness", "released_at"]
+    ret = []
+    for key in preserved_keys:
+        if key in card:
+            ret.append(card[key])
+        elif "card_faces" not in card:
+            ret.append("")
+        elif key == "mana_cost":
+            cost = card["card_faces"][0]["mana_cost"]
+            c2 = card["card_faces"][1]["mana_cost"]
+            if c2:
+                cost += "//" + c2
+            ret.append(cost)
+        else:
+            ret.append(card["card_faces"][0].get(key, ""))
+    if "image_uris" in card:
+        normal = card["image_uris"]["normal"]
+    if card.get("card_faces", []):
+        for face in card["card_faces"]:
             if "image_uris" in face:
                 normal = face["image_uris"]["normal"]
-                face["image_uris"] = {"normal": normal}
-                faces.append(face)
-        ret["card_faces"] = faces
+                break
+    ret.append(normal[len("https://cards.scryfall.io/normal/"):])
     return ret 
 
 def is_real_card(obj):
     if obj['layout'] in ['token', 'reversible_card', "art_series"]:
         return False 
-    if 'Token' in obj['type_line'] or obj['digital'] == True:
+    if obj['digital'] == True or obj["set_name"] == "Unknown Event" or "alchemy" in obj.get("promo_types", []):
         return False
-    if 'Scheme' in obj['type_line']:
+    weird_types = ['Token', 'Scheme', 'Emblem', 'Plane ', 'Conspiracy', 'Card', 'Phenomenon']
+    if any(wt in obj['type_line'] for wt in weird_types):
         return False
     return True 
 
@@ -184,11 +195,11 @@ if __name__ == "__main__":
         with open('res/filtered-oracle.js', 'w+') as outf:
             outf.write('export const all_cards = \n')
             filtered_names = {name: simplify_obj(obj) for name,obj in official_names.items() if name in sw_names}
-            json.dump(filtered_names, outf)
+            json.dump(filtered_names, outf, separators=(',', ':'))
         with open('res/filtered-oracle-unmatched.js', "w+") as outf:
             outf.write('export const all_cards = \n')
             filtered_names = {name: simplify_obj(obj) for name,obj in official_names.items() if name in non_sw_names}
-            json.dump(filtered_names, outf)
+            json.dump(filtered_names, outf, separators=(',', ':'))
         all_data_items = set()
         with open('res/data.js', "w+") as outf:
             outf.write('export const all_relations = [\n')

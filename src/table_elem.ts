@@ -2,7 +2,7 @@ import { Card, Direction } from './card.js'
 import { OracleItem } from './oracle.js'
 
 export const getPTString = (oracle: OracleItem): string => {
-  if (oracle.power === undefined) {
+  if (oracle.power === "" || oracle.power === undefined) {
     return "";
   }
   return oracle.power + " / " + oracle.toughness;
@@ -52,16 +52,7 @@ export class TableElem {
     const oDir = dir == Direction.Better ? Direction.Worse : Direction.Better;
     this.name = card.name;
     this.colors = oracle.colors ?? [];
-    let cost = "";
-    if (oracle.mana_cost) {
-      cost = oracle.mana_cost;
-    } else if (oracle.card_faces) {
-      cost = oracle.card_faces[0].mana_cost;
-      if (oracle.card_faces[1].mana_cost) {
-        cost += "//" + oracle.card_faces[1].mana_cost;
-      }
-    }
-    this.cost = renderCost(cost);
+    this.cost = renderCost(oracle.mana_cost ?? "");
     this.cmc = oracle.cmc;
     this.type = oracle.type_line;
     const emDash = '—';
