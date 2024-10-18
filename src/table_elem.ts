@@ -1,6 +1,5 @@
-import { Card, Direction } from './card.js'
+import { Card, Direction, CardCategory } from './card.js'
 import { OracleItem } from './oracle.js'
-
 export const getPTString = (oracle: OracleItem): string => {
   if (oracle.power === "" || oracle.power === undefined) {
     return "";
@@ -47,8 +46,9 @@ export class TableElem {
   public degree: number;
   public totalWorse: number;
   public release: string;
+  public category: CardCategory;
 
-  constructor(card: Card, oracle: OracleItem, dir: Direction) {
+  constructor(card: Card, oracle: OracleItem, cat: CardCategory, dir: Direction) {
     const oDir = dir == Direction.Better ? Direction.Worse : Direction.Better;
     this.name = card.name;
     this.colors = oracle.colors ?? [];
@@ -67,5 +67,6 @@ export class TableElem {
     this.degree = card.stats(oDir).degree;
     this.totalWorse = card.stats(oDir).total;
     this.release = oracle.released_at;
+    this.category = cat;
   }
 }

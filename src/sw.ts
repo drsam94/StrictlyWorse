@@ -16,15 +16,17 @@ import * as help from '../res/help.js';
 // from the compiled form of this file to the compiled form of the imported
 import { CARD_HEIGHT, imbueHoverImage } from './hover.js';
 import { autocomplete } from './autocomplete.js';
-import { Direction, DirStats, Card } from './card.js';
+import { Direction, DirStats, Card, CardCategory } from './card.js';
 import { addUnion } from './set.js';
 import { SearchMatcher } from './search.js';
-import { oracleData, oracleDataUnmapped, Oracle, OracleItem } from './oracle.js';
-import { TableElem, renderCost } from './table_elem.js';
+import { oracleData, oracleDataUnmapped } from './oracle.js';
+import { TableMaker } from './table_maker.js';
 import { Timer } from './timer.js';
 import { getImageURL } from './image_url.js';
 import { makeChart } from './chart.js';
 import { makeDateHistogram, DateHistogramEntry } from './histogram.js';
+import { displayCharts, renderChecker, renderSearch, renderTable } from './navigate.js';
+import { initializeTotalSets, getMaximalCards, getTotalSet } from './card_maps.js';
 
 function initNode(dag: Record<string, Card>, key: string): Card {
   if (!(key in dag)) {
@@ -158,276 +160,6 @@ function makeTree(rootNode: Card, dir: Direction) {
   return data;
 }
 
-const maximalCards: Record<Direction, Array<Card>> = [[], [], []];
-function initializeMaximalCards(dag: Record<string, Card>, toInit: Array<Card>, dir: Direction) {
-  if (toInit.length == 0) {
-    for (const [cardName, card] of Object.entries(dag)) {
-      if (card.name !== cardName) {
-        // Skip alias nodes
-        continue;
-      }
-      const stats = card.stats(dir);
-      const ostats = card.stats(dir == Direction.Better ? Direction.Worse : Direction.Better);
-      if (dir === Direction.Better && ostats.degree === 1 && ostats.total === 1) {
-        // skip 1-1 better cards
-        continue;
-      }
-      if (stats.cards.length == 0 && !card.isPlaceholder()) {
-        toInit.push(card);
-      }
-    }
-  }
-}
-
-function makeElement(type: string, parent?: Node, text?: string): HTMLElement {
-  const elem = document.createElement(type);
-  elem.className = "mytable";
-  if (text) {
-    elem.textContent = text;
-  }
-  if (parent) {
-    parent.appendChild(elem);
-  }
-  return elem;
-};
-
-enum TableColumn {
-  Name,
-  Cost,
-  Degree,
-  TotalWorse,
-  Category,
-}
-
-class FlagsState {
-  private flags: Array<string> = []
-  private flagValues: Array<boolean> = []
-  private onChangeCB: (p: HTMLElement) => void;
-  private parent: HTMLElement | null;
-  private colors = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}"];
-  private types = ["Creature", "Instant", "Sorcery", "Enchantment", "Artifact", "Land"];
-
-  constructor(ocb: (p: HTMLElement) => void = (x) => { }) {
-    this.flags = [...this.colors, ...this.types];
-    this.flagValues = new Array(this.flags.length);
-    this.flagValues.fill(true);
-    this.onChangeCB = ocb;
-    this.parent = null;
-  }
-
-  public render(parent: HTMLElement): HTMLElement {
-    this.parent = parent;
-
-    const flagsDiv = makeElement("div", parent);
-    // For now this is specific to labels that are many symbols
-    for (let i = 0; i < this.flags.length; ++i) {
-      const cbDiv = document.createElement("div");
-      cbDiv.style.display = "inline-block";
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      const capturedI = i;
-      checkbox.onchange = () => {
-        this.flagValues[capturedI] = checkbox.checked;
-        if (this.parent) this.onChangeCB(this.parent);
-      };
-      checkbox.checked = this.flagValues[i];
-      const textLabel = (text: string) => {
-        const rootNode = document.createElement("div");
-        rootNode.style.display = "inline-block";
-        const childNode = document.createElement("p");
-        childNode.innerText = text;
-        rootNode.appendChild(childNode);
-        return rootNode;
-      };
-      const labelMaker = i < 6 ? renderCost : textLabel;
-
-      flagsDiv.appendChild(labelMaker(this.flags[i]));
-      cbDiv.appendChild(checkbox);
-      flagsDiv.appendChild(cbDiv);
-      if (i == 5) {
-        flagsDiv.appendChild(document.createElement("br"));
-      }
-    }
-    return flagsDiv;
-  }
-
-  public getColorFlags(): Array<boolean> {
-    return this.flagValues.slice(0, 6);
-  }
-  public getTypeFlags(): Record<string, boolean> {
-    const ret: Record<string, boolean> = {};
-    for (let i = 0; i < this.flags.length; ++i) {
-      ret[this.flags[i]] = this.flagValues[i];
-    }
-    return ret;
-  }
-}
-
-class TableMaker {
-  private column: TableColumn = TableColumn.Cost;
-  private increasing: boolean = true;
-  private swData: Array<TableElem>;
-  private dir: Direction;
-  private flags: FlagsState;
-
-  constructor(cards: Array<Card>, dir: Direction) {
-    this.swData = [];
-    for (const card of cards) {
-      const orcle = getOracleData(card.name);
-      if (!orcle) {
-        continue;
-      }
-
-      this.swData.push(new TableElem(card, orcle, dir));
-    }
-    this.dir = dir;
-    this.flags = new FlagsState((p: HTMLElement) => { this.renderTable(p); });
-  }
-
-  private makeClickSort(elem: HTMLElement, parent: HTMLElement, column: TableColumn) {
-    elem.onclick = () => {
-      if (column === this.column) {
-        this.increasing = !this.increasing;
-      } else {
-        this.increasing = true;
-        this.column = column;
-      }
-      this.renderTable(parent);
-    }
-  }
-  public renderTable(parent: HTMLElement) {
-    this.cardSort();
-    parent.replaceChildren("");
-    const flagsDiv = this.flags.render(parent);
-    const table = makeElement("table", parent);
-    const hdrRow = makeElement("tr", table);
-    this.makeClickSort(makeElement("th", hdrRow, "Card"), parent, TableColumn.Name);
-    this.makeClickSort(makeElement("th", hdrRow, "Cost"), parent, TableColumn.Cost);
-    makeElement("th", hdrRow, "Type");
-    makeElement("th", hdrRow, "P / T");
-    if (this.dir != Direction.None) {
-      this.makeClickSort(makeElement("th", hdrRow, "Degree"), parent, TableColumn.Degree);
-      this.makeClickSort(makeElement("th", hdrRow, "Total " + (this.dir == Direction.Worse ? "Worse" : "Better")), parent, TableColumn.TotalWorse);
-    } else {
-      this.makeClickSort(makeElement("th", hdrRow, "Category"), parent, TableColumn.Category);
-    }
-
-    // Making a template row and cloning it substantially speeds up DOM creation here
-    // (something like 5-10x)
-    const numColumns = 6 - +(this.dir == Direction.None);
-    const templateRow = makeElement("tr");
-    for (let i = 0; i < numColumns; ++i) {
-      makeElement("td", templateRow);
-    }
-    for (const card of this.swData) {
-      if (!this.passesFilter(card)) {
-        continue;
-      }
-      const elemRow = templateRow.cloneNode(true) as HTMLElement;
-      const children = elemRow.children;
-      const nameRow = children[0] as HTMLElement;
-      nameRow.textContent = card.name;
-
-      const category = getCategory(card.name);
-      imbueHoverImage(nameRow, getImageURL(card.name, getOracle(category)));
-      if (category != CardCategory.Unmapped) {
-        nameRow.onclick = () => {
-          displayCharts(card.name);
-        }
-      }
-      children[1].appendChild(card.cost);
-      children[2].textContent = card.type;
-      children[3].textContent = card.pt;
-      if (this.dir != Direction.None) {
-        children[4].textContent = card.degree + "";
-        children[5].textContent = card.totalWorse + "";
-      } else {
-        children[4].textContent = CardCategory[category];
-        elemRow.style.backgroundColor = {
-          [CardCategory.Best]: "#2A9D8F",
-          [CardCategory.Worst]: "#E76F51",
-          [CardCategory.Mapped]: "#F4A261",
-          [CardCategory.Unmapped]: "#E9C46A",
-          [CardCategory.Unknown]: "#2646F3",
-        }[category];
-      }
-      table.appendChild(elemRow);
-    }
-    parent.appendChild(flagsDiv);
-    parent.appendChild(table);
-  }
-
-  private passesFilter(card: TableElem): boolean {
-    return this.passesColorFilter(card) && this.passesTypeFilter(card);
-  }
-  private passesColorFilter(card: TableElem): boolean {
-    const colors = card.colors ?? [];
-    const includeColors = this.flags.getColorFlags();
-    if (colors.length == 0) {
-      // colorless
-      return includeColors[5];
-    }
-    for (const color of colors) {
-      const idx = "WUBRG".indexOf(color);
-      if (!includeColors[idx]) {
-        return false;
-      }
-    }
-    return true;
-  }
-  private passesTypeFilter(card: TableElem): boolean {
-    const words = card.type.split(" ");
-    const flags = this.flags.getTypeFlags();
-    for (const word of words) {
-      const val = flags[word];
-      if (val === undefined || val === true) {
-        continue;
-      } else {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  private cardSort() {
-    const costCompare = (a: TableElem, b: TableElem) => {
-      // TODO: use faces
-      const colors = (c: TableElem) => c.colors ? c.colors.length : 2;
-      const colorCountDiff = colors(a) - colors(b);
-      if (colorCountDiff != 0) {
-        return colorCountDiff;
-      }
-      const colorToNum = (color: string) => { return "WUBRG".indexOf(color); };
-      if (a.colors && b.colors && a.colors.length == 1) {
-        const colorDiff = colorToNum(a.colors[0]) - colorToNum(b.colors[0]);
-        if (colorDiff != 0) {
-          return colorDiff;
-        }
-      }
-      return (a.cmc - b.cmc) * (this.increasing ? 1 : -1);
-    };
-    const compare = ((column: TableColumn) => {
-      switch (column) {
-        case TableColumn.Cost:
-          return costCompare;
-        case TableColumn.Degree:
-          return (a: TableElem, b: TableElem) => {
-            return (a.degree - b.degree) * (this.increasing ? 1 : -1);
-          }
-        case TableColumn.TotalWorse:
-          return (a: TableElem, b: TableElem) => {
-            return (a.totalWorse - b.totalWorse) * (this.increasing ? 1 : -1);
-          }
-        // TODO: sort by category
-        default:
-          return costCompare;
-      }
-    })(this.column);
-
-    this.swData.sort(compare);
-  }
-}
-
 function extractDates<T>(collection: Iterable<T>, extract?: (arg0: T) => string): Array<DateHistogramEntry> {
   const doExtract = extract ?? ((x: T) => x as string);
 
@@ -446,10 +178,6 @@ function extractDates<T>(collection: Iterable<T>, extract?: (arg0: T) => string)
     }
   }
   return ret;
-}
-
-function displayCharts(name: string): void {
-  window.location.hash = "card-" + name;
 }
 
 function doDisplayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: string, fontSize = 14): void {
@@ -522,33 +250,20 @@ function displayTextWithCardLinks(elem: HTMLElement, text: string, setHashTo?: s
   timer.checkpoint("Display Text");
 }
 
-
-
 const tableMakers: Record<Direction, TableMaker | undefined> = [undefined, undefined, undefined];
 const doRenderTable = (outdiv: HTMLElement, dag: Record<string, Card>, dir: Direction) => {
-  initializeMaximalCards(dag, maximalCards[dir], dir);
   initializeTotalSets(dag);
 
   const timer = new Timer();
   if (tableMakers[dir] === undefined) {
-    tableMakers[dir] = new TableMaker(maximalCards[dir], dir);
+    tableMakers[dir] = new TableMaker(getMaximalCards(dir), dir);
   }
 
   tableMakers[dir]?.renderTable(outdiv);
   timer.checkpoint("Render Table");
 }
 
-function renderTable(dir: Direction) {
-  window.location.hash = "table-" + Direction[dir];
-};
-
 let globalSuppressOnHashChange = false;
-function renderSearch(query: string) {
-  window.location.hash = "search-" + query;
-}
-function renderChecker() {
-  window.location.hash = "page-checker"
-}
 
 function doRenderCheck(outdiv: HTMLElement, dag: Record<string, Card>) {
   initializeTotalSets(dag);
@@ -607,8 +322,8 @@ function displayCheck(inputText: string, errordiv: HTMLDivElement, tablediv: HTM
 function doRenderSearch(outdiv: HTMLElement, dag: Record<string, Card>, query: string) {
   outdiv.replaceChildren("");
   // captured in multiple closures below
-  let poolIndex = 3;
-  const addRadio = (i: number) => {
+  let poolIndex = CardCategory.Unmapped;
+  const addRadio = (i: CardCategory) => {
     const rad = document.createElement("input");
     rad.type = "radio";
     rad.name = "search";
@@ -618,15 +333,14 @@ function doRenderSearch(outdiv: HTMLElement, dag: Record<string, Card>, query: s
     rad.checked = (i == poolIndex);
     return rad;
   };
-  const labels = ["Best Cards", "Worst Cards", "Mapped Cards", "Unmapped Cards"];
-  for (let i = 0; i < 4; ++i) {
+  for (let cat of [CardCategory.Best, CardCategory.Worst, CardCategory.Mapped, CardCategory.Unmapped]) {
     const rootNode = document.createElement("div");
     rootNode.style.display = "inline-block";
     const childNode = document.createElement("p");
-    childNode.innerText = labels[i];
+    childNode.innerText = CardCategory[cat] + " Cards";
     rootNode.appendChild(childNode);
     outdiv.appendChild(rootNode);
-    outdiv.appendChild(addRadio(i))
+    outdiv.appendChild(addRadio(cat))
   }
   const inputElem = document.createElement("input");
 
@@ -654,72 +368,19 @@ function doRenderSearch(outdiv: HTMLElement, dag: Record<string, Card>, query: s
   }
 }
 
-enum CardCategory {
-  Worst,
-  Best,
-  Mapped,
-  Unmapped, 
-  Unknown
-};
-const total_sets: Array<Array<Card>> = new Array(4);
-const total_map: Record<string, CardCategory> = {};
-function initializeTotalSets(dag: Record<string, Card>) {
-  if (total_sets[0] !== undefined) {
-    return;
-  }
-  for (const dir of [Direction.Better, Direction.Worse]) {
-    initializeMaximalCards(dag, maximalCards[dir], dir);
-  }
-
-  total_sets[0] = maximalCards[Direction.Better];
-  total_sets[1] = maximalCards[Direction.Worse];
-  total_sets[2] = Object.values(dag);
-
-  const unmappedOracle = Object.keys(oracleDataUnmapped.all_cards);
-  const unmappedCards = new Array<Card>(unmappedOracle.length);
-  for (let i = 0; i < unmappedCards.length; ++i) {
-    unmappedCards[i] = new Card(unmappedOracle[i]);
-  }
-  total_sets[3] = unmappedCards;
-  // do better enum stuff
-  const categories = [CardCategory.Best, CardCategory.Worst, CardCategory.Mapped, CardCategory.Unmapped];
-  for (const i of [0, 1, 3]) {
-    for (const card of total_sets[i]) {
-      total_map[card.name] = categories[i];
-    }
-  }
-  for (const card of total_sets[2]) {
-    if (!(card.name in total_map)) {
-      total_map[card.name] = CardCategory.Mapped;
-    }
-  }
-}
-
-function getCategory(name: string): CardCategory {
-  return total_map[name] ?? CardCategory.Unknown;
-}
-function getOracle(cat: CardCategory): Oracle {
-  return cat == CardCategory.Unmapped ? oracleDataUnmapped : oracleData;
-}
-function getOracleData(name: string): OracleItem {
-  const cat = getCategory(name);
-  return getOracle(cat).all_cards[name];
-}
-
-function displaySearch(outdiv: HTMLElement, dag: Record<string, Card>, searchQuery: string, poolIndex: number) {
+function displaySearch(outdiv: HTMLElement, dag: Record<string, Card>, searchQuery: string, poolIndex: CardCategory) {
   initializeTotalSets(dag);
 
   const searchResults: Array<Card> = [];
-  const oracle = poolIndex < 3 ? oracleData : oracleDataUnmapped;
-  const matcher = new SearchMatcher(searchQuery, oracle);
-  const set = total_sets[poolIndex];
+  const matcher = new SearchMatcher(searchQuery, poolIndex);
+  const set = getTotalSet(poolIndex);
   for (const card of set) {
     if (matcher.match(card)) {
       searchResults.push(card);
     }
   }
 
-  const tableMaker = new TableMaker(searchResults, [Direction.Better, Direction.Worse][poolIndex] ?? Direction.None);
+  const tableMaker = new TableMaker(searchResults, poolIndex == CardCategory.Best ? Direction.Better : poolIndex == CardCategory.Worst ? Direction.Worse :  Direction.None);
 
   tableMaker.renderTable(outdiv);
 }
@@ -880,12 +541,10 @@ function doRenderStats(outdiv: HTMLDivElement, dag: Record<string, Card>) {
     outdiv.appendChild(label);
     outdiv.appendChild(dateChart);
   }
-  // TODO: lazy initialize to avoid multiple calls to this
-  initializeMaximalCards(dag, maximalCards[Direction.Worse], Direction.Worse);
-  initializeMaximalCards(dag, maximalCards[Direction.Better], Direction.Better);
+  initializeTotalSets(dag);
   doChart("All Mapped Cards", Object.values(dag));
-  doChart("All Worst Cards", maximalCards[Direction.Worse]);
-  doChart("All Best Cards", maximalCards[Direction.Better]);
+  doChart("All Worst Cards", getMaximalCards(Direction.Worse));
+  doChart("All Best Cards", getMaximalCards(Direction.Better));
 }
 
 function initializePageFromHash(outdiv: HTMLDivElement, searchBar: HTMLDivElement, dag: Record<string, Card>) {

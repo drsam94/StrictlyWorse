@@ -21,10 +21,18 @@ export class Card {
     }
 
     public isPlaceholder(): boolean {
-        return (this.name.indexOf('/') > 0 && this.name.indexOf('//') < 0) || this.name == "MORPH";
+        return (this.name.indexOf('/') > 0 && this.name.indexOf('//') < 0) || this.name == "MORPH" || this.name.indexOf(" Instant ") > 0;
     }
 
     public stats(dir: Direction): DirStats {
         return dir == Direction.Worse ? this.worseStats : this.betterStats;
     }
+};
+
+export enum CardCategory {
+  Worst,
+  Best,
+  Mapped,
+  Unmapped, 
+  Unknown
 };

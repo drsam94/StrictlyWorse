@@ -1,6 +1,6 @@
-import { Card, Direction } from './card.js'
+import { Card, Direction, CardCategory } from './card.js'
 import { isSetEqual, isSubsetOf, isProperSubsetOf } from './set.js'
-import { Oracle } from './oracle.js'
+import { getOracle } from './card_maps.js'
 import { TableElem } from './table_elem.js'
 
 enum SearchKey {
@@ -197,9 +197,11 @@ class SearchComponent {
 
 export class SearchMatcher {
   private oracle: Record<string, any>;
+  private category: CardCategory;
   private components: Array<SearchComponent>;
-  constructor(query: string, oData: Oracle) {
-    this.oracle = oData.all_cards;
+  constructor(query: string, category: CardCategory) {
+    this.oracle = getOracle(category).all_cards;
+    this.category = category;
 
     const parts = query.match(/\S+|"[^"]+"/g) ?? [];
     this.components = [];
@@ -212,7 +214,12 @@ export class SearchMatcher {
   }
 
   public match(card: Card): boolean {
-    const elem = new TableElem(card, this.oracle[card.name], Direction.None);
+    if (card.isPlaceholder()) {
+      return false;
+    }
+    console.log(this.category);
+    console.log(card);
+    const elem = new TableElem(card, this.oracle[card.name], this.category, Direction.None);
     for (const component of this.components) {
       if (!component.matches(elem)) {
         return false;
