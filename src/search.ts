@@ -217,8 +217,6 @@ export class SearchMatcher {
     if (card.isPlaceholder()) {
       return false;
     }
-    console.log(this.category);
-    console.log(card);
     const elem = new TableElem(card, this.oracle[card.name], this.category, Direction.None);
     for (const component of this.components) {
       if (!component.matches(elem)) {

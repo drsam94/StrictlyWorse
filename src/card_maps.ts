@@ -1,6 +1,12 @@
 import { Card, CardCategory, Direction } from './card.js'
 import { Oracle, OracleItem, oracleData, oracleDataUnmapped } from './oracle.js'
 
+const worseSet: Record<string, Set<string>> = {};
+const betterSet: Record<string, Set<string>> = {};
+export function getTotalChildSet(dir: Direction) {
+  return dir == Direction.Worse ? worseSet : betterSet;
+}
+
 const maximalCards: Record<Direction, Array<Card>> = [[], [], []];
 function initializeMaximalCards(dag: Record<string, Card>, toInit: Array<Card>, dir: Direction) {
   if (toInit.length == 0) {
@@ -46,7 +52,7 @@ export function initializeTotalSets(dag: Record<string, Card>) {
     unmappedCards[i] = new Card(unmappedOracle[i]);
   }
   total_sets[CardCategory.Unmapped] = unmappedCards;
-  
+
   for (const cat of [CardCategory.Best, CardCategory.Worst, CardCategory.Unmapped]) {
     for (const card of total_sets[cat]) {
       total_map[card.name] = cat;

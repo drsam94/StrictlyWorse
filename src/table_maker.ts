@@ -1,6 +1,6 @@
 import { TableElem, renderCost } from './table_elem.js';
 import { Card, CardCategory, Direction } from './card.js'
-import { getOracleData, getCategory, getOracle } from './card_maps.js';
+import { getOracleData, getCategory, getOracle, getTotalChildSet } from './card_maps.js';
 import { getImageURL } from './image_url.js'
 import { imbueHoverImage } from './hover.js';
 import { displayCharts } from './navigate.js';
@@ -23,6 +23,9 @@ enum TableColumn {
   Degree,
   TotalWorse,
   Category,
+  Type,
+  Exemplar,
+  PT
 }
 
 class FlagsState {
@@ -121,28 +124,87 @@ export class TableMaker {
       this.renderTable(parent);
     }
   }
+
+  private getColumnList(): Array<TableColumn> {
+    const ret: Array<TableColumn> = [TableColumn.Name, TableColumn.Cost, TableColumn.Type, TableColumn.PT]
+    if (this.dir != Direction.None) {
+      ret.push(TableColumn.Degree);
+      ret.push(TableColumn.TotalWorse);
+    } else {
+      ret.push(TableColumn.Category);
+      ret.push(TableColumn.Exemplar);
+    }
+    return ret;
+  }
+
+  private fillColumn(column: TableColumn, cell: HTMLElement, parent: HTMLElement, card: TableElem) {
+    const category = getCategory(card.name);
+    function doCardColumn(name: string) {
+      cell.textContent = name;
+
+      imbueHoverImage(cell, getImageURL(name, getOracle(category)));
+      if (category != CardCategory.Unmapped) {
+        cell.onclick = () => {
+          displayCharts(name);
+        }
+      }
+    }
+    switch (column) {
+      case TableColumn.Name:
+        doCardColumn(card.name)
+        break;
+      case TableColumn.Cost:
+        cell.appendChild(card.cost);
+        break;
+      case TableColumn.Type:
+        cell.textContent = card.type;
+        break;
+      case TableColumn.PT:
+        cell.textContent = card.pt;
+        break;
+      case TableColumn.Degree:
+        cell.textContent = card.degree + "";
+        break;
+      case TableColumn.TotalWorse:
+        cell.textContent = card.totalWorse + "";
+        break;
+      case TableColumn.Category:
+        cell.textContent = CardCategory[category];
+        parent.style.backgroundColor = {
+          [CardCategory.Best]: "#2A9D8F",
+          [CardCategory.Worst]: "#E76F51",
+          [CardCategory.Mapped]: "#F4A261",
+          [CardCategory.Unmapped]: "#E9C46A",
+          [CardCategory.Unknown]: "#2646F3",
+        }[category];
+        break;
+      case TableColumn.Exemplar:
+        if (category == CardCategory.Unmapped) {
+          cell.textContent = "";
+        } else {
+          const dir = category == CardCategory.Best ? Direction.Worse : Direction.Better;
+          const exemplar = getTotalChildSet(dir)[card.name].keys().next().value;
+          doCardColumn(exemplar);
+        }
+        break;
+    }
+  }
+
   public renderTable(parent: HTMLElement) {
     this.cardSort();
     parent.replaceChildren("");
     const flagsDiv = this.flags.render(parent);
     const table = makeElement("table", parent);
     const hdrRow = makeElement("tr", table);
-    this.makeClickSort(makeElement("th", hdrRow, "Card"), parent, TableColumn.Name);
-    this.makeClickSort(makeElement("th", hdrRow, "Cost"), parent, TableColumn.Cost);
-    makeElement("th", hdrRow, "Type");
-    makeElement("th", hdrRow, "P / T");
-    if (this.dir != Direction.None) {
-      this.makeClickSort(makeElement("th", hdrRow, "Degree"), parent, TableColumn.Degree);
-      this.makeClickSort(makeElement("th", hdrRow, "Total " + (this.dir == Direction.Worse ? "Worse" : "Better")), parent, TableColumn.TotalWorse);
-    } else {
-      this.makeClickSort(makeElement("th", hdrRow, "Category"), parent, TableColumn.Category);
+    const columns = this.getColumnList();
+    for (let column of columns) {
+      const label = column == TableColumn.TotalWorse && this.dir == Direction.Better ? "TotalBetter" : TableColumn[column];
+      this.makeClickSort(makeElement("th", hdrRow, label), parent, column);
     }
-
     // Making a template row and cloning it substantially speeds up DOM creation here
     // (something like 5-10x)
-    const numColumns = 6 - +(this.dir == Direction.None);
     const templateRow = makeElement("tr");
-    for (let i = 0; i < numColumns; ++i) {
+    for (let i = 0; i < columns.length; ++i) {
       makeElement("td", templateRow);
     }
     for (const card of this.swData) {
@@ -150,32 +212,10 @@ export class TableMaker {
         continue;
       }
       const elemRow = templateRow.cloneNode(true) as HTMLElement;
-      const children = elemRow.children;
-      const nameRow = children[0] as HTMLElement;
-      nameRow.textContent = card.name;
-
-      const category = getCategory(card.name);
-      imbueHoverImage(nameRow, getImageURL(card.name, getOracle(category)));
-      if (category != CardCategory.Unmapped) {
-        nameRow.onclick = () => {
-          displayCharts(card.name);
-        }
-      }
-      children[1].appendChild(card.cost);
-      children[2].textContent = card.type;
-      children[3].textContent = card.pt;
-      if (this.dir != Direction.None) {
-        children[4].textContent = card.degree + "";
-        children[5].textContent = card.totalWorse + "";
-      } else {
-        children[4].textContent = CardCategory[category];
-        elemRow.style.backgroundColor = {
-          [CardCategory.Best]: "#2A9D8F",
-          [CardCategory.Worst]: "#E76F51",
-          [CardCategory.Mapped]: "#F4A261",
-          [CardCategory.Unmapped]: "#E9C46A",
-          [CardCategory.Unknown]: "#2646F3",
-        }[category];
+      let i = 0;
+      for (const column of columns) {
+        this.fillColumn(column, elemRow.children[i] as HTMLElement, elemRow, card);
+        ++i;
       }
       table.appendChild(elemRow);
     }

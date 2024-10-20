@@ -26,7 +26,7 @@ import { getImageURL } from './image_url.js';
 import { makeChart } from './chart.js';
 import { makeDateHistogram, DateHistogramEntry } from './histogram.js';
 import { displayCharts, renderChecker, renderSearch, renderTable } from './navigate.js';
-import { initializeTotalSets, getMaximalCards, getTotalSet } from './card_maps.js';
+import { initializeTotalSets, getMaximalCards, getTotalSet, getTotalChildSet } from './card_maps.js';
 
 function initNode(dag: Record<string, Card>, key: string): Card {
   if (!(key in dag)) {
@@ -52,14 +52,6 @@ function processData(dag: Record<string, Card>, inData: Array<Array<string>>) {
     betterCards.push(worseNode);
   }
 }
-
-
-const worseSet: Record<string, Set<string>> = {};
-const betterSet: Record<string, Set<string>> = {};
-function getTotalChildSet(dir: Direction) {
-  return dir == Direction.Worse ? worseSet : betterSet;
-}
-
 
 function computeStats(dag: Record<string, Card>): void {
   function computeStatsRecursive(card: Card, dir: Direction) {
@@ -160,14 +152,13 @@ function makeTree(rootNode: Card, dir: Direction) {
   return data;
 }
 
-function extractDates<T>(collection: Iterable<T>, extract?: (arg0: T) => string): Array<DateHistogramEntry> {
-  const doExtract = extract ?? ((x: T) => x as string);
+function extractDates<T>(collection: Iterable<T>, extract: (arg0: T) => string): Array<DateHistogramEntry> {
 
   const oracle = oracleData.all_cards;
 
   const ret: Array<DateHistogramEntry> = [];
   for (const preName of collection) {
-    const name = doExtract(preName as T);
+    const name = extract(preName);
     const data = oracle[name];
     if (data === undefined) {
       continue;
@@ -202,7 +193,7 @@ function doDisplayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: s
         nameStr += " (Equivalent to [[" + card.name + "]])";
       }
       const textContent = nameStr + " is <strong>" + (dir == Direction.Better ? "worse" : "better") + "</strong> than...";
-      const dateData = extractDates(getTotalChildSet(dir)[card.name]);
+      const dateData = extractDates(getTotalChildSet(dir)[card.name], (x: string) => x);
       const dateChart = makeDateHistogram(dateData);
       displayTextWithCardLinks(label, textContent);
       if (!renderedFont) {
@@ -297,26 +288,26 @@ function doRenderCheck(outdiv: HTMLElement, dag: Record<string, Card>) {
 }
 
 function displayCheck(inputText: string, errordiv: HTMLDivElement, tablediv: HTMLDivElement, dag: Record<string, Card>) {
-    const lines = inputText.split('\n');
-    const matchedCards: Array<Card> = [];
-    const errorCards: Array<string> = [];
-    for (let line of lines) {
-      const trimmed = line.trim();
-      if (trimmed.indexOf('#') >= 0) {
-        continue;
-      }
-      if (trimmed.length == 0) {
-        continue;
-      }
-      if (trimmed in dag) {
-        matchedCards.push(dag[trimmed]);
-      } else {
-        errorCards.push(trimmed);
-      }
+  const lines = inputText.split('\n');
+  const matchedCards: Array<Card> = [];
+  const errorCards: Array<string> = [];
+  for (let line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.indexOf('#') >= 0) {
+      continue;
     }
-    const tableMaker = new TableMaker(matchedCards, Direction.None);
-    
-    tableMaker.renderTable(tablediv);
+    if (trimmed.length == 0) {
+      continue;
+    }
+    if (trimmed in dag) {
+      matchedCards.push(dag[trimmed]);
+    } else {
+      errorCards.push(trimmed);
+    }
+  }
+  const tableMaker = new TableMaker(matchedCards, Direction.None);
+
+  tableMaker.renderTable(tablediv);
 }
 
 function doRenderSearch(outdiv: HTMLElement, dag: Record<string, Card>, query: string) {
@@ -380,7 +371,7 @@ function displaySearch(outdiv: HTMLElement, dag: Record<string, Card>, searchQue
     }
   }
 
-  const tableMaker = new TableMaker(searchResults, poolIndex == CardCategory.Best ? Direction.Better : poolIndex == CardCategory.Worst ? Direction.Worse :  Direction.None);
+  const tableMaker = new TableMaker(searchResults, poolIndex == CardCategory.Best ? Direction.Better : poolIndex == CardCategory.Worst ? Direction.Worse : Direction.None);
 
   tableMaker.renderTable(outdiv);
 }
