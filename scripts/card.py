@@ -31,6 +31,7 @@ class Compare(Enum):
 # TODO: use attrs? might make it harder for others to use
 class CardDesc:
     positive_kw = ["Trample", "Flying", "Lifelink", "Haste", "Reach", "Vigilance", "Deathtouch", "Menace", "Flash"]
+    negative_kw = ["Noblock", "Defender"]
     two_word_positive_kw = ["Add", "First", "Double"]
     two_word_negative_kw = ["Can't"]
     def __init__(self, placeholder_name: str):
@@ -50,6 +51,8 @@ class CardDesc:
                 self.pow, self.tou = part.split('/')
             elif part in CardDesc.positive_kw:
                 self.positives[part] = weight
+            elif part in CardDesc.negative_kw:
+                self.negatives[part] = weight
             # + and - are used to represent abstractly better/worse: this creates an incomparable advantage or disadvantage
             # or can be applied to kw as a modify, i.e -Flying is "sometimes flying"
             elif part.startswith("+"):
