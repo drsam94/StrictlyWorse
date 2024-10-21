@@ -3,6 +3,7 @@
 import sys
 import json
 from card import Card, CardDesc, Compare, construct_relationship_tree
+from typing import Any 
 
 def parse_sw(file: str):
     content = '['
@@ -129,21 +130,32 @@ def augment_rules(sw, sw_names, vanilla):
         ret_sw.append(item)
     return ret_sw
 
-def get_error_aliases(sw: list[list[str]]):
+def get_error_aliases(sw: list[list[str]], all_cards: dict[str, Any]):
+    import datetime 
     error_aliases: set[str] = set()
     all_aliases: list[str] = []
+    bad_date_aliases: dict[str, str] = {}
     for item in sw:
         if len(item) == 2 or item[2] != '=':
             continue
         all_aliases.append(item[1])
+        get_time = lambda x: datetime.datetime.strptime(all_cards[x]["released_at"], "%Y-%m-%d")
+        dates = [get_time(name) for name in (item[0], item[1])]
+        if dates[0] > dates[1]:
+            if item[0] in bad_date_aliases:
+                if get_time(item[1]) < get_time(bad_date_aliases[item[0]]):
+                    bad_date_aliases[item[0]] = item[1]
+            else:
+                bad_date_aliases[item[0]] = item[1]
     for item in sw:
         if len(item) > 2:
             continue 
         for elem in item:
             if elem in all_aliases:
                 error_aliases.add(elem)
-    return error_aliases 
+    return error_aliases, bad_date_aliases 
 
+# def apply_realias
 if __name__ == "__main__":
     sw_file = 'res/data.js' if len(sys.argv) < 2 else sys.argv[1]
     sf_file = 'res/oracle-cards.json' if len(sys.argv) < 3 else sys.argv[2]
@@ -184,14 +196,21 @@ if __name__ == "__main__":
     non_sw_names = {name for name, obj in official_names.items() if name not in sw_names}
     sw.sort()
     sw = augment_rules(sw, sw_names, vanilla)
-    error_aliases = get_error_aliases(sw)
+    error_aliases, bad_date_aliases = get_error_aliases(sw, official_names)
+    has_error = False
     if len(error_aliases) > 0:
         print("The Following are used as aliases and also first class names:")
         print('\n'.join(error_aliases))
+        has_error = True
+    elif len(bad_date_aliases) > 0:
+        print("The Following are aliases where the newer card aliases the older:")
+        print('\n'.join(f"{k, v}" for k,v in bad_date_aliases.items()))
+        has_error = True
     elif len(error_names) > 0:
         print("The Following are not actual mtg card names:")
         print('\n'.join(error_names))
-    else:
+        has_error = True
+    if not has_error:
         with open('res/filtered-oracle.js', 'w+') as outf:
             outf.write('export const all_cards = \n')
             filtered_names = {name: simplify_obj(obj) for name,obj in official_names.items() if name in sw_names}
