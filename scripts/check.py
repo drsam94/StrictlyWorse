@@ -136,8 +136,10 @@ def get_error_aliases(sw: list[list[str]], all_cards: dict[str, Any]):
     all_aliases: list[str] = []
     bad_date_aliases: dict[str, str] = {}
     for item in sw:
-        if len(item) == 2 or item[2] != '=':
+        if len(item) == 2:
             continue
+        if item[2] != '=':
+            raise ValueError(f"Found item {item} with 3 elements but not an alias")
         all_aliases.append(item[1])
         get_time = lambda x: datetime.datetime.strptime(all_cards[x]["released_at"], "%Y-%m-%d")
         dates = [get_time(name) for name in (item[0], item[1])]
@@ -155,7 +157,24 @@ def get_error_aliases(sw: list[list[str]], all_cards: dict[str, Any]):
                 error_aliases.add(elem)
     return error_aliases, bad_date_aliases 
 
-# def apply_realias
+def apply_realiases(sw: list[list[str]], realiases: dict[str, str]):
+    for item in sw:
+        if len(item) == 3 and item[1] in realiases:
+            # remapping x -> y
+            # this is an alias of z, x, = -> y, z, =
+            # (in most cases, z == x)
+            item[:] = [realiases[item[1]], item[0], "="]
+        elif len(item) == 3 and realiases.get(item[0], "") == item[1]:
+            # remapping x -> y
+            # this an an alias of x, y, =
+            # so it has to be redone as y, x, =
+            item[:] = [item[1], item[0], "="]
+        elif item[0] in realiases:
+            item[0] = realiases[item[0]]
+        elif item[1] in realiases:
+            item[1] = realiases[item[1]]
+      
+            
 if __name__ == "__main__":
     sw_file = 'res/data.js' if len(sys.argv) < 2 else sys.argv[1]
     sf_file = 'res/oracle-cards.json' if len(sys.argv) < 3 else sys.argv[2]
@@ -205,7 +224,8 @@ if __name__ == "__main__":
     elif len(bad_date_aliases) > 0:
         print("The Following are aliases where the newer card aliases the older:")
         print('\n'.join(f"{k, v}" for k,v in bad_date_aliases.items()))
-        has_error = True
+        key, value = list(bad_date_aliases.items())[0]
+        apply_realiases(sw, {key: value})
     elif len(error_names) > 0:
         print("The Following are not actual mtg card names:")
         print('\n'.join(error_names))
