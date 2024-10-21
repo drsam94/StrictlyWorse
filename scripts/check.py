@@ -228,8 +228,7 @@ if __name__ == "__main__":
     if len(bad_date_aliases) > 0:
         print("The Following are aliases where the newer card aliases the older:")
         print('\n'.join(f"{k, v}" for k,v in bad_date_aliases.items()))
-        key, value = list(bad_date_aliases.items())[0]
-        apply_realiases(sw, {key: value})
+        apply_realiases(sw, bad_date_aliases)
         sw.sort()
     if len(bad_vanilla_aliases) > 0:
         print("The Following are names used in valla.json which are aliases:")
