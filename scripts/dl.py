@@ -2,6 +2,7 @@
 import requests # type: ignore
 import datetime
 import json
+import os
 
 def is_bad(card):
     return card['lang'] != 'en' or card['digital'] == True 
@@ -40,6 +41,7 @@ def main():
         json.dump(all_json, f)
     sym = requests.get('https://api.scryfall.com/symbology')
     j = sym.json()
+    os.mkdir("res/ico")
     for datum in j['data']:
         uri = datum["svg_uri"]
         img = requests.get(uri)

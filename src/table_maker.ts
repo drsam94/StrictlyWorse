@@ -184,7 +184,9 @@ export class TableMaker {
         } else {
           const dir = category == CardCategory.Best ? Direction.Worse : Direction.Better;
           const exemplar = getTotalChildSet(dir)[card.name].keys().next().value;
-          doCardColumn(exemplar);
+          if (exemplar !== undefined) {
+            doCardColumn(exemplar);
+          }
         }
         break;
     }
