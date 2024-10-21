@@ -231,7 +231,7 @@ if __name__ == "__main__":
         apply_realiases(sw, bad_date_aliases)
         sw.sort()
     if len(bad_vanilla_aliases) > 0:
-        print("The Following are names used in valla.json which are aliases:")
+        print("The Following are names used in vanilla.json which are aliases:")
         print('\n'.join(bad_vanilla_aliases))
         has_error = True
     if len(error_names) > 0:
