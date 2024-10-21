@@ -226,6 +226,7 @@ if __name__ == "__main__":
         print('\n'.join(f"{k, v}" for k,v in bad_date_aliases.items()))
         key, value = list(bad_date_aliases.items())[0]
         apply_realiases(sw, {key: value})
+        sw.sort()
     elif len(error_names) > 0:
         print("The Following are not actual mtg card names:")
         print('\n'.join(error_names))
