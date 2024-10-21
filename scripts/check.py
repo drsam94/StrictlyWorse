@@ -130,7 +130,7 @@ def augment_rules(sw, sw_names, vanilla):
         ret_sw.append(item)
     return ret_sw
 
-def get_error_aliases(sw: list[list[str]], all_cards: dict[str, Any]):
+def get_error_aliases(sw: list[list[str]], all_cards: dict[str, Any], vanilla: dict[str, str]):
     import datetime 
     error_aliases: set[str] = set()
     all_aliases: list[str] = []
@@ -155,7 +155,11 @@ def get_error_aliases(sw: list[list[str]], all_cards: dict[str, Any]):
         for elem in item:
             if elem in all_aliases:
                 error_aliases.add(elem)
-    return error_aliases, bad_date_aliases 
+    bad_vanilla_aliases = []
+    for vanilla_name in vanilla.values():
+        if vanilla_name in all_aliases:
+            bad_vanilla_aliases.append(vanilla_name)
+    return error_aliases, bad_date_aliases, bad_vanilla_aliases
 
 def apply_realiases(sw: list[list[str]], realiases: dict[str, str]):
     for item in sw:
@@ -215,19 +219,23 @@ if __name__ == "__main__":
     non_sw_names = {name for name, obj in official_names.items() if name not in sw_names}
     sw.sort()
     sw = augment_rules(sw, sw_names, vanilla)
-    error_aliases, bad_date_aliases = get_error_aliases(sw, official_names)
+    error_aliases, bad_date_aliases, bad_vanilla_aliases = get_error_aliases(sw, official_names, vanilla)
     has_error = False
     if len(error_aliases) > 0:
         print("The Following are used as aliases and also first class names:")
         print('\n'.join(error_aliases))
         has_error = True
-    elif len(bad_date_aliases) > 0:
+    if len(bad_date_aliases) > 0:
         print("The Following are aliases where the newer card aliases the older:")
         print('\n'.join(f"{k, v}" for k,v in bad_date_aliases.items()))
         key, value = list(bad_date_aliases.items())[0]
         apply_realiases(sw, {key: value})
         sw.sort()
-    elif len(error_names) > 0:
+    if len(bad_vanilla_aliases) > 0:
+        print("The Following are names used in valla.json which are aliases:")
+        print('\n'.join(bad_vanilla_aliases))
+        has_error = True
+    if len(error_names) > 0:
         print("The Following are not actual mtg card names:")
         print('\n'.join(error_names))
         has_error = True
