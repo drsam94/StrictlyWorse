@@ -144,9 +144,6 @@ class CardDesc:
     def compare(_self, other) -> Compare:
         self = _self
         x_slot = -1
-        if 'X' in self.cost and 'X' in other.cost:
-            # not handling X vs X right now
-            return Compare.Incomparable
         if 'X' in self.cost:
             self = CardDesc(self.desc)
             dc_self, dc_other = CardDesc._decompose_cost(self.cost), CardDesc._decompose_cost(other.cost)
@@ -160,7 +157,7 @@ class CardDesc:
             x_val = dc_self[0] - dc_other[0]
             other.pow = str(eval(other.pow.replace('X', str(x_val))))
             other.tou = str(eval(other.tou.replace('X', str(x_val))))
-            x_slot = 1
+            x_slot = 1 if x_slot == -1 else 2
         cost_result = CardDesc._compare_cost(self.cost, other.cost)
         pt_result = CardDesc._compare_arrays([int(self.pow), int(self.tou)], [int(other.pow), int(other.tou)])
         neg_result = CardDesc._compare_modifiers(self.negatives, other.negatives, invert=True)
@@ -171,5 +168,11 @@ class CardDesc:
             # Not having this can crete an erroneous worse than: just because an X card is worse
             # at a given cost doesn't mean it is actually worse
             return Compare.Incomparable 
+        if x_slot == 0 and res == Compare.Equal:
+            # For e.g 1 1/1 = X X/X eval'ed @ 1
+            # but due to flexibility, X X/X is better than 1 1/1
+            return Compare.Greater
+        elif x_slot == 1 and res == Compare.Equal:
+            return Compare.Less
         return res 
     

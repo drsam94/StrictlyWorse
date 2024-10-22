@@ -249,6 +249,7 @@
   "XRG X+2/X+2 +": "Mawloc",
   "X1W X+1/X+2 +": "Jacked Rabbit",
   "XG X+1/X+1 +": "Knickknack Ouphe",
+  "XG X+1/X+1 +1": "Hormagaunt Horde",
   "XGU X/X Flying": "Nimbus Swimmer",
   "XR X/X Flying Haste": "Shivan Devastator",
   "6 6/6 Flying +": "Hexavus",
@@ -373,5 +374,11 @@
   "4G 5/4 Trample Vigilance": "Tajuru Pathwarden",
   "3GG 4/4 Trample": "Fangren Hunter",
   "5G 6/6 Trample +": "Honored Hydra",
+  "XG X/X Reach +": "Wren's Run Hydra",
+  "XG X/X -": "Capricopian",
+  "XG X/X Vigilance +": "Haldir, L\u00f3rien Lieutenant",
+  "XG X/X Trample +": "Ochre Jelly",
+  "XG X/X+1 Trample Reach +": "Nyxborn Hydra",
+  "X2G X+3/X+3 +": "Tyrant Guard",
   "3G 4/4 Vigilance +": "Giant Beaver"
 }

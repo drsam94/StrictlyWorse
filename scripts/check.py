@@ -72,7 +72,6 @@ def is_real_card(obj):
         return False
     return True 
 
-
 def augment_rules(sw, sw_names, vanilla):
     # map from card name to vanilla spec
     invert_vanilla = {v: k for k,v in vanilla.items() }
@@ -178,7 +177,26 @@ def apply_realiases(sw: list[list[str]], realiases: dict[str, str]):
         elif item[1] in realiases:
             item[1] = realiases[item[1]]
       
-            
+def check_simplifying_placeholders(sw: list[list[str]]):
+    tree = construct_relationship_tree(sw)
+    def get_key(card: Card):
+        return ":".join(sorted((c.name for c in card.worse_than)))
+    invmap: dict[str, list[str]] = {}
+    multikeys = []
+    for card in tree.values():
+        if len(card.worse_than) <= 2:
+            continue
+        k = get_key(card)
+        if k not in invmap:
+            invmap[k] = []
+        else:
+            multikeys.append(k)
+        invmap[k].append(card.name)
+    if len(multikeys) > 0:
+        print("The following cards have identical worse than lists:")
+    for mk in multikeys:
+        print(f"{invmap[mk]}: {mk}")
+    
 if __name__ == "__main__":
     sw_file = 'res/data.js' if len(sys.argv) < 2 else sys.argv[1]
     sf_file = 'res/oracle-cards.json' if len(sys.argv) < 3 else sys.argv[2]
@@ -221,6 +239,7 @@ if __name__ == "__main__":
     sw = augment_rules(sw, sw_names, vanilla)
     error_aliases, bad_date_aliases, bad_vanilla_aliases = get_error_aliases(sw, official_names, vanilla)
     has_error = False
+    #check_simplifying_placeholders(sw)
     if len(error_aliases) > 0:
         print("The Following are used as aliases and also first class names:")
         print('\n'.join(error_aliases))
