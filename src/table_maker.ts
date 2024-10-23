@@ -25,7 +25,7 @@ enum TableColumn {
   Category,
   Type,
   Exemplar,
-  PT
+  Stats
 }
 
 class FlagsState {
@@ -126,7 +126,7 @@ export class TableMaker {
   }
 
   private getColumnList(): Array<TableColumn> {
-    const ret: Array<TableColumn> = [TableColumn.Name, TableColumn.Cost, TableColumn.Type, TableColumn.PT]
+    const ret: Array<TableColumn> = [TableColumn.Name, TableColumn.Cost, TableColumn.Type, TableColumn.Stats]
     if (this.dir != Direction.None) {
       ret.push(TableColumn.Degree);
       ret.push(TableColumn.TotalWorse);
@@ -159,7 +159,7 @@ export class TableMaker {
       case TableColumn.Type:
         cell.textContent = card.type;
         break;
-      case TableColumn.PT:
+      case TableColumn.Stats:
         cell.textContent = card.pt;
         break;
       case TableColumn.Degree:

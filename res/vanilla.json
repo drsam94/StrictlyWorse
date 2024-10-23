@@ -191,9 +191,10 @@
   "2 2/1": "Alpha Myr",
   "2 1/2": "Omega Myr",
   "2 2/2": "Lore Seeker",
+  "3 2/1 First Strike": "Coiled Tinviper",
   "3 2/2": "Stonework Puma",
   "3 3/1": "Wicker Witch",
-  "4 3/3": "Gilded Sentinel",
+  "4 3/3": "Transguild Courier",
   "4 2/2 Flying": "Millennial Gargoyle",
   "5 3/3": "Venser's Sliver",
   "5 4/4": "Stone Golem",
@@ -381,5 +382,6 @@
   "XG X/X+1 Trample Reach +": "Nyxborn Hydra",
   "X2G X+3/X+3 +": "Tyrant Guard",
   "2W 2/2 Vigilance": "Alert Shu Infantry",
+  "2R 2/3 -Haste": "Eldrazi Aggressor",
   "3G 4/4 Vigilance +": "Giant Beaver"
 }

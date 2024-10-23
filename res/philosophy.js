@@ -178,8 +178,9 @@ Ante Cards
 <li>[[Tempest Efreet]]</li>
 <li>[[Timmerian Fiends]]</li>
 </ul>
-Funny Cards that complicate things to consider
+Other cards that complicate things to consider
 <ul>
+<li>[[Alloy Golem]]</li>
 <li>[[The Secret Lair]]</li>
 <li>[[Barry's Land]]</li>
 <li>[[_____]]</li>
