@@ -178,9 +178,10 @@ Ante Cards
 <li>[[Tempest Efreet]]</li>
 <li>[[Timmerian Fiends]]</li>
 </ul>
-Other cards that complicate things to consider
+Other cards that complicate things to consider. I may bring in the color modifying cards in soon
 <ul>
 <li>[[Alloy Golem]]</li>
+<li>[[Shyft]]</li>
 <li>[[The Secret Lair]]</li>
 <li>[[Barry's Land]]</li>
 <li>[[_____]]</li>
