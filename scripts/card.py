@@ -31,7 +31,8 @@ class Compare(Enum):
 # TODO: use attrs? might make it harder for others to use
 class CardDesc:
     positive_kw = ["Trample", "Flying", "Lifelink", "Haste", 
-                   "Reach", "Vigilance", "Hexproof", "Deathtouch", "Menace", "Flash", "Firebreathing"]
+                   "Reach", "Vigilance", "Hexproof", "Deathtouch", "Menace", "Flash", "Firebreathing",
+                   "Swampwalk"]
     negative_kw = ["Noblock", "Defender"]
     two_word_positive_kw = ["Add", "First", "Double"]
     two_word_negative_kw = ["Can't"]

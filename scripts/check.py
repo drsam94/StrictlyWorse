@@ -65,10 +65,21 @@ def simplify_obj(card):
 def is_real_card(obj):
     if obj['layout'] in ['token', 'reversible_card', "art_series"]:
         return False 
-    if obj['digital'] == True or obj["set_name"] == "Unknown Event" or "alchemy" in obj.get("promo_types", []):
+    weird_sets = ["Unknown Event", "Defeat a God", "Face the Hydra", 
+                  "Battle the Horde", "M15 Prerelease Challenge"] 
+    if obj['digital'] == True or obj["set_name"] in weird_sets or "alchemy" in obj.get("promo_types", []):
         return False
-    weird_types = ['Token', 'Scheme', 'Emblem', 'Plane ', 'Conspiracy', 'Card', 'Phenomenon']
-    if any(wt in obj['type_line'] for wt in weird_types):
+    weird_types = ['Token', 'Scheme', 'Emblem', 'Plane ', 
+                   'Conspiracy', 'Card', 'Phenomenon', 
+                   'Hero', 'Stickers', 'Vanguard',
+                   'Dungeon']
+    type_line = obj['type_line']
+
+    subtype_point = type_line.index("\u2014") if "\u2014" in type_line else -1
+    major_types = type_line[:subtype_point] if subtype_point != -1 else type_line
+    minor_types = type_line[subtype_point:]
+    weird_subtypes = ['Contraption', 'Attraction']
+    if any(wt in major_types for wt in weird_types) or any(wt in minor_types for wt in weird_subtypes):
         return False
     return True 
 

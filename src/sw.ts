@@ -299,6 +299,7 @@ function displayCheck(inputText: string, errordiv: HTMLDivElement, tablediv: HTM
     if (trimmed.length == 0) {
       continue;
     }
+
     if (trimmed in dag) {
       matchedCards.push(dag[trimmed]);
     } else {
@@ -308,6 +309,19 @@ function displayCheck(inputText: string, errordiv: HTMLDivElement, tablediv: HTM
   const tableMaker = new TableMaker(matchedCards, Direction.None);
 
   tableMaker.renderTable(tablediv);
+  if (errorCards.length == 0) {
+    return;
+  } 
+  const label = document.createElement("p");
+  label.textContent = "The following cards were not found or are Unmapped: ";
+  const ul = document.createElement("ul");
+  for (const name of errorCards) {
+    const li = document.createElement("li");
+    li.textContent = name;
+    ul.appendChild(li);
+  }
+  errordiv.appendChild(label);
+  errordiv.appendChild(ul);
 }
 
 function doRenderSearch(outdiv: HTMLElement, dag: Record<string, Card>, query: string) {

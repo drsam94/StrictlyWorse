@@ -27,7 +27,9 @@ This one is perhaps a bit more controvertial, but doing this as a blanket rule l
 
 Perhaps a bit more controvertial is ignoring <i>supertypes</i>. The important one here is Legendary. So, for example, I consider in this data [[Isamaru, Hound of Konda]] to be better than [[Savannah Lions]], despite the fact that Isamaru is worse to have multiples of in an opening hand in a white weenie deck. So many modern creatures are legendary that it just isn't particularly interesting to restrict comparability by this. Other supertypes like Snow are also ignored. World too, and yes, that does come up. I do not consider Basic lands comparable with other cards, however. Also the Lesson subtype is considered a benefit on a card due to its interaction with the Learn mechanic, causing these cards to not really be meant to be played in a maindeck.
 
-Lastly the card types themselves. While [[Personal Tutor]] can't find [[Lightning Strike]], I still claim it is strictly better than [[Volcanic Hammer]], so the abilility to be cast at instant speed is a pro, and the type is ignored. I take this to the logical extreme, and also say for example [[Omega Myr]] is better than [[Squire]] because of the less restrict mana cost, and consider the artifact type irrelevant. So long as the act of playing the card provides the same or more value, the type of the card it is attached to is considered superfluous.
+For card types themselves. While [[Personal Tutor]] can't find [[Lightning Strike]], I still claim it is strictly better than [[Volcanic Hammer]], so the abilility to be cast at instant speed is a pro, and the type is ignored. I take this to the logical extreme, and also say for example [[Omega Myr]] is better than [[Squire]] because of the less restrict mana cost, and consider the artifact type irrelevant. So long as the act of playing the card provides the same or more value, the type of the card it is attached to is considered superfluous.
+
+Now lastly, I note that <b>Changeling</b> is considered neither positive nor negative, as it is a static assessment of properties. However, cards like [[Mistform Dreamer]] the ability to change properties is a positive. This is as it allows its controller to hit or dodge benefits on-demand, as opposed to dealing with it. While a [[Mistform Ultimus]] will always dodge [[Eyeblight's Ending]], it will also always be able to be taken with [[Goatnapper]]. While it takes an activation, the controller gets to choose for activated abilities. Similarly, [[Alloy Golem]] and [[Shyft]] have a legitimate ability due to self-determination, while [[Transguild Courier]] does not.
 </p>
 
 <h2> Counters and other minor components </h2>
@@ -157,6 +159,7 @@ Conspiracy Draft Cards
 
 Multiplayer Cards
 <ul>
+<li>[[Aeon Engine]]</li>
 <li>[[Decoy Gambit]]</li>
 <li>[[Corporeal Projection]]</li>
 <li>[[Legion Loyalty]]</li>
@@ -178,10 +181,8 @@ Ante Cards
 <li>[[Tempest Efreet]]</li>
 <li>[[Timmerian Fiends]]</li>
 </ul>
-Other cards that complicate things to consider. I may bring in the color modifying cards in soon
+Weird fun cards that complicate things to consider. 
 <ul>
-<li>[[Alloy Golem]]</li>
-<li>[[Shyft]]</li>
 <li>[[The Secret Lair]]</li>
 <li>[[Barry's Land]]</li>
 <li>[[_____]]</li>
