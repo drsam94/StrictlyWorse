@@ -207,7 +207,80 @@ def check_simplifying_placeholders(sw: list[list[str]]):
         print("The following cards have identical worse than lists:")
     for mk in multikeys:
         print(f"{invmap[mk]}: {mk}")
+
+def get_connected_components(id_to_edges):
+    components = []
+    id_to_component = {}
+    def get_connected_components_from_root(id, edges, new_component):
+        if id in id_to_component:
+            # already reached this component by another edge
+            return
+        id_to_component[id] = new_component
+        new_component.add(id)
+        for elem in edges:
+            val = abs(elem)
+            get_connected_components_from_root(val, id_to_edges[val], new_component)
     
+    for id_iter, edges_iter in id_to_edges.items():
+        if id_iter in id_to_component:
+            continue
+        next_component = set()
+        components.append(next_component)
+        get_connected_components_from_root(id_iter, edges_iter, next_component)
+    return components
+
+def generateDotFiles(sw):
+    card_to_id = {}
+    id_to_card = [""]
+    card_to_edges = {}
+    for item in sw:
+        if len(item) > 2:
+            continue 
+        for card in item:
+            if card not in card_to_id:
+                id_to_card.append(card)
+                card_to_id[card] = len(id_to_card) - 1
+            if card not in card_to_edges:
+                card_to_edges[card] = []
+        card_to_edges[item[0]].append((item[1], -1))
+        card_to_edges[item[1]].append((item[0], 1))
+
+    edgeset_to_card = {}
+    canonicalize_edgeset = lambda edges: tuple(sign * card_to_id[name] for name, sign in sorted(edges, key=lambda x:card_to_id[x[0]]))
+    for card, edges in card_to_edges.items():
+        edgeset = canonicalize_edgeset(edges)
+        edgeset_to_card[edgeset] = card_to_id[card]
+
+    id_to_canonical_id = lambda c: edgeset_to_card[canonicalize_edgeset(card_to_edges[id_to_card[c]])]
+    canonical_card_to_edges = {}
+    sign = lambda x: 1 if x > 0 else -1
+    for card, edges in card_to_edges.items():
+        edgeset = tuple(sign(val) * id_to_canonical_id(abs(val)) for val in canonicalize_edgeset(edges))
+        canonical_card_to_edges[id_to_canonical_id(card_to_id[card])] = edgeset 
+ 
+    ccs = get_connected_components(canonical_card_to_edges)
+    out_map = []
+    out_map.append((canonical_card_to_edges.keys(), 'res/tot_graph.dot'))
+    i = 0
+    for cc in ccs:
+        if len(cc) > 3:
+            out_map.append((cc, f'res/tot_graph_{len(cc)}_{i}.dot'))
+            i += 1
+    for cards, fname in out_map:
+        with open(fname, "w+") as outf:
+            comment_layout = "#" if len(cards) < 100 else ""
+                
+            outf.write(f"digraph G {{\n{comment_layout}layout=twopi;\nranksep=3;\nratio=auto;\n")
+            for card in cards:
+                edgeset = canonical_card_to_edges[card]
+                for edgeval in edgeset:
+                    if edgeval < 0:
+                        continue
+                    my_name = id_to_card[card].replace('"', '')
+                    other_name = id_to_card[edgeval].replace('"','')
+                    outf.write(f'"{my_name}" -> "{other_name}";\n')
+            outf.write("}\n")
+
 if __name__ == "__main__":
     sw_file = 'res/data.js' if len(sys.argv) < 2 else sys.argv[1]
     sf_file = 'res/oracle-cards.json' if len(sys.argv) < 3 else sys.argv[2]
@@ -288,6 +361,7 @@ if __name__ == "__main__":
                 all_data_items.add(item[0])
                 all_data_items.add(item[1])
             outf.write("\n];")
+        """
         all_data_list = list(all_data_items)
         index_map = {}
         index = 0
@@ -303,6 +377,7 @@ if __name__ == "__main__":
                 first = False 
                 outf.write(f"[{index_map[item[0]]},{index_map[item[1]]}{',=' if len(item) == 3 else ''}]")
             outf.write(";\n")
-            
+        """
+        generateDotFiles(sw)
         print(f"Relation Count: {len(sw)}")
         print("All Good! Exported Files")

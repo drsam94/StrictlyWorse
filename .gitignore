@@ -6,6 +6,9 @@ res/filtered-oracle.js
 build/*
 res/unmatched-*
 *.svg
+*.dot
+*.eps
+*.png
 *.pyc
 src/Purchase*
 res/filtered-oracle-unmatched.js

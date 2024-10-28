@@ -7,6 +7,7 @@ import * as rawData from '../res/data.js';
 import * as philosophy from '../res/philosophy.js';
 // @ts-ignore
 import * as help from '../res/help.js';
+
 // After months of working on this project having no clue how to harmonize the d3 import
 // syntax above which I didn't want to touch, the json importing syntax, and a typescript
 // import syntax, it turns out that the secret is that you have to lie about filenames in 
