@@ -10,142 +10,17 @@
 import { CARD_HEIGHT, imbueHoverImage } from './hover.js';
 import { autocomplete } from './autocomplete.js';
 import { Direction, DirStats, Card, CardCategory } from './card.js';
-import { addUnion } from './set.js';
 import { SearchMatcher } from './search.js';
-import { oracleData, oracleDataUnmapped } from './oracle.js';
+import { oracleData } from './oracle.js';
 import { TableMaker } from './table_maker.js';
 import { Timer } from './timer.js';
 import { getImageURL } from './image_url.js';
 import { makeChart } from './chart.js';
 import { makeDateHistogram, DateHistogramEntry } from './histogram.js';
-import { displayCharts, renderChecker, renderSearch, renderTable } from './navigate.js';
+import { Page, changeLocation } from './navigate.js';
 import { initializeTotalSets, getMaximalCards, getTotalSet, getTotalChildSet } from './card_maps.js';
-
-function initNode(dag: Record<string, Card>, key: string): Card {
-  if (!(key in dag)) {
-    dag[key] = new Card(key);
-  }
-  return dag[key];
-}
-
-function processData(inData: Array<Array<string>>): Record<string, Card> {
-  const dag: Record<string, Card> = {};
-  for (const elem of inData) {
-    const worse = elem[0];
-    const better = elem[1];
-    const worseNode = initNode(dag, worse);
-    const betterNode = initNode(dag, better);
-    if (elem.length === 3) {
-      if (elem[2] === '=') {
-        dag[better] = worseNode;
-        continue;
-      }
-    }
-    worseNode.stats(Direction.Better).cards.push(betterNode);
-    const betterCards = betterNode.stats(Direction.Worse).cards;
-    betterCards.push(worseNode);
-  }
-  return dag;
-}
-
-function computeStats(dag: Record<string, Card>): void {
-  function computeStatsRecursive(card: Card, dir: Direction) {
-    const set = getTotalChildSet(dir);
-    if (set[card.name] === undefined) {
-      set[card.name] = new Set();
-      const ws = set[card.name];
-      let maxDegree = 0;
-      for (const worse of card.stats(dir).cards) {
-        computeStatsRecursive(worse, dir);
-        ws.add(worse.name);
-        addUnion(ws, set[worse.name]);
-        let childDegree = worse.stats(dir).degree + (worse.isPlaceholder() ? 0 : 1);
-        maxDegree = Math.max(maxDegree, childDegree);
-      }
-      const stats = card.stats(dir);
-      stats.degree = maxDegree;
-      for (const c of ws) {
-        stats.total += dag[c].isPlaceholder() ? 0 : 1;
-      }
-    }
-  }
-  for (const card of Object.values(dag)) {
-    computeStatsRecursive(card, Direction.Worse);
-    computeStatsRecursive(card, Direction.Better);
-  }
-}
-// { name: rootNode.name, "children": [], value: rootNode.stats(dir).total, depth: rootNode.stats(dir).degree };
-class TreeNode {
-  public readonly name: string;
-  public children: Array<TreeNode>;
-  public readonly value: number;
-  public readonly depth: number;
-
-  public constructor(sourceNode: Card, dir: Direction) {
-    this.name = sourceNode.name;
-    this.children = [];
-    const stats = sourceNode.stats(dir)
-    this.value = stats.total;
-    this.depth = stats.degree
-  }
-};
-
-function recurAddChildren(rootNode: TreeNode, childList: Array<Card>, dir: Direction) {
-  for (const child of childList) {
-    const obj = new TreeNode(child, dir);
-    let newRoot = obj;
-    if (!child.isPlaceholder()) {
-      let childAlreadyExists = false;
-      for (const chi of rootNode.children) {
-        if (chi.name === child.name) {
-          childAlreadyExists = true;
-          break;
-        }
-      }
-      if (!childAlreadyExists) {
-        rootNode.children.push(obj);
-      }
-    } else {
-      newRoot = rootNode;
-    }
-    recurAddChildren(newRoot, child.stats(dir).cards, dir);
-  }
-}
-
-function recurCleanTree(rootNode: TreeNode, dir: Direction) {
-  // This cleans the tree to remove instances of
-  //
-  //    B
-  //   /
-  // A
-  //   \
-  //    C - B
-  //
-  // Because B is transitively related to A, we should not also claim it is directly a child of A.
-  // We generally keep the input data clean of these cases, but they can arise due to the collapsing
-  // of
-  const allDeeper = new Set<string>();
-  const totalSet = getTotalChildSet(dir);
-  for (const child of rootNode.children) {
-    addUnion(allDeeper, totalSet[child.name])
-  }
-  const filteredChildren = [];
-  for (const child of rootNode.children) {
-    if (!allDeeper.has(child.name)) {
-      filteredChildren.push(child);
-    }
-    recurCleanTree(child, dir);
-  }
-  rootNode.children = filteredChildren;
-}
-function makeTree(rootNode: Card, dir: Direction) {
-  const data = new TreeNode(rootNode, dir);
-  recurAddChildren(data, rootNode.stats(dir).cards, dir);
-
-  recurCleanTree(data, dir);
-
-  return data;
-}
+import { Stats } from './stats.js'
+import { makeTree, processData } from './dag.js'
 
 function extractDates<T>(collection: Iterable<T>, extract: (arg0: T) => string): Array<DateHistogramEntry> {
 
@@ -195,7 +70,7 @@ function doDisplayConnectedComponents(outdiv: HTMLElement, data: string) {
           displayTextWithCardLinks(innerDiv, textContent);
           const captureElement = element;
           innerDiv.onclick = () => {
-            displayCharts(captureElement);
+            changeLocation(Page.card, captureElement);
           }
         } else {
           innerDiv.textContent = "Total";
@@ -435,53 +310,6 @@ function displaySearch(outdiv: HTMLElement, dag: Record<string, Card>, searchQue
   tableMaker.renderTable(outdiv);
 }
 
-class Stats {
-  private readonly dag: Record<string, Card>;
-  private static singleton: Stats | null;
-  public constructor(dag: Record<string, Card>) {
-    this.dag = dag;
-  }
-  public static relationsCount: number = 0;
-  public static get(dag: Record<string, Card>): Stats {
-    if (Stats.singleton == null) {
-      Stats.singleton = new Stats(dag);
-    }
-    return Stats.singleton;
-  }
-  public getRelationsCount(): number {
-    return Stats.relationsCount;
-  }
-  public getMappedCount(): number {
-    return Object.keys(oracleData.all_cards).length;
-  }
-  public getTotalCount(): number {
-    return this.getMappedCount() + Object.keys(oracleDataUnmapped.all_cards).length;
-  }
-
-  public getExtremeBy(dir: Direction, key: keyof DirStats): [Array<Card>, number] {
-    let maxDegree = 0;
-    let ret: Array<Card> = [];
-    for (const card of Object.values(this.dag)) {
-      const thisDegree = card.stats(dir)[key] as number;
-      if (thisDegree > maxDegree) {
-        ret = [];
-      }
-      if (thisDegree >= maxDegree) {
-        maxDegree = thisDegree;
-        ret.push(card)
-      }
-    }
-    return [ret, maxDegree];
-  }
-
-  public getExtremeByDegree(dir: Direction): [Array<Card>, number] {
-    return this.getExtremeBy(dir, "degree");
-  }
-  public getExtremeByTotal(dir: Direction): [Array<Card>, number] {
-    return this.getExtremeBy(dir, "total");
-  }
-};
-
 function doRenderHome(outdiv: HTMLDivElement, dag: Record<string, Card>) {
   outdiv.replaceChildren("");
   const containerDiv = document.createElement("div");
@@ -670,14 +498,14 @@ function makeHeaderButtons(headerDiv: HTMLDivElement, outdiv: HTMLDivElement): v
     button.onclick = action;
   };
 
-  makeButton("#ABCDEF", "Home", () => { window.location.hash = "home"; });
-  makeButton("#ABCDEF", "Philosophy", () => { window.location.hash = "page-philosophy"; });
-  makeButton("#ABCDEF", "Adv. Search", () => { renderSearch(""); });
-  makeButton("#ABCDEF", "All Worst Cards", () => { renderTable(Direction.Worse); });
-  makeButton("#ABCDEF", "All Best Cards", () => { renderTable(Direction.Better); })
-  makeButton("#ABCDEF", "Stats", () => { window.location.hash = "page-stats"; });
-  makeButton("#ABCDEF", "Check Cards", () => { renderChecker(); });
-  makeButton("#ABCDEF", "Graph Components", () => { window.location.hash = "page-components"; });
+  makeButton("#ABCDEF", "Home", () => { changeLocation(Page.home); });
+  makeButton("#ABCDEF", "Philosophy", () => { changeLocation(Page.philosophy); });
+  makeButton("#ABCDEF", "Adv. Search", () => { changeLocation(Page.search, "");; });
+  makeButton("#ABCDEF", "All Worst Cards", () => { changeLocation(Page.table, Direction.Worse); });
+  makeButton("#ABCDEF", "All Best Cards", () => { changeLocation(Page.table, Direction.Better); })
+  makeButton("#ABCDEF", "Stats", () => { changeLocation(Page.stats); });
+  makeButton("#ABCDEF", "Check Cards", () => { changeLocation(Page.checker); });
+  makeButton("#ABCDEF", "Graph Components", () => { changeLocation(Page.components); });
 }
 interface PseudoKeyboardEvent {
   key: string
@@ -702,7 +530,7 @@ function makeSearchBar(dag: Record<string, Card>): [HTMLDivElement, HTMLInputEle
     if (event.key != "Enter") {
       return;
     }
-    displayCharts(inputElem.value);
+    changeLocation(Page.card, inputElem.value);
   };
   autocomplete(inputElem, Object.keys(dag), cb);
   inputElem.addEventListener("keydown", cb);
@@ -715,8 +543,10 @@ function main(): void {
   globalSetup();
 
   const xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = () => {
-    mainOnLoad(JSON.parse(xhttp.responseText));
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      mainOnLoad(JSON.parse(xhttp.responseText));
+    }
   }
   xhttp.open("GET", "res/data.json", true);
   xhttp.send();
@@ -725,7 +555,6 @@ function main(): void {
 function mainOnLoad(all_relations: Array<Array<string>>): void {
   const dag: Record<string, Card> = processData(all_relations);
   Stats.relationsCount = all_relations.length;
-  computeStats(dag);
 
   const searchBar = makeSearchBar(dag)[0];
 

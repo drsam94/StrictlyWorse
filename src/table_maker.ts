@@ -3,7 +3,7 @@ import { Card, CardCategory, Direction } from './card.js'
 import { getOracleData, getCategory, getOracle, getTotalChildSet } from './card_maps.js';
 import { getImageURL } from './image_url.js'
 import { imbueHoverImage } from './hover.js';
-import { displayCharts } from './navigate.js';
+import { changeLocation, Page } from './navigate.js'
 
 function makeElement(type: string, parent?: Node, text?: string): HTMLElement {
   const elem = document.createElement(type);
@@ -145,7 +145,7 @@ export class TableMaker {
       imbueHoverImage(cell, getImageURL(name, getOracle(category)));
       if (category != CardCategory.Unmapped) {
         cell.onclick = () => {
-          displayCharts(name);
+          changeLocation(Page.card, name);
         }
       }
     }

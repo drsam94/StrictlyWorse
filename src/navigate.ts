@@ -1,14 +1,31 @@
 import { Direction } from './card.js';
 
-export function displayCharts(name: string): void {
-  window.location.hash = "card-" + name;
+export enum Page {
+  card,
+  search,
+  checker,
+  table,
+  help,
+  philosophy,
+  home,
+  stats,
+  components
 }
-export function renderSearch(query: string) {
-  window.location.hash = "search-" + query;
+
+export function changeLocation(loc: Page, arg?: any): void {
+  switch (loc) {
+    case Page.card:
+    case Page.search:
+      window.location.hash = Page[loc] + "-" + (arg as string);
+      break;
+    case Page.table:
+      window.location.hash = Page[loc] + "-" + Direction[arg as Direction];
+      break;
+    case Page.home:
+      window.location.hash = Page[loc];
+      break;
+    default:
+      window.location.hash = "page-" + Page[loc];
+      break;
+  }
 }
-export function renderChecker() {
-  window.location.hash = "page-checker"
-}
-export function renderTable(dir: Direction) {
-  window.location.hash = "table-" + Direction[dir];
-};
