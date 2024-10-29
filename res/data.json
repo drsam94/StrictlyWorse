@@ -1,3 +1,4 @@
+[
 ["+2 Mace", "Cultist's Staff"],
 ["1 1/2", "Keeper of the Lens"],
 ["1 1/2", "Merchant's Dockhand"],
@@ -7030,7 +7031,6 @@
 ["Nature's Spiral", "Regrowth"],
 ["Nature's Spiral", "Revive the Shire"],
 ["Nature's Spiral", "Unnatural Restoration"],
-["Remove", "Vapor Snag"],
 ["Nausea", "Shrivel", "="],
 ["Nausea", "Shrouded Shepherd // Cleave Shadows"],
 ["Naya Panorama", "Sheltering Landscape"],
@@ -8147,6 +8147,7 @@
 ["Remove", "Ephara's Dispersal"],
 ["Remove", "Into the Flood Maw"],
 ["Remove", "Unsummon"],
+["Remove", "Vapor Snag"],
 ["Remove Soul", "Essence Scatter", "="],
 ["Remove Soul", "False Summoning", "="],
 ["Remove Soul", "Glorious Gale"],

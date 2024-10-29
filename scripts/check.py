@@ -2,17 +2,15 @@
 
 import sys
 import json
+import os
+import subprocess 
+import csv
 from card import Card, CardDesc, Compare, construct_relationship_tree
 from typing import Any 
 
 def parse_sw(file: str):
-    content = '['
-    for line in open(file).readlines():
-        if line.startswith('export') or line.startswith(']'):
-            continue
-        content += line
-    content += ']'
-    return json.loads(content)
+    with open(file) as infile:
+        return json.load(infile)
 
 def parse_sf(file: str):
     return json.load(open(file))
@@ -22,7 +20,7 @@ def is_placeholder(name: str) -> bool:
 
 def get_text_names() -> set[str]:
     import re
-    text_file = 'res/philosophy.js'
+    text_file = 'res/philosophy.html'
     r = re.compile(r'\[\[([^\[\]]*)\]\]')
     names = set()
     for match in r.finditer(open(text_file).read()):
@@ -229,7 +227,7 @@ def get_connected_components(id_to_edges):
         get_connected_components_from_root(id_iter, edges_iter, next_component)
     return components
 
-def generateDotFiles(sw):
+def generate_dot_files(sw):
     card_to_id = {}
     id_to_card = [""]
     card_to_edges = {}
@@ -260,29 +258,53 @@ def generateDotFiles(sw):
  
     ccs = get_connected_components(canonical_card_to_edges)
     out_map = []
-    out_map.append((canonical_card_to_edges.keys(), 'res/tot_graph.dot'))
+    if not os.path.exists('res/dot'):
+        os.mkdir('res/dot')
+    out_map.append((canonical_card_to_edges.keys(), 'res/dot/tot_graph.dot'))
     i = 0
     for cc in ccs:
-        if len(cc) > 3:
-            out_map.append((cc, f'res/tot_graph_{len(cc)}_{i}.dot'))
-            i += 1
+        out_map.append((cc, f'res/dot/tot_graph_{len(cc)}_{i}.dot'))
+        i += 1
+    out_data = []
+    def good_name(card):
+        name = id_to_card[card]
+        return not is_placeholder(name) and '"' not in name and ',' not in name
     for cards, fname in out_map:
-        with open(fname, "w+") as outf:
-            comment_layout = "#" if len(cards) < 100 else ""
-                
-            outf.write(f"digraph G {{\n{comment_layout}layout=twopi;\nranksep=3;\nratio=auto;\n")
+        exemplar = None
+        size = len(cards)
+        if size > 3:
+            with open(fname, "w+") as outf:
+                comment_layout = "#" if size < 100 else ""
+                rank_sep = "2" if size < 100 else "3"
+                outf.write(f"digraph G {{\n{comment_layout}layout=twopi;\n{comment_layout}overlap=prism;\nranksep={rank_sep};\nratio=auto;\n")
+                for card in cards:
+                    if exemplar is None and good_name(card):
+                        exemplar = card
+                    edgeset = canonical_card_to_edges[card]
+                    for edgeval in edgeset:
+                        if edgeval < 0:
+                            continue
+                        my_name = id_to_card[card].replace('"', '')
+                        other_name = id_to_card[edgeval].replace('"','')
+                        outf.write(f'"{my_name}" -> "{other_name}";\n')
+                outf.write("}\n")
+            svg_name = os.path.splitext(fname)[0] + ".svg"
+            subprocess.run(f"dot -Tsvg {fname} -o {svg_name}", shell=True)
+        else:
             for card in cards:
-                edgeset = canonical_card_to_edges[card]
-                for edgeval in edgeset:
-                    if edgeval < 0:
-                        continue
-                    my_name = id_to_card[card].replace('"', '')
-                    other_name = id_to_card[edgeval].replace('"','')
-                    outf.write(f'"{my_name}" -> "{other_name}";\n')
-            outf.write("}\n")
+                if exemplar is None and good_name(card):
+                    exemplar = card
+            svg_name = ""
+        exemplar_name = id_to_card[exemplar] if out_data else "Total"
+        out_data.append([exemplar_name, size, svg_name])
+    with open("res/graphs.csv", "w+") as outf:
+        writer = csv.writer(outf)
+        writer.writerow(["Exemplar", "Size", "Filename"])
+        for row in sorted(out_data, key=lambda x:-x[1]):
+            writer.writerow(row)
 
 if __name__ == "__main__":
-    sw_file = 'res/data.js' if len(sys.argv) < 2 else sys.argv[1]
+    sw_file = 'res/data.json' if len(sys.argv) < 2 else sys.argv[1]
     sf_file = 'res/oracle-cards.json' if len(sys.argv) < 3 else sys.argv[2]
     vanilla_file = 'res/vanilla.json' if len(sys.argv) < 4 else sys.argv[3]
     vanilla = json.load(open(vanilla_file))
@@ -351,16 +373,16 @@ if __name__ == "__main__":
             filtered_names = {name: simplify_obj(obj) for name,obj in official_names.items() if name in non_sw_names}
             json.dump(filtered_names, outf, separators=(',', ':'))
         all_data_items = set()
-        with open('res/data.js', "w+") as outf:
-            outf.write('export const all_relations = [\n')
+        with open('res/data.json', "w+") as outf:
             first = True
+            outf.write("[\n")
             for item in sw:
                 if not first: outf.write(",\n")
                 json.dump(item, outf)
                 first = False
                 all_data_items.add(item[0])
                 all_data_items.add(item[1])
-            outf.write("\n];")
+            outf.write("\n]")
         """
         all_data_list = list(all_data_items)
         index_map = {}
@@ -378,6 +400,6 @@ if __name__ == "__main__":
                 outf.write(f"[{index_map[item[0]]},{index_map[item[1]]}{',=' if len(item) == 3 else ''}]")
             outf.write(";\n")
         """
-        generateDotFiles(sw)
+        generate_dot_files(sw)
         print(f"Relation Count: {len(sw)}")
         print("All Good! Exported Files")

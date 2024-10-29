@@ -1,13 +1,5 @@
 // Author: Sam Donow, 2024
 
-
-// @ts-ignore
-import * as rawData from '../res/data.js';
-// @ts-ignore
-import * as philosophy from '../res/philosophy.js';
-// @ts-ignore
-import * as help from '../res/help.js';
-
 // After months of working on this project having no clue how to harmonize the d3 import
 // syntax above which I didn't want to touch, the json importing syntax, and a typescript
 // import syntax, it turns out that the secret is that you have to lie about filenames in 
@@ -36,7 +28,8 @@ function initNode(dag: Record<string, Card>, key: string): Card {
   return dag[key];
 }
 
-function processData(dag: Record<string, Card>, inData: Array<Array<string>>) {
+function processData(inData: Array<Array<string>>): Record<string, Card> {
+  const dag: Record<string, Card> = {};
   for (const elem of inData) {
     const worse = elem[0];
     const better = elem[1];
@@ -52,6 +45,7 @@ function processData(dag: Record<string, Card>, inData: Array<Array<string>>) {
     const betterCards = betterNode.stats(Direction.Worse).cards;
     betterCards.push(worseNode);
   }
+  return dag;
 }
 
 function computeStats(dag: Record<string, Card>): void {
@@ -170,6 +164,56 @@ function extractDates<T>(collection: Iterable<T>, extract: (arg0: T) => string):
     }
   }
   return ret;
+}
+
+function doDisplayConnectedComponents(outdiv: HTMLElement, data: string) {
+  outdiv.replaceChildren("");
+
+  const table = document.createElement("table");
+  table.className = "mytable";
+  let headerWritten = false;
+  for (let line of data.split("\n")) {
+    if (line.length <= 1) {
+      continue;
+    }
+    const row = document.createElement("tr");
+    row.className = "mytable";
+    let i = 0;
+    for (let element of line.split(",")) {
+      const field = document.createElement("td");
+      field.className = "mytable";
+      if (!headerWritten) {
+        field.textContent = element;
+        row.appendChild(field);
+        continue;
+      }
+      if (i == 0) {
+        // exemplar
+        const innerDiv = document.createElement("div");
+        if (element != "Total") {
+          const textContent = `[[${element}]]`;
+          displayTextWithCardLinks(innerDiv, textContent);
+          const captureElement = element;
+          innerDiv.onclick = () => {
+            displayCharts(captureElement);
+          }
+        } else {
+          innerDiv.textContent = "Total";
+        }
+        field.appendChild(innerDiv);
+      } else if (i == 1) {
+        field.textContent = element;
+      } else if (i == 2 && element.length > 1) {
+        // len 1 because of newline
+        field.innerHTML = `<a href="${element}">Chart</a>`;
+      }
+      i += 1;
+      row.appendChild(field);
+    }
+    table.appendChild(row);
+    headerWritten = true;
+  }
+  outdiv.appendChild(table);
 }
 
 function doDisplayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: string, fontSize = 14): void {
@@ -312,7 +356,7 @@ function displayCheck(inputText: string, errordiv: HTMLDivElement, tablediv: HTM
   tableMaker.renderTable(tablediv);
   if (errorCards.length == 0) {
     return;
-  } 
+  }
   const label = document.createElement("p");
   label.textContent = "The following cards were not found or are Unmapped: ";
   const ul = document.createElement("ul");
@@ -397,6 +441,7 @@ class Stats {
   public constructor(dag: Record<string, Card>) {
     this.dag = dag;
   }
+  public static relationsCount: number = 0;
   public static get(dag: Record<string, Card>): Stats {
     if (Stats.singleton == null) {
       Stats.singleton = new Stats(dag);
@@ -404,7 +449,7 @@ class Stats {
     return Stats.singleton;
   }
   public getRelationsCount(): number {
-    return rawData.all_relations.length;
+    return Stats.relationsCount;
   }
   public getMappedCount(): number {
     return Object.keys(oracleData.all_cards).length;
@@ -574,9 +619,20 @@ function initializePageFromHash(outdiv: HTMLDivElement, searchBar: HTMLDivElemen
       doRenderStats(outdiv, dag);
     } else if (val === "checker") {
       doRenderCheck(outdiv, dag);
+    } else if (val === "components") {
+      const xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = () => {
+        doDisplayConnectedComponents(outdiv, xhttp.responseText);
+      }
+      xhttp.open("GET", "res/graphs.csv", true);
+      xhttp.send();
     } else {
-      const pageSource: string = val == "philosophy" ? philosophy.pageSource : help.pageSource;
-      displayTextWithCardLinks(outdiv, pageSource, "");
+      const xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = () => {
+        displayTextWithCardLinks(outdiv, xhttp.responseText, "");
+      }
+      xhttp.open("GET", `res/${val}.html`, true);
+      xhttp.send();
     }
   } else if (key === "search") {
     searchBar.style.visibility = "hidden";
@@ -615,13 +671,13 @@ function makeHeaderButtons(headerDiv: HTMLDivElement, outdiv: HTMLDivElement): v
   };
 
   makeButton("#ABCDEF", "Home", () => { window.location.hash = "home"; });
-  makeButton("#ABCDEF", "Philosophy", () => { displayTextWithCardLinks(outdiv, philosophy.pageSource, "philosophy"); });
+  makeButton("#ABCDEF", "Philosophy", () => { window.location.hash = "page-philosophy"; });
   makeButton("#ABCDEF", "Adv. Search", () => { renderSearch(""); });
   makeButton("#ABCDEF", "All Worst Cards", () => { renderTable(Direction.Worse); });
   makeButton("#ABCDEF", "All Best Cards", () => { renderTable(Direction.Better); })
   makeButton("#ABCDEF", "Stats", () => { window.location.hash = "page-stats"; });
   makeButton("#ABCDEF", "Check Cards", () => { renderChecker(); });
-  // TODO Check List page
+  makeButton("#ABCDEF", "Graph Components", () => { window.location.hash = "page-components"; });
 }
 interface PseudoKeyboardEvent {
   key: string
@@ -658,8 +714,17 @@ function makeSearchBar(dag: Record<string, Card>): [HTMLDivElement, HTMLInputEle
 function main(): void {
   globalSetup();
 
-  const dag: Record<string, Card> = {};
-  processData(dag, rawData.all_relations);
+  const xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = () => {
+    mainOnLoad(JSON.parse(xhttp.responseText));
+  }
+  xhttp.open("GET", "res/data.json", true);
+  xhttp.send();
+}
+
+function mainOnLoad(all_relations: Array<Array<string>>): void {
+  const dag: Record<string, Card> = processData(all_relations);
+  Stats.relationsCount = all_relations.length;
   computeStats(dag);
 
   const searchBar = makeSearchBar(dag)[0];
