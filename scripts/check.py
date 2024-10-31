@@ -303,12 +303,18 @@ def generate_dot_files(sw):
         for row in sorted(out_data, key=lambda x:-x[1]):
             writer.writerow(row)
 
-if __name__ == "__main__":
-    sw_file = 'res/data.json' if len(sys.argv) < 2 else sys.argv[1]
-    sf_file = 'res/oracle-cards.json' if len(sys.argv) < 3 else sys.argv[2]
-    vanilla_file = 'res/vanilla.json' if len(sys.argv) < 4 else sys.argv[3]
-    vanilla = json.load(open(vanilla_file))
-    sw = parse_sw(sw_file)
+
+
+def main():
+    import argparse 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--nodot", "-n", action="store_true")
+    parser.add_argument("sw_file", default="res/data.json", nargs="?")
+    parser.add_argument("sf_file", default="res/oracle-cards.json", nargs="?")
+    parser.add_argument("vanilla_file", default="res/vanilla.json", nargs="?")
+    args = parser.parse_args()
+    vanilla = json.load(open(args.vanilla_file))
+    sw = parse_sw(args.sw_file)
     filtered_sw = []
     lastItem: list[str] = []
     filtered_items = []
@@ -325,7 +331,7 @@ if __name__ == "__main__":
         print(f"Removed {len(filtered_items)} duplicates: {chr(10).join(filtered_items)}")
     sw = filtered_sw
 
-    sf = parse_sf(sf_file)
+    sf = parse_sf(args.sf_file)
     official_names = {obj["name"] : obj for obj in sf if is_real_card(obj)}
     raw_sw_names = set()
     for elem in sw:
@@ -400,6 +406,10 @@ if __name__ == "__main__":
                 outf.write(f"[{index_map[item[0]]},{index_map[item[1]]}{',=' if len(item) == 3 else ''}]")
             outf.write(";\n")
         """
-        generate_dot_files(sw)
+        if not args.nodot:
+            generate_dot_files(sw)
         print(f"Relation Count: {len(sw)}")
         print("All Good! Exported Files")
+
+if __name__ == "__main__":
+    main()
