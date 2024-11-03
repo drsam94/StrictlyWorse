@@ -1,191 +1,189 @@
 Exemplar,Size,Filename
-Total,4727,res/dot/tot_graph.svg
-Siren of the Fanged Coast,2991,res/dot/tot_graph_2991_1.svg
-Assassinate,75,res/dot/tot_graph_75_42.svg
-Binding Negotiation,50,res/dot/tot_graph_50_12.svg
-Skyclave Relic,49,res/dot/tot_graph_49_6.svg
-+2 Mace,37,res/dot/tot_graph_37_0.svg
-Coma Veil,32,res/dot/tot_graph_32_36.svg
-Inspired Charge,31,res/dot/tot_graph_31_54.svg
-Pierce the Sky,28,res/dot/tot_graph_28_2.svg
-Cooped Up,17,res/dot/tot_graph_17_40.svg
-Grasp of Fate,17,res/dot/tot_graph_17_47.svg
-Keys to the House,17,res/dot/tot_graph_17_79.svg
-Craterize,15,res/dot/tot_graph_15_125.svg
-Jund Panorama,13,res/dot/tot_graph_13_50.svg
-Vampire's Kiss,12,res/dot/tot_graph_12_17.svg
-Farm // Market,11,res/dot/tot_graph_11_3.svg
-Moss Diamond,11,res/dot/tot_graph_11_96.svg
-Eaten by Piranhas,9,res/dot/tot_graph_9_176.svg
-Fierce Guardianship,9,res/dot/tot_graph_9_192.svg
-Word of Seizing,9,res/dot/tot_graph_9_261.svg
-Call to Arms,8,res/dot/tot_graph_8_33.svg
-Urborg Repossession,8,res/dot/tot_graph_8_144.svg
-Oakenform,8,res/dot/tot_graph_8_193.svg
-Run Out of Town,8,res/dot/tot_graph_8_339.svg
-Refuse to Yield,7,res/dot/tot_graph_7_15.svg
-Shimmering Grotto,7,res/dot/tot_graph_7_29.svg
+Total,4815,res/dot/tot_graph.svg
+Shatter,3066,res/dot/tot_graph_3066_1.svg
+Hypnotic Cloud,82,res/dot/tot_graph_82_13.svg
+Sever the Bloodline,76,res/dot/tot_graph_76_43.svg
+Rakdos Cluestone,49,res/dot/tot_graph_49_6.svg
+Butcher's Cleaver,37,res/dot/tot_graph_37_0.svg
+Tamiyo's Compleation,32,res/dot/tot_graph_32_37.svg
+Break Asunder,28,res/dot/tot_graph_28_2.svg
+Sigarda's Imprisonment,17,res/dot/tot_graph_17_41.svg
+Static Net,17,res/dot/tot_graph_17_47.svg
+Springjaw Trap,17,res/dot/tot_graph_17_78.svg
+Victorious Destruction,15,res/dot/tot_graph_15_124.svg
+Promising Vein,13,res/dot/tot_graph_13_50.svg
+Syphon Soul,12,res/dot/tot_graph_12_18.svg
+Rebuke,11,res/dot/tot_graph_11_3.svg
+Marble Diamond,11,res/dot/tot_graph_11_95.svg
+Witness Protection,9,res/dot/tot_graph_9_174.svg
+Extinguish,9,res/dot/tot_graph_9_191.svg
+Vengeful Possession,9,res/dot/tot_graph_9_260.svg
+Vanish from Sight,9,res/dot/tot_graph_9_339.svg
+Crusade,8,res/dot/tot_graph_8_34.svg
+Diabolic Tutor,8,res/dot/tot_graph_8_130.svg
+Wander in Death,8,res/dot/tot_graph_8_143.svg
+Frantic Strength,8,res/dot/tot_graph_8_192.svg
+Yavimaya Granger,8,res/dot/tot_graph_8_297.svg
+Alarum,7,res/dot/tot_graph_7_16.svg
+Ambuscade,7,res/dot/tot_graph_7_27.svg
+The Mycosynth Gardens,7,res/dot/tot_graph_7_30.svg
 Righteous Blow,7,res/dot/tot_graph_7_240.svg
-Tempt with Immortality,7,res/dot/tot_graph_7_423.svg
-Unnerving Grasp,6,res/dot/tot_graph_6_16.svg
-Galestrike,6,res/dot/tot_graph_6_41.svg
-Giant Strength,6,res/dot/tot_graph_6_92.svg
-Monstrous Growth,6,res/dot/tot_graph_6_119.svg
-Sisay's Ring,6,res/dot/tot_graph_6_185.svg
-Lull,6,res/dot/tot_graph_6_222.svg
-Sowing Mycospawn,6,res/dot/tot_graph_6_297.svg
-Thunder Strike,6,res/dot/tot_graph_6_466.svg
-Village Rites,5,res/dot/tot_graph_5_24.svg
-Hunt the Weak,5,res/dot/tot_graph_5_26.svg
-Invisibility,5,res/dot/tot_graph_5_46.svg
-Black Dragon,5,res/dot/tot_graph_5_61.svg
-Green Ward,5,res/dot/tot_graph_5_62.svg
-Bone Splinters,5,res/dot/tot_graph_5_73.svg
-Tail Slash,5,res/dot/tot_graph_5_134.svg
-Shattered Dreams,5,res/dot/tot_graph_5_162.svg
-Flaying Tendrils,5,res/dot/tot_graph_5_218.svg
-Vision Skeins,5,res/dot/tot_graph_5_266.svg
-Quicksilver Geyser,5,res/dot/tot_graph_5_373.svg
-Resuscitate,5,res/dot/tot_graph_5_413.svg
-Wild Guess,5,res/dot/tot_graph_5_508.svg
+Restart Sequence,7,res/dot/tot_graph_7_422.svg
+Aether Adept,6,res/dot/tot_graph_6_17.svg
+Tolarian Geyser,6,res/dot/tot_graph_6_42.svg
+Maniacal Rage,6,res/dot/tot_graph_6_91.svg
+Confidence from Strength,6,res/dot/tot_graph_6_118.svg
+Sol Ring,6,res/dot/tot_graph_6_183.svg
+Root Snare,6,res/dot/tot_graph_6_222.svg
+Furious Bellow,6,res/dot/tot_graph_6_464.svg
+Village Rites,5,res/dot/tot_graph_5_25.svg
+Cloak of Mists,5,res/dot/tot_graph_5_46.svg
+Black Dragon,5,res/dot/tot_graph_5_60.svg
+Green Ward,5,res/dot/tot_graph_5_61.svg
+Powerstone Fracture,5,res/dot/tot_graph_5_72.svg
+Crush Underfoot,5,res/dot/tot_graph_5_133.svg
+Divest,5,res/dot/tot_graph_5_160.svg
+Infest,5,res/dot/tot_graph_5_218.svg
+Huddle Up,5,res/dot/tot_graph_5_265.svg
+Quicksilver Geyser,5,res/dot/tot_graph_5_372.svg
+Serpent Assassin,5,res/dot/tot_graph_5_385.svg
+Resuscitate,5,res/dot/tot_graph_5_412.svg
+Witch's Mark,5,res/dot/tot_graph_5_508.svg
 Abzan Runemark,4,res/dot/tot_graph_4_7.svg
-Shimmer of Possibility,4,res/dot/tot_graph_4_35.svg
-Brainwash,4,res/dot/tot_graph_4_80.svg
-Prismatic Ward,4,res/dot/tot_graph_4_99.svg
-Commit // Memory,4,res/dot/tot_graph_4_101.svg
-Blue Sun's Zenith,4,res/dot/tot_graph_4_118.svg
-Ajani's Mantra,4,res/dot/tot_graph_4_122.svg
-Fade from Memory,4,res/dot/tot_graph_4_148.svg
-Rhystic Tutor,4,res/dot/tot_graph_4_153.svg
-Control Magic,4,res/dot/tot_graph_4_164.svg
-Douse in Gloom,4,res/dot/tot_graph_4_167.svg
-Elvish Doomsayer,4,res/dot/tot_graph_4_181.svg
-Burning Sun's Fury,4,res/dot/tot_graph_4_215.svg
-Wall of Earth,4,res/dot/tot_graph_4_225.svg
-Witchbane Orb,4,res/dot/tot_graph_4_275.svg
-Black Lotus,4,res/dot/tot_graph_4_276.svg
-Indestructible Aura,4,res/dot/tot_graph_4_278.svg
-Quick-Draw Dagger,4,res/dot/tot_graph_4_312.svg
-Mystic Veil,4,res/dot/tot_graph_4_349.svg
-Grafted Growth,4,res/dot/tot_graph_4_356.svg
+Experimental Augury,4,res/dot/tot_graph_4_36.svg
+Brainwash,4,res/dot/tot_graph_4_79.svg
+Ward of Lights,4,res/dot/tot_graph_4_98.svg
+Commit // Memory,4,res/dot/tot_graph_4_100.svg
+Drown in Dreams,4,res/dot/tot_graph_4_117.svg
+Spiritual Sanctuary,4,res/dot/tot_graph_4_121.svg
+Rapid Decay,4,res/dot/tot_graph_4_147.svg
+Persuasion,4,res/dot/tot_graph_4_162.svg
+Douse in Gloom,4,res/dot/tot_graph_4_165.svg
+Deadbridge Shaman,4,res/dot/tot_graph_4_179.svg
+Fists of the Anvil,4,res/dot/tot_graph_4_215.svg
+Fortified Rampart,4,res/dot/tot_graph_4_225.svg
+Ivory Mask,4,res/dot/tot_graph_4_274.svg
+Mirrored Lotus,4,res/dot/tot_graph_4_275.svg
+Loran's Escape,4,res/dot/tot_graph_4_277.svg
+Leonin Scimitar,4,res/dot/tot_graph_4_312.svg
+Robe of Mirrors,4,res/dot/tot_graph_4_349.svg
+Weirding Wood,4,res/dot/tot_graph_4_356.svg
 Blood Pact,4,res/dot/tot_graph_4_367.svg
 You See a Pair of Goblins,4,res/dot/tot_graph_4_371.svg
-Wei Assassins,4,res/dot/tot_graph_4_386.svg
-Primal Beyond,4,res/dot/tot_graph_4_388.svg
-Whitesun's Passage,4,res/dot/tot_graph_4_434.svg
+Secluded Courtyard,4,res/dot/tot_graph_4_387.svg
+Soothing Balm,4,res/dot/tot_graph_4_432.svg
 Volcanic Geyser,4,res/dot/tot_graph_4_504.svg
 Weight of the Underworld,4,res/dot/tot_graph_4_512.svg
-Crown of Empires,4,res/dot/tot_graph_4_518.svg
-Barbed Sextant,3,
+Pacification Array,4,res/dot/tot_graph_4_518.svg
+Chromatic Star,3,
 Battlefield Percher,3,
 Bone Harvest,3,
-Crystal Slipper,3,
-Breath of Life,3,
-Cinder Storm,3,
-Convolute,3,
-Cruel Tutor,3,
+Boots of Speed,3,
+Resurrection,3,
+Searing Flesh,3,
+Flaccify,3,
 Overload,3,
-Debilitating Injury,3,
+Enfeeblement,3,
 Druid's Deliverance,3,
-Enclave Elite,3,
-Doomed Dissenter,3,
+Rootwater Commando,3,
+Innocuous Rat,3,
 Drowsing Tyrannodon,3,
-Wasteland,3,
-Festering Goblin,3,
-Neonate's Rush,3,
-Shell Shield,3,
-Heavy Infantry,3,
-Thwart the Enemy,3,
-Tranquilize,3,
+Waste Land,3,
+Shambling Ghast,3,
+Flare,3,
+Glint,3,
+Kitsune Dawnblade,3,
+Obscuring Haze,3,
+Freeze in Place,3,
 Jalum Tome,3,
 Necrobite,3,
 Opportunity,3,
 Revolutionary Rebuff,3,
-Rampant Growth,3,
-Salvage,3,
+Thunderherd Migration,3,
+Reclaim,3,
 Abnormal Endurance,2,
 Abyssal Nightstalker,2,
+Academy Journeymage,2,
 Boon of Boseiju,2,
 Acolyte of Xathrid,2,
-Scrollshift,2,
+Acrobatic Maneuver,2,
 Act on Impulse,2,
 Advanced Hoverguard,2,
 Aegis of the Gods,2,
 Distant Melody,2,
-Ephara's Warden,2,
-Staff of Zegon,2,
-You're Ambushed on the Road,2,
+Ballynock Trapper,2,
+Horn of Deafening,2,
+Alley Evasion,2,
 Alluring Scent,2,
-Altar of Bone,2,
+Eladamri's Call,2,
 Ambition's Cost,2,
 Shaggy Camel,2,
-Arctic Foxes,2,
+Fleet-Footed Monk,2,
 Angelic Blessing,2,
 Angelic Edict,2,
 Angelic Gift,2,
-Orator of Ojutai,2,
+Angelic Wall,2,
 Argothian Elder,2,
 Armory of Iroas,2,
 Army of Allah,2,
-Premature Burial,2,
-Aven Envoy,2,
+Doom Blade,2,
 Avenging Angel,2,
-Unexpectedly Absent,2,
+Banishment Decree,2,
 Banners Raised,2,
 Barishi,2,
 Barter in Blood,2,
-Bloodthorn Taunter,2,
-Battle-Rattle Shaman,2,
+Trailblazing Historian,2,
+Brambleguard Captain,2,
 Beskir Shieldmate,2,
 Bewilder,2,
 Binding Agony,2,
-Revitalize,2,
+Reviving Dose,2,
 Blistering Barrier,2,
 Clash of Titans,2,
 Blood Reckoning,2,
-Howl from Beyond,2,
+Bloodcurdling Scream,2,
 Bloodshed Fever,2,
 Bloodtallow Candle,2,
-Blue Elemental Blast,2,
+Hydroblast,2,
 Boiling Seas,2,
-Assembled Ensemble,2,
+Border Patrol,2,
 Bottomless Vault,2,
-Joyous Respite,2,
+Bountiful Harvest,2,
 Braidwood Cup,2,
 Break Open,2,
 Bright Reprisal,2,
 Bull Cerodon,2,
-Fae Flight,2,
+Buoyancy,2,
 Call to Serve,2,
 Canopy Dragon,2,
 Capricious Sorcerer,2,
 Captivating Gyre,2,
-Stoic Builder,2,
+Cartographer,2,
 Castigate,2,
 Cave of Temptation,2,
 Celestial Sword,2,
 Ceremonial Guard,2,
 Chieftain en-Dal,2,
-Arm-Mounted Anchor,2,
+Chitinous Cloak,2,
 Chromatic Armor,2,
-Circle of Despair,2,
+Martyr's Cause,2,
 Civic Wayfinder,2,
-Clash of Wills,2,
+Syncopate,2,
 Cleanfall,2,
 Clear a Path,2,
 Clip Wings,2,
-Stunt Double,2,
+Clone,2,
 Mystic Skyfish,2,
 Cloudshift,2,
-Coastal Piracy,2,
+Reconnaissance Mission,2,
 Coat with Venom,2,
 Cobbled Wings,2,
 Collective Unconscious,2,
-Collision // Colossus,2,
+Colossal Might,2,
 Combo Attack,2,
 Conservator,2,
-Towering Viewpoint,2,
-Outflank,2,
+Consulate Skygate,2,
+Coordinated Barrage,2,
 Crimson Roc,2,
 Crippling Blight,2,
 Crippling Chill,2,
@@ -198,19 +196,19 @@ Dark Favor,2,
 Dark Offering,2,
 Dauntless Onslaught,2,
 Dauthi Slayer,2,
-Timetwister,2,
+Time Reversal,2,
 Dazzling Beauty,2,
 Death Bomb,2,
 Deathcoil Wurm,2,
 Solemn Offering,2,
 Deep Reconnaissance,2,
-Bar the Door,2,
-Joint Exploration,2,
-Demotion,2,
-Dense Canopy,2,
-No Escape,2,
+Piety,2,
+Deliberate,2,
+Gelid Shackles,2,
+Bower Passage,2,
+Deny Existence,2,
 Devour in Shadow,2,
-Undead Executioner,2,
+Disease Carriers,2,
 Disfigure,2,
 Displace,2,
 Divine Transformation,2,
@@ -221,20 +219,21 @@ Drain Life,2,
 Dream Spoilers,2,
 Dredge the Mire,2,
 Drekavac,2,
-Mercadian Bazaar,2,
-Solve the Equation,2,
-Disturbed Slumber,2,
-Long Goodbye,2,
+Dwarven Hold,2,
+Eerie Procession,2,
+Elemental Uprising,2,
+Eliminate,2,
 Elven Rite,2,
 Elvish Healer,2,
 Elvish Promenade,2,
-Wrap in Flames,2,
+Cosmotronic Wave,2,
 Enchanted Being,2,
+Energizer,2,
 Enrage,2,
-Entangling Vines,2,
+Roots,2,
 Enthralling Hold,2,
 Entrancing Melody,2,
-Campfire,2,
+Tanglebloom,2,
 Essence Extraction,2,
 Vastwood Surge,2,
 Eye of Nowhere,2,
@@ -246,23 +245,24 @@ Feeding Frenzy,2,
 Marsh Lurker,2,
 Twinblade Geist // Twinblade Invocation,2,
 Feral Instinct,2,
-Fervor,2,
-Fiery Intervention,2,
-Farewell,2,
+Rising of the Day,2,
+Festival of Trokin,2,
+Molten Rebuke,2,
+Final Judgment,2,
 Fire Tempest,2,
 Fire-Omen Crane,2,
 Firebreathing,2,
 Firestorm Phoenix,2,
 Fissure Vent,2,
-Flawless Maneuver,2,
+Your Temple Is Under Attack,2,
 Fleeting Distraction,2,
-Lantern Spirit,2,
+Fleeting Image,2,
 Shimmering Wings,2,
-Foreshadow,2,
+Predict,2,
 Foresight,2,
 Fortress Crab,2,
 Fortune's Favor,2,
-Mindstatic,2,
+Out of Bounds,2,
 Frost Giant,2,
 Funeral Pyre,2,
 Funeral Rites,2,
@@ -272,37 +272,37 @@ Futurist Sentinel,2,
 Fyndhorn Elder,2,
 Gainsay,2,
 Gaze of Adamaro,2,
-Geomancer's Gambit,2,
+Cleansing Wildfire,2,
 Ghostway,2,
-Big Play,2,
+Gift of Strength,2,
 Glimpse the Future,2,
 Glowrider,2,
-Goblin General,2,
 Mountain Goat,2,
 Gorgon's Head,2,
 Split Up,2,
-Arid Archway,2,
+Guildless Commons,2,
 Harmony of Nature,2,
 Pay No Heed,2,
 Headless Specter,2,
 Headstone,2,
 Heal,2,
-Healing Hands,2,
-Torch Breath,2,
+Ritual of Rejuvenation,2,
+Heat Ray,2,
 Hedron Blade,2,
 Hedron Crawler,2,
-Mercenary Knight,2,
+Hidden Horror,2,
 Holdout Settlement,2,
-Rushwood Grove,2,
+Hollow Trees,2,
 Holy Strength,2,
 Hunted Wumpus,2,
-Rejuvenate,2,
+Hunters' Feast,2,
 Hydrolash,2,
 Hysterical Blindness,2,
 Icatian Store,2,
 Igneous Cur,2,
 Illusionary Presence,2,
-Imposing Visage,2,
+Sticky Fingers,2,
+Dauntless Veteran,2,
 Intervene,2,
 Into Thin Air,2,
 Serum Tank,2,
@@ -324,27 +324,27 @@ Krovikan Fetish,2,
 Kukemssa Serpent,2,
 Kuldotha Rebirth,2,
 Laboratory Brute,2,
-Lance,2,
+Shadow Lance,2,
 Last Chance,2,
 Last Word,2,
-Latch Seeker,2,
+True-Name Nemesis,2,
 Lava-Field Overlord,2,
 Minamo's Meddling,2,
 Leaf Arrow,2,
 Leatherback Baloth,2,
-Turn into a Pumpkin,2,
+Leave in the Dust,2,
 Legerdemain,2,
 Ley Druid,2,
 Lifelink,2,
 Lightning Blow,2,
 Lightning Reflexes,2,
 Lightning Stormkin,2,
-Lim-Dûl's High Guard,2,
-Master of the Pearl Trident,2,
+Sanguine Guard,2,
+Lord of Atlantis,2,
 Lost in a Labyrinth,2,
 Sea Gate Loremaster,2,
 Lunge,2,
-Magefire Wings,2,
+Spectral Flight,2,
 Mageta's Boon,2,
 Mardu Runemark,2,
 Megrim,2,
@@ -355,12 +355,12 @@ Mightstone,2,
 Miming Slime,2,
 Mind Ravel,2,
 Mind Sculpt,2,
-Silver Scrutiny,2,
+Mind Spring,2,
 Minor Misstep,2,
 Minotaur Explorer,2,
-Mirror Image,2,
+Glasspool Mimic // Glasspool Shore,2,
 Mutavault,2,
-Aether Meltdown,2,
+Slimebind,2,
 Steelclad Spirit,2,
 Mobilize,2,
 Modify Memory,2,
@@ -370,9 +370,9 @@ Mulch,2,
 Multani's Harmony,2,
 Myr Enforcer,2,
 Narcolepsy,2,
-Road // Ruin,2,
+Natural Connection,2,
 Necromancer's Assistant,2,
-Zephyr Boots,2,
+Neurok Hoversail,2,
 Neurok Prodigy,2,
 Nightguard Patrol,2,
 Noble Steeds,2,
@@ -386,16 +386,15 @@ Overwhelming Encounter,2,
 Pale Bears,2,
 Order // Chaos,2,
 Parallectric Feedback,2,
-Peach Garden Oath,2,
 Penumbra Kavu,2,
-Personal Tutor,2,
-Convincing Mirage,2,
-Pharika's Libation,2,
+Mystical Tutor,2,
+Phantasmal Terrain,2,
+Debt to the Kami,2,
 Phyrexian Denouncer,2,
 Phyrexian Vault,2,
 Pin to the Earth,2,
 Pincher Beetles,2,
-Faith's Fetters,2,
+Suppression Bonds,2,
 Unexpected Windfall,2,
 Planar Cleansing,2,
 Polar Kraken,2,
@@ -408,69 +407,68 @@ Pyre Hound,2,
 Pyretic Ritual,2,
 Quirion Dryad,2,
 Rabid Bloodsucker,2,
-Footfall Crater,2,
+Racecourse Fury,2,
 Rain of Blades,2,
-Sinkhole,2,
-Rakshasa's Disdain,2,
+Rain of Tears,2,
+Countervailing Winds,2,
 Ranger's Path,2,
 Rats' Feast,2,
 Ravaging Horde,2,
-Skullcap Snail,2,
+Ravenous Rats,2,
 Razorgrass Screen,2,
 Reach of Shadows,2,
-Uktabi Orangutan,2,
+Manglehorn,2,
 Red Dragon,2,
-Red Elemental Blast,2,
+Pyroblast,2,
 Regenesis,2,
-Stand // Deliver,2,
-Relentless Pursuit,2,
+Regress,2,
+In the Presence of Ages,2,
 Remove Soul,2,
 Repel the Darkness,2,
 Seeds of Renewal,2,
 Return from Extinction,2,
 Rib Cage Spider,2,
 Ringwarden Owl,2,
-Rite of the Serpent,2,
 Ritual of Restoration,2,
 Ritual of Steel,2,
 River Heralds' Boon,2,
 Rod of Ruin,2,
-Roiling Regrowth,2,
+Harrow,2,
 Rule of Law,2,
-Nearby Planet,2,
+Rupture Spire,2,
 Rush of Battle,2,
 Sacred Boon,2,
 Sacrifice,2,
-Council's Judgment,2,
-Samite Healer,2,
-Saprazzan Cove,2,
-Sanguinary Mage,2,
-Time Warp,2,
-Phyrexian Furnace,2,
+Saltblast,2,
+Battlefield Medic,2,
+Sand Silos,2,
+Harmonic Prodigy,2,
+Time Walk,2,
+Scrabbling Claws,2,
 Sea Scryer,2,
 Sea's Claim,2,
 Seek the Wilds,2,
 Seeker,2,
-Seismic Rupture,2,
-Falter,2,
+Rolling Temblor,2,
+Seismic Stomp,2,
 Sensory Deprivation,2,
-Serra Avatar,2,
+Soul of Eternity,2,
 Setessan Starbreaker,2,
 Setessan Training,2,
-Shared Triumph,2,
+Rally the Ranks,2,
 Shattered Crypt,2,
-Sex Appeal,2,
+Shieldmate's Blessing,2,
 Shocking Grasp,2,
-Shriek of Dread,2,
+Dirge of Dread,2,
 Shrieking Drake,2,
-Sick and Tired,2,
+Splendid Agony,2,
 Siegecraft,2,
 Silence,2,
-Journey to Nowhere,2,
+Suspension Field,2,
 Siren Song Lyre,2,
 Sixth Sense,2,
 Skillful Lunge,2,
-Smuggler's Copter,2,
+Sky Skiff,2,
 Sleek Schooner,2,
 Sleight of Hand,2,
 Sonic Seizure,2,
@@ -484,6 +482,7 @@ Spring of Eternal Peace,2,
 Squall,2,
 Squelching Leeches,2,
 Squirming Mass,2,
+Stalking Stones,2,
 Stand Together,2,
 Starfall,2,
 Gods Willing,2,
@@ -494,15 +493,16 @@ Stream of Life,2,
 Strength of the Pack,2,
 Sunbond,2,
 Sustainer of the Realm,2,
-Battle at the Bridge,2,
-Swelter,2,
+Swallowing Plague,2,
+Furious Reprisal,2,
 Sylvan Tutor,2,
-Take Inventory,2,
+Accumulated Knowledge,2,
 Takeno's Cavalry,2,
-Taste of Blood,2,
+Vicious Rumors,2,
 Team Spirit,2,
 Teeterpeak Ambusher,2,
 Telepathy,2,
+Telim'Tor's Darts,2,
 Tempt with Discovery,2,
 Tendo Ice Bridge,2,
 Fabled Passage,2,
@@ -510,16 +510,16 @@ Terrarion,2,
 The Hive,2,
 Thicket Basilisk,2,
 Thoughtflare,2,
-Prismatic Lace,2,
+Thoughtlace,2,
 Tidal Surge,2,
-Time Ebb,2,
+Anchor to the Aether,2,
 Titania's Boon,2,
 Totally Lost,2,
-Last Caress,2,
+Touch of Death,2,
 Touchstone,2,
 Tranquility,2,
 Treetop Defense,2,
-Turn the Tide,2,
+Hampering Snare,2,
 Twiddle,2,
 Twincast,2,
 Twisted Experiment,2,
@@ -542,28 +542,28 @@ Venomous Breath,2,
 Verdant Field,2,
 Vernal Equinox,2,
 Vigilance,2,
-Zuran Enchanter,2,
+Vodalian Hypnotist,2,
 Voice of the Provinces,2,
 Wall of Torches,2,
 Wall of Vapor,2,
 War Chariot,2,
-Wasp Lancer,2,
 Watchwolf,2,
-Waterspout Djinn,2,
+Living Tsunami,2,
 Web,2,
 Wee Dragonauts,2,
 Wicked Pact,2,
 Wildwood Rebirth,2,
-Wind Sail,2,
-Mortality Spear,2,
-Windstorm,2,
+Ghostform,2,
+Windgrace's Judgment,2,
+Heaven // Earth,2,
 Winter's Grasp,2,
-Wood Elemental,2,
-Inner Struggle,2,
+Fungus Elemental,2,
+Woodland Liege,2,
+Wrack with Madness,2,
 Wrench Mind,2,
 Wring Flesh,2,
 Yavimaya Sapherd,2,
-Yeva's Forcemage,2,
+Adaptive Sporesinger,2,
 Zephid,2,
-Zhalfirin Void,2,
+The Grey Havens,2,
 Tromokratis,2,

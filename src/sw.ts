@@ -248,12 +248,25 @@ function doRenderSearch(outdiv: HTMLElement, dag: Record<string, Card>, query: s
   outdiv.replaceChildren("");
   // captured in multiple closures below
   let poolIndex = CardCategory.Unmapped;
+  const inputElem = document.createElement("input");
+  if (query.startsWith("category=") && query.indexOf("&") > -1) {
+    const [catPart, otherPart] = query.split("&", 2);
+    let category = catPart.split("=", 2)[1];
+    poolIndex = CardCategory[category as keyof typeof CardCategory];
+    query = otherPart;
+  }
+  const submitSearch = () => {
+    globalSuppressOnHashChange = true;
+    window.location.hash = `search-category=${CardCategory[poolIndex]}&${inputElem.value}`;
+    displaySearch(tableDiv, dag, inputElem.value, poolIndex);
+  };
   const addRadio = (i: CardCategory) => {
     const rad = document.createElement("input");
     rad.type = "radio";
     rad.name = "search";
     rad.onchange = () => {
       poolIndex = i;
+      submitSearch();
     }
     rad.checked = (i == poolIndex);
     return rad;
@@ -267,7 +280,7 @@ function doRenderSearch(outdiv: HTMLElement, dag: Record<string, Card>, query: s
     outdiv.appendChild(rootNode);
     outdiv.appendChild(addRadio(cat))
   }
-  const inputElem = document.createElement("input");
+
 
   inputElem.type = "text";
   inputElem.placeholder = "Enter a Scryfall search query...";
@@ -283,9 +296,7 @@ function doRenderSearch(outdiv: HTMLElement, dag: Record<string, Card>, query: s
     if (event.key != "Enter") {
       return;
     }
-    globalSuppressOnHashChange = true;
-    window.location.hash = "search-" + inputElem.value;
-    displaySearch(tableDiv, dag, inputElem.value, poolIndex);
+    submitSearch();
   });
   if (query != "") {
     inputElem.value = query;
@@ -543,7 +554,7 @@ function main(): void {
   globalSetup();
 
   const xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function() {
+  xhttp.onreadystatechange = function () {
     if (this.readyState == 4 && this.status == 200) {
       mainOnLoad(JSON.parse(xhttp.responseText));
     }

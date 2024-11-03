@@ -74,7 +74,7 @@ export function getCategory(name: string): CardCategory {
 export function getOracle(cat: CardCategory): Oracle {
   return cat == CardCategory.Unmapped ? oracleDataUnmapped : oracleData;
 }
-export function getOracleData(name: string): [OracleItem, CardCategory] {
+export function getOracleData(name: string): [OracleItem | undefined, CardCategory] {
   const cat = getCategory(name);
   return [getOracle(cat).all_cards[name], cat];
 }

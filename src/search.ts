@@ -1,7 +1,9 @@
 import { Card, Direction, CardCategory } from './card.js'
 import { isSetEqual, isSubsetOf, isProperSubsetOf } from './set.js'
-import { getOracle } from './card_maps.js'
+import { getOracleData } from './card_maps.js'
 import { TableElem } from './table_elem.js'
+import { OracleItem } from './oracle.js'
+import { Stats } from './stats.js'
 
 enum SearchKey {
   CMC,
@@ -9,7 +11,8 @@ enum SearchKey {
   Type,
   Power,
   Toughness,
-  Date,
+  ReleaseDate,
+  MapDate,
   Error
 };
 
@@ -99,27 +102,16 @@ class SearchComponent {
     // Special case of "M" not supported here
     return new Set(value.toUpperCase().split(""));
   }
-  /// Interpret a date YYYY[-MM[-DD]] as a integral months since 0 AD
-  /// and a fractional component for date
-  private static parseTimeValue(value: string): number {
-    const splits = value.split("-");
-    let ret = +splits[0] * 12;
-    if (splits.length > 1) {
-      ret += +splits[1] - 1;
-    }
-    if (splits.length > 2) {
-      ret += .01 * +splits[2];
-    }
-    return ret;
-  }
+
   private static extractValueFromComponent(value: string, key: SearchKey): SearchValue {
     switch (key) {
       case SearchKey.CMC:
       case SearchKey.Power:
       case SearchKey.Toughness:
         return +value;
-      case SearchKey.Date:
-        return SearchComponent.parseTimeValue(value);
+      case SearchKey.ReleaseDate:
+      case SearchKey.MapDate:
+        return Stats.parseTimeValue(value);
       case SearchKey.Color:
         return SearchComponent.parseColorValue(value);
       case SearchKey.Type:
@@ -139,8 +131,10 @@ class SearchComponent {
         return card.pow;
       case SearchKey.Toughness:
         return card.tou;
-      case SearchKey.Date:
-        return SearchComponent.parseTimeValue(card.release);
+      case SearchKey.ReleaseDate:
+        return Stats.parseTimeValue(card.release);
+      case SearchKey.MapDate:
+        return Stats.getMapDate(card.name);
     }
     return 0;
   }
@@ -188,19 +182,20 @@ class SearchComponent {
     if (["tou", "toughness"].indexOf(key) != -1) {
       return SearchKey.Toughness;
     }
-    if (["date", "year"].indexOf(key) != -1) {
-      return SearchKey.Date;
+    if (["date", "year", "release", "rel"].indexOf(key) != -1) {
+      return SearchKey.ReleaseDate;
+    }
+    if (["mapped", "mapdate", "added"].indexOf(key) != -1) {
+      return SearchKey.MapDate;
     }
     return SearchKey.Error;
   }
 };
 
 export class SearchMatcher {
-  private oracle: Record<string, any>;
   private category: CardCategory;
   private components: Array<SearchComponent>;
   constructor(query: string, category: CardCategory) {
-    this.oracle = getOracle(category).all_cards;
     this.category = category;
 
     const parts = query.match(/\S+|"[^"]+"/g) ?? [];
@@ -217,7 +212,7 @@ export class SearchMatcher {
     if (card.isPlaceholder()) {
       return false;
     }
-    const elem = new TableElem(card, this.oracle[card.name], this.category, Direction.None);
+    const elem = new TableElem(card, getOracleData(card.name)[0] as OracleItem, this.category, Direction.None);
     for (const component of this.components) {
       if (!component.matches(elem)) {
         return false;

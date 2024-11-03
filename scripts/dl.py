@@ -14,10 +14,11 @@ def better_example(card, prev_data):
         return True 
     my_released = datetime.datetime.strptime(card["released_at"], "%Y-%m-%d")
     old_released = datetime.datetime.strptime(prev_data["released_at"], "%Y-%m-%d")
-    if my_released < old_released:
+    bling = lambda x: len([fe for fe in x.get("frame_effects", []) if fe != "colorshifted"]) + len(x.get("promo_types", []))
+    if bling(card) > bling(prev_data):
+        return False
+    if my_released < old_released or bling(card) < bling(prev_data):
       return True
-    bling = lambda x: len(x.get("frame_effects", [])) + len(x.get("promo_types", []))
-    return bling(card) < bling(prev_data)
 
 def main():
     r = requests.get('https://api.scryfall.com/bulk-data')

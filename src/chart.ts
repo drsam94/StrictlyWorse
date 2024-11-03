@@ -110,7 +110,7 @@ export function makeChart(data: any, rootName: string, startExpanded: boolean, f
         const bottomEdge = window.innerHeight + window.scrollY;
         let top = event.clientY + window.scrollY - 15;
         if (event.clientY + +CARD_HEIGHT > window.innerHeight) {
-          top = (bottomEdge + (-CARD_HEIGHT));
+          top = (bottomEdge + (-CARD_HEIGHT)) - 30;
         }
         hoverDiv
           .style("position", "absolute")

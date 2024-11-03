@@ -47,6 +47,7 @@ export class TableElem {
   public totalWorse: number;
   public release: string;
   public category: CardCategory;
+  public origCard: Card;
 
   constructor(card: Card, oracle: OracleItem, cat: CardCategory, dir: Direction) {
     const oDir = dir == Direction.Better ? Direction.Worse : Direction.Better;
@@ -68,5 +69,6 @@ export class TableElem {
     this.totalWorse = card.stats(oDir).total;
     this.release = oracle.released_at;
     this.category = cat;
+    this.origCard = card;
   }
 }

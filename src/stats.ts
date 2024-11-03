@@ -1,6 +1,6 @@
 import { Card, Direction, DirStats } from './card.js'
 import { oracleData, oracleDataUnmapped } from './oracle.js'
-
+import { getOracleData, getTotalChildSet } from './card_maps.js';
 export class Stats {
   private readonly dag: Record<string, Card>;
   private static singleton: Stats | null;
@@ -45,5 +45,39 @@ export class Stats {
   }
   public getExtremeByTotal(dir: Direction): [Array<Card>, number] {
     return this.getExtremeBy(dir, "total");
+  }
+
+  /// Interpret a date YYYY[-MM[-DD]] as a integral months since 0 AD
+  /// and a fractional component for date
+  public static parseTimeValue(value: string): number {
+    const splits = value.split("-");
+    let ret = +splits[0] * 12;
+    if (splits.length > 1) {
+      ret += +splits[1] - 1;
+    }
+    if (splits.length > 2) {
+      ret += .01 * +splits[2];
+    }
+    return ret;
+  }
+
+  private static mapDateMap: Record<string, number> = {};
+  public static getMapDate(name: string): number {
+    if (name in Stats.mapDateMap) {
+      return Stats.mapDateMap[name];
+    }
+    let ret = 99999999;
+    for (let dir of [Direction.Better, Direction.Worse]) {
+      for (const mappedCard of getTotalChildSet(dir)[name]) {
+        const oData = getOracleData(mappedCard)[0];
+        if (oData === undefined) {
+          continue;
+        }
+        const release = Stats.parseTimeValue(oData.released_at);
+        ret = Math.min(ret, release);
+      }
+    }
+    Stats.mapDateMap[name] = ret;
+    return ret;
   }
 };
