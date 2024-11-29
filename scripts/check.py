@@ -277,6 +277,7 @@ def generate_dot_files(sw):
                 comment_layout = "#" if size < 100 else ""
                 rank_sep = "2" if size < 100 else "3"
                 outf.write(f"digraph G {{\n{comment_layout}layout=twopi;\n{comment_layout}overlap=prism;\nranksep={rank_sep};\nratio=auto;\n")
+                written = set()
                 for card in cards:
                     if exemplar is None and good_name(card):
                         exemplar = card
@@ -286,7 +287,11 @@ def generate_dot_files(sw):
                             continue
                         my_name = id_to_card[card].replace('"', '')
                         other_name = id_to_card[edgeval].replace('"','')
-                        outf.write(f'"{my_name}" -> "{other_name}";\n')
+                        if (my_name, other_name) not in written:
+                            # It is possible for one edge to show up multiple times
+                            # due to the aliasing of nodes
+                            written.add((my_name, other_name))
+                            outf.write(f'"{my_name}" -> "{other_name}";\n')
                 outf.write("}\n")
             svg_name = os.path.splitext(fname)[0] + ".svg"
             subprocess.run(f"dot -Tsvg {fname} -o {svg_name}", shell=True)

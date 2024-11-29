@@ -22,7 +22,7 @@ import { initializeTotalSets, getMaximalCards, getTotalSet, getTotalChildSet } f
 import { Stats } from './stats.js'
 import { makeTree, processData } from './dag.js'
 
-function extractDates<T>(collection: Iterable<T>, extract: (arg0: T) => string): Array<DateHistogramEntry> {
+function extractDates<T>(collection: Iterable<T>, extract: (arg0: T) => string, useMappedDate: boolean = false): Array<DateHistogramEntry> {
 
   const oracle = oracleData.all_cards;
 
@@ -33,7 +33,7 @@ function extractDates<T>(collection: Iterable<T>, extract: (arg0: T) => string):
     if (data === undefined) {
       continue;
     }
-    const ra = data["released_at"];
+    const ra = useMappedDate ? Stats.getMapDateStr(name) : data["released_at"];
     if (ra !== undefined) {
       ret.push(new DateHistogramEntry(ra, name));
     }
@@ -114,7 +114,7 @@ function doDisplayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: s
       }
       const textContent = nameStr + " is <strong>" + (dir == Direction.Better ? "worse" : "better") + "</strong> than...";
       const dateData = extractDates(getTotalChildSet(dir)[card.name], (x: string) => x);
-      const dateChart = makeDateHistogram(dateData);
+      const dateChart = makeDateHistogram(dateData, oracleData.all_cards[card.name].released_at);
       displayTextWithCardLinks(label, textContent);
       if (!renderedFont) {
         const fontLabel = document.createElement("p");
@@ -422,19 +422,31 @@ function doRenderStats(outdiv: HTMLDivElement, dag: Record<string, Card>) {
   h2.textContent = "Release Date Histograms";
   outdiv.appendChild(h2);
 
-  const doChart = (desc: string, cardSet: Iterable<Card>) => {
+  const doChart = (desc: string, cardSet: Iterable<Card>, useMappedDate: boolean) => {
     const label = document.createElement("p");
     label.textContent = desc;
-    const dateData = extractDates(cardSet, (card: Card) => card.name);
+    const dateData = extractDates(cardSet, (card: Card) => card.name, useMappedDate);
     const dateChart = makeDateHistogram(dateData);
 
     outdiv.appendChild(label);
     outdiv.appendChild(dateChart);
   }
   initializeTotalSets(dag);
-  doChart("All Mapped Cards", Object.values(dag));
-  doChart("All Worst Cards", getMaximalCards(Direction.Worse));
-  doChart("All Best Cards", getMaximalCards(Direction.Better));
+  doChart("All Mapped Cards", Object.values(dag), false);
+  doChart("All Worst Cards", getMaximalCards(Direction.Worse), false);
+  doChart("All Best Cards", getMaximalCards(Direction.Better), false);
+
+  const h22 = document.createElement("h2");
+  h22.textContent = "Mapped Date Histograms";
+  outdiv.appendChild(h22);
+
+  const mapLabel = document.createElement("p");
+  mapLabel.textContent = "Mapped date is the date a card became mapped, i.e had the first Strictly worse or better card printed."
+  outdiv.appendChild(mapLabel);
+
+  doChart("All Mapped Cards", Object.values(dag), true);
+  doChart("All Worst Cards", getMaximalCards(Direction.Worse), true);
+  doChart("All Best Cards", getMaximalCards(Direction.Better), true);
 }
 
 function initializePageFromHash(outdiv: HTMLDivElement, searchBar: HTMLDivElement, dag: Record<string, Card>) {

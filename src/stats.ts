@@ -1,4 +1,4 @@
-import { Card, Direction, DirStats } from './card.js'
+import { Card, Direction, DirStats, CardCategory } from './card.js'
 import { oracleData, oracleDataUnmapped } from './oracle.js'
 import { getOracleData, getTotalChildSet } from './card_maps.js';
 export class Stats {
@@ -50,6 +50,15 @@ export class Stats {
   /// Interpret a date YYYY[-MM[-DD]] as a integral months since 0 AD
   /// and a fractional component for date
   public static parseTimeValue(value: string): number {
+    if (value.indexOf("-") == -1) {
+      // Support YYYYMMDD
+      if (value.length >= 6) {
+        value = value.substring(0, 4) + "-" + value.substring(4);
+      }
+      if (value.length >= 9) {
+        value = value.substring(0, 7) + "-" + value.substring(7);
+      }
+    }
     const splits = value.split("-");
     let ret = +splits[0] * 12;
     if (splits.length > 1) {
@@ -61,12 +70,18 @@ export class Stats {
     return ret;
   }
 
-  private static mapDateMap: Record<string, number> = {};
-  public static getMapDate(name: string): number {
+  private static mapDateMap: Record<string, string> = {};
+  public static getMapDateStr(name: string): string {
     if (name in Stats.mapDateMap) {
       return Stats.mapDateMap[name];
     }
-    let ret = 99999999;
+    let ret = "0000-00-00";
+    let retNum = 99999999;
+    const [oracleSelf, category] = getOracleData(name);
+    if (category == CardCategory.Unmapped || !oracleSelf) {
+      Stats.mapDateMap[name] = ret;
+      return ret;
+    }
     for (let dir of [Direction.Better, Direction.Worse]) {
       for (const mappedCard of getTotalChildSet(dir)[name]) {
         const oData = getOracleData(mappedCard)[0];
@@ -74,10 +89,24 @@ export class Stats {
           continue;
         }
         const release = Stats.parseTimeValue(oData.released_at);
-        ret = Math.min(ret, release);
+        if (release < retNum) {
+          ret = oData.released_at;
+          retNum = release
+        }
       }
+    }
+    // Map date is the first mapping card being released, but
+    // we need to max that with the card itself's release
+    const base = oracleSelf.released_at;
+    const baseNum = Stats.parseTimeValue(base);
+
+    if (baseNum > retNum) {
+      ret = base;
     }
     Stats.mapDateMap[name] = ret;
     return ret;
+  }
+  public static getMapDate(name: string): number {
+    return Stats.parseTimeValue(Stats.getMapDateStr(name));
   }
 };

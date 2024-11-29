@@ -10,7 +10,7 @@ export class DateHistogramEntry {
     this.card = c;
   }
 };
-export function makeDateHistogram(indata: Array<DateHistogramEntry>): Node {
+export function makeDateHistogram(indata: Array<DateHistogramEntry>, startDate?: string): Node {
   const width = 800;
   const height = 200;
   const margin = { top: 20, right: 50, bottom: 30, left: 50 };
@@ -41,6 +41,7 @@ export function makeDateHistogram(indata: Array<DateHistogramEntry>): Node {
   const svg = d3.create("svg")
     .attr("width", width)
     .attr("height", height);
+
   // Append y axis
   svg.append("g")
     .attr("transform", `translate(${margin.left},0)`)
@@ -107,5 +108,17 @@ export function makeDateHistogram(indata: Array<DateHistogramEntry>): Node {
     .attr("text-anchor", "middle")
     .style("font-size", "12px")
     .text("Release Order");
+
+  if (startDate) {
+    svg.append("rect")
+      .data([parseDate(startDate)])
+      .attr("x", (d: any) => { const ret = x(d) + 1; return ret; })
+      .attr("width", (d: any) => 2)
+      .attr("y", (d: any) => { return 10; })
+      .attr("height", (d: any) => y(0) - 10)
+      .attr("fill", "red")
+      .attr("stroke", "black") // Add a black border around the bars
+      .attr("stroke-width", 1) // Adjust border width as needed
+  }
   return svg.node();
 }

@@ -37,6 +37,7 @@ export function renderCost(cost: string): HTMLElement {
 export class TableElem {
   public name: string;
   public colors: Array<string>;
+  public mana_cost: string;
   public cost: HTMLElement;
   public cmc: number;
   public type: string;
@@ -53,7 +54,8 @@ export class TableElem {
     const oDir = dir == Direction.Better ? Direction.Worse : Direction.Better;
     this.name = card.name;
     this.colors = oracle.colors ?? [];
-    this.cost = renderCost(oracle.mana_cost ?? "");
+    this.mana_cost = oracle.mana_cost ?? "";
+    this.cost = renderCost(this.mana_cost);
     this.cmc = oracle.cmc;
     this.type = oracle.type_line;
     const emDash = '—';

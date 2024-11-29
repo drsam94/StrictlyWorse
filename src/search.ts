@@ -13,6 +13,7 @@ enum SearchKey {
   Toughness,
   ReleaseDate,
   MapDate,
+  Mana,
   Error
 };
 
@@ -94,6 +95,7 @@ class SearchComponent {
     }
     return ret;
   }
+
   private static parseColorValue(value: string): Set<string> {
     const uc = value.toUpperCase();
     if (uc == "C") {
@@ -101,6 +103,10 @@ class SearchComponent {
     }
     // Special case of "M" not supported here
     return new Set(value.toUpperCase().split(""));
+  }
+
+  private static parseManaValue(value: string): number {
+    return 0; // return Array<number>
   }
 
   private static extractValueFromComponent(value: string, key: SearchKey): SearchValue {
@@ -116,6 +122,8 @@ class SearchComponent {
         return SearchComponent.parseColorValue(value);
       case SearchKey.Type:
         return new Set([value.toLowerCase()]);
+      case SearchKey.Mana:
+        return SearchComponent.parseManaValue(value);
     }
     return 0;
   }
@@ -135,6 +143,8 @@ class SearchComponent {
         return Stats.parseTimeValue(card.release);
       case SearchKey.MapDate:
         return Stats.getMapDate(card.name);
+      case SearchKey.Mana:
+        return SearchComponent.parseColorValue(card.mana_cost);
     }
     return 0;
   }
@@ -187,6 +197,9 @@ class SearchComponent {
     }
     if (["mapped", "mapdate", "added"].indexOf(key) != -1) {
       return SearchKey.MapDate;
+    }
+    if (["m", "mana", "cost"].indexOf(key) != -1) {
+      return SearchKey.Mana;
     }
     return SearchKey.Error;
   }
