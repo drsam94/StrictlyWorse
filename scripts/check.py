@@ -91,7 +91,7 @@ def augment_rules(sw, sw_names, vanilla):
     for name in invert_vanilla:
         all_placeholders.add(invert_vanilla[name])
   
-    placeholder_descs = [CardDesc(desc) for desc in all_placeholders if all(kw not in desc for kw in ["MORPH", "Instant"])]
+    placeholder_descs = [CardDesc(desc) for desc in all_placeholders if all(kw not in desc for kw in ["MORPH", "Instant", "Cycling"])]
     total_descs = len(placeholder_descs)
     suggestions = []
     reduce_name = lambda desc: vanilla.get(desc, desc)
@@ -260,6 +260,7 @@ def generate_dot_files(sw):
     out_map = []
     if not os.path.exists('res/dot'):
         os.mkdir('res/dot')
+    subprocess.run("bash -c 'rm ./res/dot/*.{svg,dot}'", shell=True)
     out_map.append((canonical_card_to_edges.keys(), 'res/dot/tot_graph.dot'))
     i = 0
     for cc in ccs:

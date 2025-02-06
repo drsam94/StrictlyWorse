@@ -34,7 +34,9 @@ export class Stats {
       }
       if (thisDegree >= maxDegree) {
         maxDegree = thisDegree;
-        ret.push(card)
+        if (!card.isPlaceholder()) {
+          ret.push(card);
+        }
       }
     }
     return [ret, maxDegree];

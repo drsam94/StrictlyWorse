@@ -20,7 +20,9 @@ export class Card {
   }
 
   public isPlaceholder(): boolean {
-    return (this.name.indexOf('/') > 0 && this.name.indexOf('//') < 0) || this.name == "MORPH" || this.name.indexOf(" Instant ") > 0;
+    return (this.name.indexOf('/') > 0 && this.name.indexOf('//') < 0) ||
+      this.name == "MORPH" || this.name.indexOf(" Instant ") > 0 ||
+      this.name.indexOf(" Cycling") > 0;
   }
 
   public stats(dir: Direction): DirStats {
