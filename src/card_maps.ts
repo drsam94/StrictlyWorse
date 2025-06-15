@@ -16,11 +16,11 @@ function initializeMaximalCards(dag: Record<string, Card>, toInit: Array<Card>, 
         continue;
       }
       const stats = card.stats(dir);
-      const ostats = card.stats(dir == Direction.Better ? Direction.Worse : Direction.Better);
-      if (dir === Direction.Better && ostats.degree === 1 && ostats.total === 1) {
-        // skip 1-1 better cards
-        continue;
-      }
+      //const ostats = card.stats(dir == Direction.Better ? Direction.Worse : Direction.Better);
+      //if (dir === Direction.Better && ostats.degree === 1 && ostats.total === 1) {
+      // skip 1-1 better cards
+      //  continue;
+      //}
       if (stats.cards.length == 0 && !card.isPlaceholder()) {
         toInit.push(card);
       }

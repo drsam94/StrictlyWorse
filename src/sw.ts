@@ -12,7 +12,7 @@ import { autocomplete } from './autocomplete.js';
 import { Direction, DirStats, Card, CardCategory } from './card.js';
 import { SearchMatcher } from './search.js';
 import { oracleData } from './oracle.js';
-import { TableMaker } from './table_maker.js';
+import { TableMaker, makeElement } from './table_maker.js';
 import { Timer } from './timer.js';
 import { getImageURL } from './image_url.js';
 import { makeChart } from './chart.js';
@@ -21,6 +21,7 @@ import { Page, changeLocation } from './navigate.js';
 import { initializeTotalSets, getMaximalCards, getTotalSet, getTotalChildSet } from './card_maps.js';
 import { Stats } from './stats.js'
 import { makeTree, processData } from './dag.js'
+// import { makeCategoryChart } from './pie.js'
 
 function extractDates<T>(collection: Iterable<T>, extract: (arg0: T) => string, useMappedDate: boolean = false): Array<DateHistogramEntry> {
 
@@ -447,9 +448,57 @@ function doRenderStats(outdiv: HTMLDivElement, dag: Record<string, Card>) {
   doChart("All Mapped Cards", Object.values(dag), true);
   doChart("All Worst Cards", getMaximalCards(Direction.Worse), true);
   doChart("All Best Cards", getMaximalCards(Direction.Better), true);
+
+
+  // to be enabled later
+  const h23 = document.createElement("h2");
+  h23.textContent = "Categories By Set";
+  outdiv.appendChild(h23);
+
+  const setStats = stats.getSetInfo();
+  console.log(setStats);
+
+  const table = makeElement("table", outdiv);
+  const hdrRow = makeElement("tr", table);
+  const columns = ["Set", "Icon", "Worst", "Best", "Mapped", "Unmapped"]
+
+  for (let column of columns) {
+    makeElement("th", hdrRow, column);
+  }
+
+  const templateRow = makeElement("tr");
+  for (let i = 0; i < columns.length; ++i) {
+    makeElement("td", templateRow);
+  }
+
+
+
+  for (const set of setStats.chronologicalSets) {
+    const row = templateRow.cloneNode(true) as HTMLElement;
+    row.children[0].textContent = set;
+
+    const _captSet = set;
+    row.children[0].onclick = () => {
+      changeLocation(Page.search, "set=" + _captSet)
+    };
+
+    const img = document.createElement("img");
+    img.src = "res/ico/" + set + ".svg";
+    img.style.width = "25";
+    img.style.height = "25";
+    img.style.position = "float";
+    row.children[1].append(img);
+    for (const category of [CardCategory.Worst, CardCategory.Best, CardCategory.Mapped, CardCategory.Unmapped]) {
+      row.children[2 + category].textContent = "" + setStats.counts[set][category];
+    }
+
+    table.appendChild(row);
+  }
+  outdiv.appendChild(table);
+
 }
 
-function initializePageFromHash(outdiv: HTMLDivElement, searchBar: HTMLDivElement, dag: Record<string, Card>) {
+function initializePageFromHash(state: GlobalState) {
   if (globalSuppressOnHashChange) {
     globalSuppressOnHashChange = false;
     return;
@@ -459,42 +508,42 @@ function initializePageFromHash(outdiv: HTMLDivElement, searchBar: HTMLDivElemen
   const key = hash.substring(1, loc);
   const val = decodeURI(hash.substring(loc + 1));
   if (key === "card") {
-    searchBar.style.visibility = "visible";
-    doDisplayCharts(outdiv, dag, val);
+    state.searchBar.style.visibility = "visible";
+    doDisplayCharts(state.outdiv, state.dag, val);
   } else if (key === "table") {
-    searchBar.style.visibility = "hidden";
-    doRenderTable(outdiv, dag, Direction[val as keyof typeof Direction])
+    state.searchBar.style.visibility = "hidden";
+    doRenderTable(state.outdiv, state.dag, Direction[val as keyof typeof Direction])
   } else if (key === "page") {
-    searchBar.style.visibility = "hidden";
+    state.searchBar.style.visibility = "hidden";
     if (val == "stats") {
-      doRenderStats(outdiv, dag);
+      doRenderStats(state.outdiv, state.dag);
     } else if (val === "checker") {
-      doRenderCheck(outdiv, dag);
+      doRenderCheck(state.outdiv, state.dag);
     } else if (val === "components") {
       const xhttp = new XMLHttpRequest();
       xhttp.onreadystatechange = () => {
-        doDisplayConnectedComponents(outdiv, xhttp.responseText);
+        doDisplayConnectedComponents(state.outdiv, xhttp.responseText);
       }
       xhttp.open("GET", "res/graphs.csv", true);
       xhttp.send();
     } else {
       const xhttp = new XMLHttpRequest();
       xhttp.onreadystatechange = () => {
-        displayTextWithCardLinks(outdiv, xhttp.responseText, "");
+        displayTextWithCardLinks(state.outdiv, xhttp.responseText, "");
       }
       xhttp.open("GET", `res/${val}.html`, true);
       xhttp.send();
     }
   } else if (key === "search") {
-    searchBar.style.visibility = "hidden";
-    doRenderSearch(outdiv, dag, val);
+    state.searchBar.style.visibility = "hidden";
+    doRenderSearch(state.outdiv, state.dag, val);
   } else { // if (key === "home") but also want this as the default
-    searchBar.style.visibility = "hidden";
-    doRenderHome(outdiv, dag);
+    state.searchBar.style.visibility = "hidden";
+    doRenderHome(state.outdiv, state.dag);
   }
 }
 
-function globalSetup(): void {
+function styleSetup(): void {
   const style = document.createElement("style");
   let cssText = ".mytable { border: 1px solid black; }";
   const cssStyleNode = document.createTextNode(cssText);
@@ -523,7 +572,7 @@ function makeHeaderButtons(headerDiv: HTMLDivElement, outdiv: HTMLDivElement): v
 
   makeButton("#ABCDEF", "Home", () => { changeLocation(Page.home); });
   makeButton("#ABCDEF", "Philosophy", () => { changeLocation(Page.philosophy); });
-  makeButton("#ABCDEF", "Adv. Search", () => { changeLocation(Page.search, "");; });
+  makeButton("#ABCDEF", "Adv. Search", () => { changeLocation(Page.search, ""); });
   makeButton("#ABCDEF", "All Worst Cards", () => { changeLocation(Page.table, Direction.Worse); });
   makeButton("#ABCDEF", "All Best Cards", () => { changeLocation(Page.table, Direction.Better); })
   makeButton("#ABCDEF", "Stats", () => { changeLocation(Page.stats); });
@@ -562,24 +611,21 @@ function makeSearchBar(dag: Record<string, Card>): [HTMLDivElement, HTMLInputEle
   return [wrapperDiv, inputElem];
 }
 
-function main(): void {
-  globalSetup();
+class GlobalState {
+  public readonly outdiv: HTMLDivElement;
+  public searchBar: HTMLElement;
+  public dag: Record<string, Card>;
+  public all_relations: Array<Array<string>>;
 
-  const xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function () {
-    if (this.readyState == 4 && this.status == 200) {
-      mainOnLoad(JSON.parse(xhttp.responseText));
-    }
+  constructor(odiv: HTMLDivElement, sb: HTMLElement, relations: Array<Array<string>>) {
+    this.outdiv = odiv;
+    this.searchBar = sb;
+    this.dag = {};
+    this.all_relations = relations;
   }
-  xhttp.open("GET", "res/data.json", true);
-  xhttp.send();
-}
-
-function mainOnLoad(all_relations: Array<Array<string>>): void {
-  const dag: Record<string, Card> = processData(all_relations);
-  Stats.relationsCount = all_relations.length;
-
-  const searchBar = makeSearchBar(dag)[0];
+};
+function main(): void {
+  styleSetup();
 
   const outdiv = document.createElement("div");
   const headerDiv = document.createElement("div");
@@ -588,11 +634,11 @@ function mainOnLoad(all_relations: Array<Array<string>>): void {
 
   document.body.appendChild(headerDiv);
   const div = document.createElement("div");
+  const searchBarElem = document.createElement("div");
 
-  div.appendChild(searchBar);
-
-  div.appendChild(outdiv);
+  div.appendChild(searchBarElem);
   document.body.appendChild(div);
+  document.body.appendChild(outdiv);
 
   // A div at the bottom that ensures the height of the page is enough to accomodate card mouseovers
   const trailerDiv = document.createElement("div");
@@ -600,9 +646,28 @@ function mainOnLoad(all_relations: Array<Array<string>>): void {
 
   document.body.appendChild(trailerDiv);
 
-  initializePageFromHash(outdiv, searchBar, dag);
+  const xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function () {
+    if (this.readyState == 4 && this.status == 200) {
+      mainOnLoad(new GlobalState(outdiv, searchBarElem, JSON.parse(xhttp.responseText)));
+    }
+  }
+  xhttp.open("GET", "res/data.json", true);
+  xhttp.send();
+}
+
+function mainOnLoad(state: GlobalState): void {
+  state.dag = processData(state.all_relations);
+  Stats.relationsCount = state.all_relations.length;
+
+  const searchBar = makeSearchBar(state.dag)[0];
+
+  state.searchBar.replaceWith(searchBar);
+  state.searchBar = searchBar;
+
+  initializePageFromHash(state);
   window.onpopstate = (evt) => {
-    initializePageFromHash(outdiv, searchBar, dag);
+    initializePageFromHash(state);
   }
 }
 

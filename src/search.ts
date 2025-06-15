@@ -14,7 +14,8 @@ enum SearchKey {
   ReleaseDate,
   MapDate,
   Mana,
-  Error
+  Error,
+  CardSet
 };
 
 enum SearchOperator {
@@ -26,7 +27,7 @@ enum SearchOperator {
   EX,
   Error,
 };
-type SearchValue = number | Set<string>
+type SearchValue = number | string | Set<string>
 class SearchComponent {
 
   private key: SearchKey;
@@ -53,7 +54,7 @@ class SearchComponent {
     return baseMatch != this.negated;
   }
 
-  private static readonly numberFuncs: Partial<Record<SearchOperator, (x: number, y: number) => boolean>> = {
+  private static readonly numberFuncs: Partial<Record<SearchOperator, (x: number | string, y: number | string) => boolean>> = {
     [SearchOperator.EQ]: (x, y) => (x == y),
     [SearchOperator.LE]: (x, y) => (x <= y),
     [SearchOperator.LT]: (x, y) => (x < y),
@@ -111,6 +112,8 @@ class SearchComponent {
 
   private static extractValueFromComponent(value: string, key: SearchKey): SearchValue {
     switch (key) {
+      case SearchKey.CardSet:
+        return value;
       case SearchKey.CMC:
       case SearchKey.Power:
       case SearchKey.Toughness:
@@ -145,6 +148,8 @@ class SearchComponent {
         return Stats.getMapDate(card.name);
       case SearchKey.Mana:
         return SearchComponent.parseColorValue(card.mana_cost);
+      case SearchKey.CardSet:
+        return card.card_set;
     }
     return 0;
   }
@@ -200,6 +205,9 @@ class SearchComponent {
     }
     if (["m", "mana", "cost"].indexOf(key) != -1) {
       return SearchKey.Mana;
+    }
+    if (["s", "set", "exp", "expansion"].indexOf(key) != -1) {
+      return SearchKey.CardSet;
     }
     return SearchKey.Error;
   }

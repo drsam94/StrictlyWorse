@@ -34,8 +34,30 @@ def any_prop(card, key: str, val: str) -> bool:
         return True
     return False
 
+def get_filter_category(card) -> str:
+    if "promo_types" in card and "playtest" in card["promo_types"]:
+        return "Playtest"
+
+    if card.get("security_stamp","") == "triangle":
+        return "UniversesBeyond"
+    if card["set_type"] == "masters" and card.get("security_stamp","") == "acorn":
+        return "Digital"
+    if card["set_type"] == "funny":
+        sn = card["set_name"]
+        if sn in ["Unglued", "Unhinged", "Unstable", "Unsanctioned"]:
+            return "Un"
+        if sn == ["Unfinity"]: 
+            if card.get("security_stamp","") == "acorn":
+                return "Un"
+            else:
+                return "Unset"
+        else:
+            return "OtherPromotional"
+        
+    return "Unset"
+
 def simplify_obj(card):
-    preserved_keys = ["colors", "mana_cost", "cmc", "type_line", "power", "toughness", "released_at"]
+    preserved_keys = ["colors", "mana_cost", "cmc", "type_line", "power", "toughness", "released_at", "set"]
     ret = []
     for key in preserved_keys:
         if key in card:
@@ -58,6 +80,7 @@ def simplify_obj(card):
                 normal = face["image_uris"]["normal"]
                 break
     ret.append(normal[len("https://cards.scryfall.io/normal/"):])
+    ret.append(get_filter_category(card))
     return ret 
 
 def is_real_card(obj):
@@ -70,7 +93,7 @@ def is_real_card(obj):
     weird_types = ['Token', 'Scheme', 'Emblem', 'Plane ', 
                    'Conspiracy', 'Card', 'Phenomenon', 
                    'Hero', 'Stickers', 'Vanguard',
-                   'Dungeon']
+                   'Dungeon', "pLAnE"]
     type_line = obj['type_line']
 
     subtype_point = type_line.index("\u2014") if "\u2014" in type_line else -1
@@ -278,6 +301,7 @@ def generate_dot_files(sw):
                 comment_layout = "#" if size < 100 else ""
                 rank_sep = "2" if size < 100 else "3"
                 outf.write(f"digraph G {{\n{comment_layout}layout=twopi;\n{comment_layout}overlap=prism;\nranksep={rank_sep};\nratio=auto;\n")
+                #outf.write(f"digraph G {{\nlayout=sfdp;overlap_scaling=25;K=2;smoothing=1;\n")
                 written = set()
                 for card in cards:
                     if exemplar is None and good_name(card):
@@ -309,7 +333,37 @@ def generate_dot_files(sw):
         for row in sorted(out_data, key=lambda x:-x[1]):
             writer.writerow(row)
 
+def get_filtered_sw(sw: list[list[str]], official_names: dict[str, Any], vanilla: dict[str, str]) -> list[list[str]]:
+    filtered_sw: list[list[str]] = []
+    lastItem: list[str] = []
+    filtered_items = []
 
+    split_names: dict[str, str] = {}
+    for name in official_names:
+        # Keep track of any split cards like 'Front Side // Back Side'
+        # So that we can allow an entry of 'Front Side' to be translated to this
+        splits = name.split(' // ')
+        if len(splits) == 2:
+            split_names[splits[0]] = name
+    
+    # For the most part, magic has a policy of split cards being their own cards, i.e having
+    # unique names. However, in Collector Booster Playtest cards, they experimented with reusing
+    # real cards for split card faces in "Bind // Liberate" -- We don't want to replace "Bind" then
+    # NB: Smelt // Herd // Saw is similar, but 3 parted, so no handling needed
+    del split_names['Bind']
+
+    for item in sw:
+        for i in range(len(item)):
+            item[i] = vanilla.get(item[i], item[i])
+            item[i] = split_names.get(item[i], item[i])
+        if item != lastItem:
+            filtered_sw.append(item)
+            lastItem = item
+        else:
+            filtered_items.append(", ".join(item))
+    if len(filtered_items) > 0:
+        print(f"Removed {len(filtered_items)} duplicates: {chr(10).join(filtered_items)}")
+    return filtered_sw
 
 def main():
     import argparse 
@@ -321,24 +375,12 @@ def main():
     args = parser.parse_args()
     vanilla = json.load(open(args.vanilla_file))
     sw = parse_sw(args.sw_file)
-    filtered_sw = []
-    lastItem: list[str] = []
-    filtered_items = []
-    for item in sw:
-        for i in range(len(item)):
-            if item[i] in vanilla:
-                item[i] = vanilla[item[i]]
-        if item != lastItem:
-            filtered_sw.append(item)
-            lastItem = item
-        else:
-            filtered_items.append(", ".join(item))
-    if len(filtered_items) > 0:
-        print(f"Removed {len(filtered_items)} duplicates: {chr(10).join(filtered_items)}")
-    sw = filtered_sw
-
+    
     sf = parse_sf(args.sf_file)
     official_names = {obj["name"] : obj for obj in sf if is_real_card(obj)}
+    
+    sw = get_filtered_sw(sw, official_names, vanilla)
+
     raw_sw_names = set()
     for elem in sw:
         try:
@@ -395,23 +437,6 @@ def main():
                 all_data_items.add(item[0])
                 all_data_items.add(item[1])
             outf.write("\n]")
-        """
-        all_data_list = list(all_data_items)
-        index_map = {}
-        index = 0
-        for item in all_data_list:
-            index_map[item] = index
-            index += 1
-        with open('res/compressed_data.js', "w+") as outf:
-            outf.write(f'export const all_names = {str(all_data_list)};\n')
-            outf.write(f'export const all_relations = [\n')
-            first = True
-            for item in sw:
-                if not first: outf.write(",")
-                first = False 
-                outf.write(f"[{index_map[item[0]]},{index_map[item[1]]}{',=' if len(item) == 3 else ''}]")
-            outf.write(";\n")
-        """
         if not args.nodot:
             generate_dot_files(sw)
         print(f"Relation Count: {len(sw)}")

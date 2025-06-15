@@ -19,12 +19,15 @@ export class Card {
     this.name = nm;
   }
 
-  public isPlaceholder(): boolean {
-    return (this.name.indexOf('/') > 0 && this.name.indexOf('//') < 0) ||
-      this.name == "MORPH" || this.name.indexOf(" Instant ") > 0 ||
-      this.name.indexOf(" Cycling") > 0;
+  public static isPlaceholderName(name: string): boolean {
+    return (name.indexOf('/') > 0 && name.indexOf('//') < 0) ||
+      name == "MORPH" || name.indexOf(" Instant ") > 0 ||
+      name.indexOf(" Cycling") > 0;
   }
 
+  public isPlaceholder(): boolean {
+    return Card.isPlaceholderName(this.name);
+  }
   public stats(dir: Direction): DirStats {
     return dir == Direction.Worse ? this.worseStats : this.betterStats;
   }

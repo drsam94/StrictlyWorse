@@ -14,7 +14,12 @@ def better_example(card, prev_data):
         return True 
     my_released = datetime.datetime.strptime(card["released_at"], "%Y-%m-%d")
     old_released = datetime.datetime.strptime(prev_data["released_at"], "%Y-%m-%d")
-    bling = lambda x: len([fe for fe in x.get("frame_effects", []) if fe != "colorshifted"]) + len(x.get("promo_types", []))
+
+    allowed_pts = ["starterdeck","planeswalkerdeck", "mediainsert"]
+    pts = lambda x: [pt for pt in x.get("promo_types", []) if pt not in allowed_pts]
+    allowed_effects = ["colorshifted", "mooneldrazifdc", "tombstone", "legendary"]
+    effects = lambda x: [fe for fe in x.get("frame_effects", []) if fe not in allowed_effects]
+    bling = lambda x: len(effects(x)) + len(pts(x)) + int(x.get("reprint"))
     if bling(card) > bling(prev_data):
         return False
     if my_released < old_released or bling(card) < bling(prev_data):
@@ -48,6 +53,17 @@ def main():
         uri = datum["svg_uri"]
         img = requests.get(uri)
         name = datum['symbol'][1:-1].replace('/', '_')
+        with open(f'res/ico/{name}.svg', 'wb+') as f:
+            f.write(img.content)
+    
+    sym = requests.get('https://api.scryfall.com/sets')
+    j = sym.json()
+    for datum in j['data']:
+        uri = datum.get('icon_svg_uri', None)
+        if not uri:
+            continue
+        img = requests.get(uri)
+        name = datum['code']
         with open(f'res/ico/{name}.svg', 'wb+') as f:
             f.write(img.content)
         

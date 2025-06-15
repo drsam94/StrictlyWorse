@@ -1,11 +1,55 @@
 import { Card, Direction, DirStats, CardCategory } from './card.js'
 import { oracleData, oracleDataUnmapped } from './oracle.js'
-import { getOracleData, getTotalChildSet } from './card_maps.js';
+import { getCategory, getOracleData, getTotalChildSet, initializeTotalSets } from './card_maps.js';
+
+export class SetInfo {
+  public counts: Record<string, Record<CardCategory, number>>;
+  public chronologicalSets: Array<string>;
+  constructor(dag: Record<string, Card>) {
+    initializeTotalSets(dag);
+    this.counts = {};
+    const releases: Record<string, number> = {};
+    const allCards: Record<string, Array<string>> = {}
+    for (const oracle of [oracleData, oracleDataUnmapped]) {
+      for (const name of Object.keys(oracle.all_cards)) {
+        const category = getCategory(name);
+        const oData = oracle.all_cards[name];
+        if (!oData) {
+          continue;
+        }
+        const set = oData.set;
+        if (!(set in this.counts)) {
+          this.counts[set] = {
+            [CardCategory.Mapped]: 0,
+            [CardCategory.Unmapped]: 0,
+            [CardCategory.Best]: 0,
+            [CardCategory.Worst]: 0,
+            [CardCategory.Unknown]: 0,
+          };
+        }
+        if (!(set in allCards)) {
+          allCards[set] = [];
+        }
+        allCards[set].push(name)
+        releases[set] = Stats.parseTimeValue(oData.released_at);
+        this.counts[set][category] += 1;
+      }
+    }
+    this.chronologicalSets = Object.keys(this.counts);
+    this.chronologicalSets.sort((a: string, b: string): number => {
+      return releases[a] - releases[b];
+    });
+    console.log(allCards);
+  }
+};
+
 export class Stats {
   private readonly dag: Record<string, Card>;
+  private readonly setInfo: SetInfo;
   private static singleton: Stats | null;
   public constructor(dag: Record<string, Card>) {
     this.dag = dag;
+    this.setInfo = new SetInfo(dag);
   }
   public static relationsCount: number = 0;
   public static get(dag: Record<string, Card>): Stats {
@@ -47,6 +91,9 @@ export class Stats {
   }
   public getExtremeByTotal(dir: Direction): [Array<Card>, number] {
     return this.getExtremeBy(dir, "total");
+  }
+  public getSetInfo(): SetInfo {
+    return this.setInfo;
   }
 
   /// Interpret a date YYYY[-MM[-DD]] as a integral months since 0 AD

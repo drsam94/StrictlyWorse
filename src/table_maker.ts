@@ -5,7 +5,7 @@ import { getImageURL } from './image_url.js'
 import { imbueHoverImage } from './hover.js';
 import { changeLocation, Page } from './navigate.js'
 
-function makeElement(type: string, parent?: Node, text?: string): HTMLElement {
+export function makeElement(type: string, parent?: Node, text?: string): HTMLElement {
   const elem = document.createElement(type);
   elem.className = "mytable";
   if (text) {
@@ -92,6 +92,19 @@ class FlagsState {
   }
 }
 
+function getExemplar(name: string, dir: Direction): string | undefined {
+  let exemplarPH: undefined | string = undefined;
+  for (const candidate of getTotalChildSet(dir)[name].keys()) {
+    if (!Card.isPlaceholderName(candidate)) {
+      return candidate
+    }
+    exemplarPH = candidate;
+  }
+  if (exemplarPH !== undefined) {
+    return getExemplar(exemplarPH, dir);
+  }
+  return undefined
+}
 export class TableMaker {
   private column: TableColumn = TableColumn.Cost;
   private increasing: boolean = true;
@@ -183,7 +196,7 @@ export class TableMaker {
           cell.textContent = "";
         } else {
           const dir = category == CardCategory.Best ? Direction.Worse : Direction.Better;
-          const exemplar = getTotalChildSet(dir)[card.name].keys().next().value;
+          const exemplar = getExemplar(card.name, dir);
           if (exemplar !== undefined) {
             doCardColumn(exemplar);
           }

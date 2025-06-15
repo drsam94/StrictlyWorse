@@ -48,9 +48,13 @@ export class TableElem {
   public totalWorse: number;
   public release: string;
   public category: CardCategory;
+  public card_set: string;
   public origCard: Card;
 
   constructor(card: Card, oracle: OracleItem, cat: CardCategory, dir: Direction) {
+    if (oracle === undefined) {
+      console.log(card.name);
+    }
     const oDir = dir == Direction.Better ? Direction.Worse : Direction.Better;
     this.name = card.name;
     this.colors = oracle.colors ?? [];
@@ -72,5 +76,6 @@ export class TableElem {
     this.release = oracle.released_at;
     this.category = cat;
     this.origCard = card;
+    this.card_set = oracle.set;
   }
 }
