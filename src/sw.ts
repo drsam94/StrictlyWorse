@@ -9,10 +9,10 @@
 // from the compiled form of this file to the compiled form of the imported
 import { CARD_HEIGHT, imbueHoverImage } from './hover.js';
 import { autocomplete } from './autocomplete.js';
-import { Direction, DirStats, Card, CardCategory } from './card.js';
+import { Direction, DirStats, Card, CardCategory, opDir } from './card.js';
 import { SearchMatcher } from './search.js';
 import { oracleData } from './oracle.js';
-import { TableMaker, makeElement } from './table_maker.js';
+import { TableMaker, makeElement, getExemplar } from './table_maker.js';
 import { Timer } from './timer.js';
 import { getImageURL } from './image_url.js';
 import { makeChart } from './chart.js';
@@ -176,6 +176,179 @@ const doRenderTable = (outdiv: HTMLElement, dag: Record<string, Card>, dir: Dire
 }
 
 let globalSuppressOnHashChange = false;
+
+function doRenderPath(outdiv: HTMLElement, dag: Record<string, Card>, names: string[]) {
+  initializeTotalSets(dag);
+  outdiv.replaceChildren("");
+  const label = document.createElement("p");
+  label.textContent = "Choose Two Cards";
+  let card1Input: HTMLInputElement | null = null;
+  let card2Input: HTMLInputElement | null = null;
+
+  const outputdiv = document.createElement("div");
+  const lastvs = ["", ""];
+  const cb = (_?: string) => {
+    if (card1Input == null || card2Input == null) {
+      return;
+    }
+    if (card1Input.value == "" || card2Input.value == "") {
+      return;
+    }
+    if (card1Input.value == lastvs[0] && card2Input.value == lastvs[1]) {
+      return;
+    }
+    globalSuppressOnHashChange = true;
+    window.location.hash = `path-${card1Input.value}&${card2Input.value}`;
+    lastvs[0] = card1Input.value;
+    lastvs[1] = card2Input.value;
+    displayPath(dag, card1Input.value, card2Input.value, outputdiv);
+  };
+  const [card1Div, c1Input] = makeSearchBar(dag, cb);
+  const [card2Div, c2Input] = makeSearchBar(dag, cb);
+  card1Input = c1Input;
+  card2Input = c2Input;
+  const textInput = document.createElement("textarea");
+  textInput.rows = 25;
+  textInput.cols = 80;
+  textInput.style.display = "inline-block";
+  textInput.style.width = "100%";
+  outdiv.appendChild(label);
+
+  outdiv.appendChild(card1Div);
+  outdiv.appendChild(card2Div);
+
+  outdiv.appendChild(outputdiv);
+  if (names.length === 2) {
+    card1Input.value = names[0];
+    card2Input.value = names[1];
+    cb();
+  }
+}
+
+function displayPath(dag: Record<string, Card>, name1: string, name2: string, outdiv: HTMLElement) {
+  outdiv.replaceChildren("");
+
+  type PathStep = [Direction, string];
+  type Path = Array<PathStep>
+  type PathMap = Map<string, Path>;
+  const maps: Array<PathMap> = [];
+  maps.push(new Map<string, Path>());
+  maps.push(new Map<string, Path>());
+  const leaves: Array<Array<Path>> = [];
+  leaves.push([[[Direction.None, name1]]]);
+  leaves.push([[[Direction.None, name2]]]);
+
+  const timer = new Timer();
+  let mergePath: [Path, Path] | null = null;
+  while (true) {
+    let onePathStuck = false;
+    for (let i = 0; i < maps.length; ++i) {
+      let didSomething = false;
+      for (const leaf of leaves[i]) {
+        const back = leaf[leaf.length - 1];
+        const name = back[1];
+        if (!maps[i].has(name)) {
+          maps[i].set(name, leaf);
+          if (!didSomething) {
+            console.log(i, leaf, name);
+          }
+          didSomething = true;
+        }
+      }
+      if (!didSomething) {
+        onePathStuck = true;
+      }
+    }
+    if (onePathStuck) {
+      break;
+    }
+    // Check if any of our paths have intersected
+    for (const key of maps[0].keys()) {
+      if (maps[1].has(key)) {
+        mergePath = [maps[0].get(key)!, maps[1].get(key)!];
+        break;
+      }
+    }
+    if (mergePath !== null) {
+      break;
+    }
+    // Grow our paths from both sides
+    for (let i = 0; i < leaves.length; ++i) {
+      const newLeaves: Array<Path> = [];
+      for (const leaf of leaves[i]) {
+        const back = leaf[leaf.length - 1];
+        const name = back[1];
+        for (const dir of [Direction.Better, Direction.Worse]) {
+          for (const nextCard of dag[name].stats(dir).cards) {
+            // copy here, so the references in the map stay to unmutated
+            // lists
+            const nextLeaf = [...leaf];
+            nextLeaf.push([dir, nextCard.name]);
+            newLeaves.push(nextLeaf);
+          }
+        }
+      }
+      leaves[i] = newLeaves;
+    }
+  }
+
+  timer.checkpoint("Compute Path");
+  if (mergePath === null) {
+    outdiv.innerText = "No Path Exists Between these cards";
+    return;
+  }
+  console.log(mergePath);
+  let strContent = "";
+  let lastDir: Direction = Direction.None;
+  const combinedPath: Path = [];
+  for (let i = 0; i < 2; ++i) {
+    for (let j = 0; j < mergePath[i].length; ++j) {
+      const index = i == 0 ? j : mergePath[i].length - j - 1;
+      const [dir, name] = mergePath[i][index];
+      if (i === 1 && j === 0) {
+        // don't repeat the central element
+        lastDir = dir;
+        continue;
+      }
+
+      const elemDir: Direction = i === 0 ? dir : opDir(lastDir);
+      lastDir = dir;
+      combinedPath.push([elemDir, name]);
+    }
+  }
+  for (let i = 0; i < combinedPath.length; ++i) {
+    const [dir, name] = combinedPath[i];
+    if (Card.isPlaceholderName(name, false)) {
+      if (dir === lastDir) {
+        // If the direction is the same on both sides,
+        // just skip the placeholder
+        combinedPath.splice(i, 1);
+        --i;
+        continue;
+      }
+      // Otherwise, add a replacement element for the placeholder
+      // If A > B and B < C, then we just need to pick an element
+      // B' s.t B > B', and we are guaranteed B' < C. The opposite 
+      // holds for <. So we just need to 'continue in the original 
+      // direction'
+      const exemplar = getExemplar(name, dir);
+      combinedPath[i] = [dir, exemplar!];
+    }
+    lastDir = dir;
+  }
+
+  for (let i = 0; i < combinedPath.length; ++i) {
+    const [dir, name] = combinedPath[i];
+    if (dir == Direction.Better) {
+      strContent += "is worse than ";
+    } else if (dir == Direction.Worse) {
+      strContent += "is better than ";
+    }
+    strContent += `[[${name}]] </br>`;
+  }
+
+  displayTextWithCardLinks(outdiv, strContent);
+}
 
 function doRenderCheck(outdiv: HTMLElement, dag: Record<string, Card>) {
   initializeTotalSets(dag);
@@ -378,6 +551,57 @@ function doRenderHome(outdiv: HTMLDivElement, dag: Record<string, Card>) {
   containerDiv.appendChild(footerDiv);
 }
 
+function renderTotalHistograms(outdiv: HTMLDivElement) {
+  const h2 = document.createElement("h2");
+
+  enum ChartCategory {
+    ReleaseDate,
+    MappedDate
+  };
+  const chartDiv = document.createElement("div");
+  const doChart = (desc: string, cardSet: Iterable<Card>, category: ChartCategory) => {
+    const label = document.createElement("p");
+    label.textContent = desc;
+    const dateData = extractDates(cardSet, (card: Card) => card.name, category == ChartCategory.MappedDate);
+    const dateChart = makeDateHistogram(dateData);
+
+    chartDiv.appendChild(label);
+    chartDiv.appendChild(dateChart);
+  };
+  const doCharts = (category: ChartCategory) => {
+    h2.textContent = `${category === ChartCategory.ReleaseDate ? "Release" : "Mapped"} Date Histograms`;
+    chartDiv.replaceChildren("");
+    doChart("All Mapped Cards", getTotalSet(CardCategory.Mapped), category);
+    doChart("All Worst Cards", getMaximalCards(Direction.Worse), category);
+    doChart("All Best Cards", getMaximalCards(Direction.Better), category);
+  };
+
+  outdiv.appendChild(h2);
+
+  let activeCategory = ChartCategory.ReleaseDate;
+  const addRadio = (i: ChartCategory) => {
+    const radioDiv = document.createElement("div");
+    const label = document.createElement("p");
+    label.textContent = ChartCategory[i];
+    label.style.display = "inline-block";
+    const rad = document.createElement("input");
+    rad.type = "radio";
+    rad.name = "histogram";
+    rad.onchange = () => {
+      activeCategory = i;
+      doCharts(activeCategory);
+    }
+    rad.checked = activeCategory === i;
+    radioDiv.appendChild(rad);
+    radioDiv.appendChild(label);
+    return radioDiv;
+  };
+  outdiv.appendChild(addRadio(ChartCategory.ReleaseDate));
+  outdiv.appendChild(addRadio(ChartCategory.MappedDate));
+  outdiv.appendChild(chartDiv);
+  doCharts(activeCategory);
+}
+
 function doRenderStats(outdiv: HTMLDivElement, dag: Record<string, Card>) {
   outdiv.replaceChildren("");
   const stats = Stats.get(dag);
@@ -419,38 +643,9 @@ function doRenderStats(outdiv: HTMLDivElement, dag: Record<string, Card>) {
 
   outdiv.appendChild(initStatsDiv);
 
-  const h2 = document.createElement("h2");
-  h2.textContent = "Release Date Histograms";
-  outdiv.appendChild(h2);
-
-  const doChart = (desc: string, cardSet: Iterable<Card>, useMappedDate: boolean) => {
-    const label = document.createElement("p");
-    label.textContent = desc;
-    const dateData = extractDates(cardSet, (card: Card) => card.name, useMappedDate);
-    const dateChart = makeDateHistogram(dateData);
-
-    outdiv.appendChild(label);
-    outdiv.appendChild(dateChart);
-  }
   initializeTotalSets(dag);
-  doChart("All Mapped Cards", Object.values(dag), false);
-  doChart("All Worst Cards", getMaximalCards(Direction.Worse), false);
-  doChart("All Best Cards", getMaximalCards(Direction.Better), false);
+  renderTotalHistograms(outdiv);
 
-  const h22 = document.createElement("h2");
-  h22.textContent = "Mapped Date Histograms";
-  outdiv.appendChild(h22);
-
-  const mapLabel = document.createElement("p");
-  mapLabel.textContent = "Mapped date is the date a card became mapped, i.e had the first Strictly worse or better card printed."
-  outdiv.appendChild(mapLabel);
-
-  doChart("All Mapped Cards", Object.values(dag), true);
-  doChart("All Worst Cards", getMaximalCards(Direction.Worse), true);
-  doChart("All Best Cards", getMaximalCards(Direction.Better), true);
-
-
-  // to be enabled later
   const h23 = document.createElement("h2");
   h23.textContent = "Categories By Set";
   outdiv.appendChild(h23);
@@ -471,14 +666,12 @@ function doRenderStats(outdiv: HTMLDivElement, dag: Record<string, Card>) {
     makeElement("td", templateRow);
   }
 
-
-
   for (const set of setStats.chronologicalSets) {
     const row = templateRow.cloneNode(true) as HTMLElement;
     row.children[0].textContent = set;
 
     const _captSet = set;
-    row.children[0].onclick = () => {
+    (row.children[0] as HTMLElement).onclick = () => {
       changeLocation(Page.search, "set=" + _captSet)
     };
 
@@ -513,6 +706,9 @@ function initializePageFromHash(state: GlobalState) {
   } else if (key === "table") {
     state.searchBar.style.visibility = "hidden";
     doRenderTable(state.outdiv, state.dag, Direction[val as keyof typeof Direction])
+  } else if (key == "path") {
+    state.searchBar.style.visibility = "hidden";
+    doRenderPath(state.outdiv, state.dag, val.split('&'));
   } else if (key === "page") {
     state.searchBar.style.visibility = "hidden";
     if (val == "stats") {
@@ -577,13 +773,14 @@ function makeHeaderButtons(headerDiv: HTMLDivElement, outdiv: HTMLDivElement): v
   makeButton("#ABCDEF", "All Best Cards", () => { changeLocation(Page.table, Direction.Better); })
   makeButton("#ABCDEF", "Stats", () => { changeLocation(Page.stats); });
   makeButton("#ABCDEF", "Check Cards", () => { changeLocation(Page.checker); });
+  makeButton("#ABCDEF", "Paths", () => { changeLocation(Page.path); });
   makeButton("#ABCDEF", "Graph Components", () => { changeLocation(Page.components); });
 }
 interface PseudoKeyboardEvent {
   key: string
 };
 
-function makeSearchBar(dag: Record<string, Card>): [HTMLDivElement, HTMLInputElement] {
+function makeSearchBar(dag: Record<string, Card>, installCB?: (x: string) => void): [HTMLDivElement, HTMLInputElement] {
   const wrapperDiv = document.createElement("div");
   wrapperDiv.style.position = "relative";
   wrapperDiv.style.display = "inline-block";
@@ -602,7 +799,11 @@ function makeSearchBar(dag: Record<string, Card>): [HTMLDivElement, HTMLInputEle
     if (event.key != "Enter") {
       return;
     }
-    changeLocation(Page.card, inputElem.value);
+    if (!installCB) {
+      changeLocation(Page.card, inputElem.value);
+    } else {
+      installCB(inputElem.value);
+    }
   };
   autocomplete(inputElem, Object.keys(dag), cb);
   inputElem.addEventListener("keydown", cb);

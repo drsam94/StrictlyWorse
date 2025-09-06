@@ -9,7 +9,8 @@ export enum Page {
   philosophy,
   home,
   stats,
-  components
+  components,
+  path
 }
 
 export function changeLocation(loc: Page, arg?: any): void {
@@ -23,6 +24,9 @@ export function changeLocation(loc: Page, arg?: any): void {
       break;
     case Page.home:
       window.location.hash = Page[loc];
+      break;
+    case Page.path:
+      window.location.hash = Page[loc] + "-";
       break;
     default:
       window.location.hash = "page-" + Page[loc];

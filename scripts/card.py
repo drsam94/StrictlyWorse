@@ -31,10 +31,25 @@ class Compare(Enum):
 # TODO: use attrs? might make it harder for others to use
 class CardDesc:
     positive_kw = ["Trample", "Flying", "Lifelink", "Haste", 
-                   "Reach", "Vigilance", "Hexproof", "Deathtouch", 
+                   "Vigilance", "Hexproof", "Deathtouch", 
                    "Menace", "Flash", "Firebreathing",
-                   "Swampwalk", "Prowess", "Indestructible"]
-    negative_kw = ["Noblock", "Defender"]
+                   "Swampwalk", "Prowess", "Indestructible",
+                   "Forestwalk", "Plunder", "Untap", "Counter",
+                   "Exile", "LifeLoss", "OrPlaneswalker",
+                   "Surveil", "Scry", "Convoke",
+                   "LoseInd"]
+    remaps = {"NonPlayer" : ("CreatureOnly", 0.5),
+              "NonCreature": ("PlayerOnly", 0.5),
+              "Bury": ("Exile", 0.5),
+              "Reach" : ("Flying", 0.5)}
+    # Nonstandard kws:
+    # Noblock: "~ can't block"
+    # Plunder: "When ~ enters the battlefield, you may discard a card"
+    #          "if you do, draw a card"
+    # Firebreathing: "R: +1/+0 Until EOT"
+    negative_kw = ["Noblock", "Defender", "Echo", "Sorcery", "CreatureOnly", 
+                   "PlayerOnly", "Nonblack", "Nonartifact", "Tapped", "Untapped",
+                   "Discard", "FlyingOnly"]
     two_word_positive_kw = ["Add", "First", "Double"]
     two_word_negative_kw = ["Can't"]
     def __init__(self, placeholder_name: str):
@@ -46,12 +61,24 @@ class CardDesc:
         self.pow = "0"
         self.tou = "0"
         self.desc = placeholder_name
+        # By default, a vanilla desc represents a creature.
+        # We support some other comparable types, e.g
+        # STATS represents an Instant that grants those stats
+        # "Sorcery" is viewed as a 'negative kw'
+        self.type = "Creature"
         def handle_part(part: str, weight = 1.0):
-            if part in CardDesc.two_word_positive_kw:
+            if part in CardDesc.remaps:
+                p, w = CardDesc.remaps[part]
+                handle_part(p, w)
+            elif part in CardDesc.two_word_positive_kw:
                 next_part = next(it)
                 self.positives[" ".join((part, next_part))] = weight
+            elif part in ["STATS", "DAMAGE", "DESTROY", "DRAW"]:
+                self.type = part
             elif '/' in part:
                 self.pow, self.tou = part.split('/')
+            elif part.isdigit():
+                self.pow = part
             elif part in CardDesc.positive_kw:
                 self.positives[part] = weight
             elif part in CardDesc.negative_kw:
@@ -62,12 +89,12 @@ class CardDesc:
                 if len(part[1:]) <= 1:
                     self.positives[placeholder_name] = 1
                 else:
-                    handle_part(part[1:], 0.5)
+                    handle_part(part[1:], weight + 1)
             elif part.startswith("-"):
                 if len(part[1:]) <= 1:
                     self.negatives[placeholder_name] = 1
                 else:
-                    handle_part(part[1:], 0.5)
+                    handle_part(part[1:], weight / 2)
             elif part in CardDesc.two_word_negative_kw:
                 next_part = next(it)
                 self.negatives[" ".join((part, next_part))] = weight
@@ -145,6 +172,8 @@ class CardDesc:
     
     def compare(_self, other) -> Compare:
         self = _self
+        if self.type != other.type:
+            return Compare.Incomparable
         x_slot = -1
         if 'X' in self.cost:
             self = CardDesc(self.desc)
@@ -161,7 +190,7 @@ class CardDesc:
             other.tou = str(eval(other.tou.replace('X', str(x_val))))
             x_slot = 1 if x_slot == -1 else 2
         cost_result = CardDesc._compare_cost(self.cost, other.cost)
-        pt_result = CardDesc._compare_arrays([int(self.pow), int(self.tou)], [int(other.pow), int(other.tou)])
+        pt_result = CardDesc._compare_arrays([float(self.pow), float(self.tou)], [float(other.pow), float(other.tou)])
         neg_result = CardDesc._compare_modifiers(self.negatives, other.negatives, invert=True)
         pos_result = CardDesc._compare_modifiers(self.positives, other.positives)
         results = (cost_result, pt_result, neg_result, pos_result)

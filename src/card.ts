@@ -4,6 +4,16 @@ export enum Direction {
   None, // Used for cards unafiliated with ordering
 };
 
+export function opDir(d: Direction) {
+  switch (d) {
+    case Direction.Worse:
+      return Direction.Better;
+    case Direction.Better:
+      return Direction.Worse;
+    case Direction.None:
+      return Direction.None;
+  }
+}
 export class DirStats {
   public cards: Array<Card> = [];
   public degree: number = 0;
@@ -19,10 +29,14 @@ export class Card {
     this.name = nm;
   }
 
-  public static isPlaceholderName(name: string): boolean {
-    return (name.indexOf('/') > 0 && name.indexOf('//') < 0) ||
-      name == "MORPH" || name.indexOf(" Instant ") > 0 ||
-      name.indexOf(" Cycling") > 0;
+  public static isPlaceholderName(name: string, allowMorph: boolean = true): boolean {
+    const phWords = ["MORPH", " Instant ", " Cycling", " DAMAGE ", " STATS ", " DESTROY ", " DRAW "];
+    for (const word of phWords) {
+      if (name.indexOf(word) > (allowMorph ? 0 : -1)) {
+        return true;
+      }
+    }
+    return (name.indexOf('/') > 0 && name.indexOf('//') < 0);
   }
 
   public isPlaceholder(): boolean {

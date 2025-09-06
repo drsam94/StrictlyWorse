@@ -44,8 +44,14 @@ export function initializeTotalSets(dag: Record<string, Card>) {
 
   total_sets[CardCategory.Best] = maximalCards[Direction.Better];
   total_sets[CardCategory.Worst] = maximalCards[Direction.Worse];
-  total_sets[CardCategory.Mapped] = Object.values(dag);
-
+  const mappedCards: Array<Card> = [];
+  for (const [name, card] of Object.entries(dag)) {
+    // Don't add aliases
+    if (card.name === name) {
+      mappedCards.push(card);
+    }
+  }
+  total_sets[CardCategory.Mapped] = mappedCards;
   const unmappedOracle = Object.keys(oracleDataUnmapped.all_cards);
   const unmappedCards = new Array<Card>(unmappedOracle.length);
   for (let i = 0; i < unmappedCards.length; ++i) {

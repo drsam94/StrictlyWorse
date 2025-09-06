@@ -92,10 +92,10 @@ class FlagsState {
   }
 }
 
-function getExemplar(name: string, dir: Direction): string | undefined {
+export function getExemplar(name: string, dir: Direction): string | undefined {
   let exemplarPH: undefined | string = undefined;
   for (const candidate of getTotalChildSet(dir)[name].keys()) {
-    if (!Card.isPlaceholderName(candidate)) {
+    if (!Card.isPlaceholderName(candidate, false)) {
       return candidate
     }
     exemplarPH = candidate;

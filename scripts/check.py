@@ -16,7 +16,7 @@ def parse_sf(file: str):
     return json.load(open(file))
 
 def is_placeholder(name: str) -> bool:
-    return name in ["MORPH"] or ('/' in name and '//' not in name) or (name[0].isdigit())
+    return name in ["MORPH"] or ('/' in name and '//' not in name) or name[0].isdigit() or (name[0] in 'WUBRG' and name[1] == ' ')
 
 def get_text_names() -> set[str]:
     import re
@@ -61,7 +61,35 @@ def simplify_obj(card):
     ret = []
     for key in preserved_keys:
         if key in card:
-            ret.append(card[key])
+            prop = card[key]
+            if key == "set":
+                prop = {
+                    "leb" : "lea",
+                    "pmic" : "phpr",
+                    "pcel" : "phpr",
+                    "purl" : "phpr",
+                    "hop" : "zen",
+                    "arc" : "m11",
+                    "pcmd" : "cmd",
+                    "exp" : "bfz",
+                    "oc15" : "c15",
+                    "h17" : "phtr",
+                    "ph17" : "phtr",
+                    "g18" : "m19",
+                    "ph18" : "phtr",
+                    "ptg" : "phtr",
+                    "ph19" : "phtr",
+                    "ph20" : "phtr",
+                    "ph21" : "phtr",
+                    "hho" : "phtr",
+                    "ph22" : "phtr",
+                    "pf24" : "phtr",
+                    "slx" : "sld",
+                    "pf25" : "phtr",
+                    "ph23" : "phtr",
+                    "pdrc" : "phtr",
+                }.get(prop, prop)
+            ret.append(prop)
         elif "card_faces" not in card:
             ret.append("")
         elif key == "mana_cost":
@@ -97,6 +125,9 @@ def is_real_card(obj):
     type_line = obj['type_line']
 
     subtype_point = type_line.index("\u2014") if "\u2014" in type_line else -1
+    if obj["id"] == "f3455651-e643-445e-9489-51e4e24fca4c":
+        # some misformatted cards
+        return True
     major_types = type_line[:subtype_point] if subtype_point != -1 else type_line
     minor_types = type_line[subtype_point:]
     weird_subtypes = ['Contraption', 'Attraction']
@@ -292,7 +323,7 @@ def generate_dot_files(sw):
     out_data = []
     def good_name(card):
         name = id_to_card[card]
-        return not is_placeholder(name) and '"' not in name and ',' not in name
+        return not is_placeholder(name) and '"' not in name
     for cards, fname in out_map:
         exemplar = None
         size = len(cards)
@@ -326,7 +357,7 @@ def generate_dot_files(sw):
                     exemplar = card
             svg_name = ""
         exemplar_name = id_to_card[exemplar] if out_data else "Total"
-        out_data.append([exemplar_name, size, svg_name])
+        out_data.append([exemplar_name.replace(',',''), size, svg_name])
     with open("res/graphs.csv", "w+") as outf:
         writer = csv.writer(outf)
         writer.writerow(["Exemplar", "Size", "Filename"])
@@ -365,7 +396,7 @@ def get_filtered_sw(sw: list[list[str]], official_names: dict[str, Any], vanilla
         print(f"Removed {len(filtered_items)} duplicates: {chr(10).join(filtered_items)}")
     return filtered_sw
 
-def main():
+def main() -> None:
     import argparse 
     parser = argparse.ArgumentParser()
     parser.add_argument("--nodot", "-n", action="store_true")
