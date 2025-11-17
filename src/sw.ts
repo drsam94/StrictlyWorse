@@ -279,7 +279,27 @@ function displayPath(dag: Record<string, Card>, name1: string, name2: string, ou
         const back = leaf[leaf.length - 1];
         const name = back[1];
         for (const dir of [Direction.Better, Direction.Worse]) {
-          for (const nextCard of dag[name].stats(dir).cards) {
+          const nextCards = [...dag[name].stats(dir).cards];
+          let expanded = true;
+          while (expanded) {
+            expanded = false;
+            const placeholderIndices: Array<number> = [];
+            for (let i = 0; i < nextCards.length; ++i) {
+              if (nextCards[i].isPlaceholder()) {
+                placeholderIndices.push(i);
+                expanded = true;
+              }
+            }
+            const placeholders: Array<Card> = [];
+            for (let i = placeholderIndices.length - 1; i >= 0; --i) {
+              placeholders.push(nextCards.splice(i, 1)[0])
+            }
+            for (const ph of placeholders) {
+              nextCards.push(...ph.stats(dir).cards);
+            }
+          }
+
+          for (const nextCard of nextCards) {
             // copy here, so the references in the map stay to unmutated
             // lists
             const nextLeaf = [...leaf];

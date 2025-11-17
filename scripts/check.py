@@ -87,6 +87,7 @@ def simplify_obj(card):
                     "slx" : "sld",
                     "pf25" : "phtr",
                     "ph23" : "phtr",
+                    "pw24" : "phtr",
                     "pdrc" : "phtr",
                 }.get(prop, prop)
             ret.append(prop)
@@ -121,7 +122,7 @@ def is_real_card(obj):
     weird_types = ['Token', 'Scheme', 'Emblem', 'Plane ', 
                    'Conspiracy', 'Card', 'Phenomenon', 
                    'Hero', 'Stickers', 'Vanguard',
-                   'Dungeon', "pLAnE"]
+                   'Dungeon', "pLAnE", "Boss"]
     type_line = obj['type_line']
 
     subtype_point = type_line.index("\u2014") if "\u2014" in type_line else -1

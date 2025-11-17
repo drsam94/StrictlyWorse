@@ -36,12 +36,15 @@ class CardDesc:
                    "Swampwalk", "Prowess", "Indestructible",
                    "Forestwalk", "Plunder", "Untap", "Counter",
                    "Exile", "LifeLoss", "OrPlaneswalker",
-                   "Surveil", "Scry", "Convoke",
-                   "LoseInd"]
-    remaps = {"NonPlayer" : ("CreatureOnly", 0.5),
-              "NonCreature": ("PlayerOnly", 0.5),
-              "Bury": ("Exile", 0.5),
-              "Reach" : ("Flying", 0.5)}
+                   "Surveil", "Scry", "Convoke", "Cycling",
+                   "LoseInd", "OrEnchantment", "OrArtifact",
+                   "oW", "oU", "oB", "oR", "oG", "o1", "Add",
+                   "OrLand", "LifeGain"]
+    remaps: dict[str, list[tuple[str, float]]] = {"NonPlayer" : [("CreatureOnly", 0.5)],
+              "Bury": [("Exile", 0.5)],
+              "Reach" : [("Flying", 0.5)],
+              "OrVehicle" : [("OrArtifact", 0.5)],
+              "Any" : [("oW", 1), ("oU", 1), ("oB", 1), ("oR", 1), ("oG", 1)]}
     # Nonstandard kws:
     # Noblock: "~ can't block"
     # Plunder: "When ~ enters the battlefield, you may discard a card"
@@ -50,7 +53,7 @@ class CardDesc:
     negative_kw = ["Noblock", "Defender", "Echo", "Sorcery", "CreatureOnly", 
                    "PlayerOnly", "Nonblack", "Nonartifact", "Tapped", "Untapped",
                    "Discard", "FlyingOnly"]
-    two_word_positive_kw = ["Add", "First", "Double"]
+    two_word_positive_kw = ["First", "Double"]
     two_word_negative_kw = ["Can't"]
     def __init__(self, placeholder_name: str):
         parts = placeholder_name.split(' ')
@@ -68,12 +71,12 @@ class CardDesc:
         self.type = "Creature"
         def handle_part(part: str, weight = 1.0):
             if part in CardDesc.remaps:
-                p, w = CardDesc.remaps[part]
-                handle_part(p, w)
+                for p, w in CardDesc.remaps[part]:
+                    handle_part(p, w)
             elif part in CardDesc.two_word_positive_kw:
                 next_part = next(it)
                 self.positives[" ".join((part, next_part))] = weight
-            elif part in ["STATS", "DAMAGE", "DESTROY", "DRAW"]:
+            elif part in ["STATS", "DAMAGE", "DESTROY", "DRAW", "AURA", "MINUS"]:
                 self.type = part
             elif '/' in part:
                 self.pow, self.tou = part.split('/')
@@ -189,6 +192,8 @@ class CardDesc:
             other.pow = str(eval(other.pow.replace('X', str(x_val))))
             other.tou = str(eval(other.tou.replace('X', str(x_val))))
             x_slot = 1 if x_slot == -1 else 2
+        if x_slot == 2:
+            return Compare.Incomparable
         cost_result = CardDesc._compare_cost(self.cost, other.cost)
         pt_result = CardDesc._compare_arrays([float(self.pow), float(self.tou)], [float(other.pow), float(other.tou)])
         neg_result = CardDesc._compare_modifiers(self.negatives, other.negatives, invert=True)

@@ -30,7 +30,7 @@ export class Card {
   }
 
   public static isPlaceholderName(name: string, allowMorph: boolean = true): boolean {
-    const phWords = ["MORPH", " Instant ", " Cycling", " DAMAGE ", " STATS ", " DESTROY ", " DRAW "];
+    const phWords = ["MORPH", " Instant", " Cycling", " DAMAGE", " STATS", " DESTROY", " DRAW", " AURA", " MINUS"];
     for (const word of phWords) {
       if (name.indexOf(word) > (allowMorph ? 0 : -1)) {
         return true;
