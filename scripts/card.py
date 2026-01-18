@@ -39,11 +39,14 @@ class CardDesc:
                    "Surveil", "Scry", "Convoke", "Cycling",
                    "LoseInd", "OrEnchantment", "OrArtifact",
                    "oW", "oU", "oB", "oR", "oG", "o1", "Add",
-                   "OrLand", "LifeGain"]
+                   "OrLand", "LifeGain", "TargetTwo", "HasteDraw",
+                   "Convoke", "Treasure", "Clue", "AllCreatures",
+                   "Lesson", "Draw"]
     remaps: dict[str, list[tuple[str, float]]] = {"NonPlayer" : [("CreatureOnly", 0.5)],
               "Bury": [("Exile", 0.5)],
               "Reach" : [("Flying", 0.5)],
               "OrVehicle" : [("OrArtifact", 0.5)],
+              "AttackingOnly" : [("InCombat", 2.0)],
               "Any" : [("oW", 1), ("oU", 1), ("oB", 1), ("oR", 1), ("oG", 1)]}
     # Nonstandard kws:
     # Noblock: "~ can't block"
@@ -52,7 +55,7 @@ class CardDesc:
     # Firebreathing: "R: +1/+0 Until EOT"
     negative_kw = ["Noblock", "Defender", "Echo", "Sorcery", "CreatureOnly", 
                    "PlayerOnly", "Nonblack", "Nonartifact", "Tapped", "Untapped",
-                   "Discard", "FlyingOnly"]
+                   "Discard", "FlyingOnly", "AttackingOnly", "InCombat"]
     two_word_positive_kw = ["First", "Double"]
     two_word_negative_kw = ["Can't"]
     def __init__(self, placeholder_name: str):

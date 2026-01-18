@@ -89,6 +89,10 @@ def simplify_obj(card):
                     "ph23" : "phtr",
                     "pw24" : "phtr",
                     "pdrc" : "phtr",
+                    "pmei": "tla",
+                    "pspl": "phtr",
+                    "punk": "phtr",
+
                 }.get(prop, prop)
             ret.append(prop)
         elif "card_faces" not in card:
