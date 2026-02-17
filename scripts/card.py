@@ -126,21 +126,24 @@ class CardDesc:
     
     @staticmethod
     def _decompose_cost(cost: str):
-        cost = cost.replace('X', '')
-        if not cost:
-            cost = "0"
-        ret = [0, 0, 0, 0, 0, 0]
-        offs = 1
-        if cost[0] in "0123456789":
-            ret[0] = int(cost[0])
-        else:
-            offs = 0
-        for c in cost[offs:]:
-            ret["WUBRG".index(c) + 1] += 1
-      
-        ret[0] = sum(ret)
-        return ret
-    
+        try:
+            cost = cost.replace('X', '')
+            if not cost:
+                cost = "0"
+            ret = [0, 0, 0, 0, 0, 0]
+            offs = 1
+            if cost[0] in "0123456789":
+                ret[0] = int(cost[0])
+            else:
+                offs = 0
+            for c in cost[offs:]:
+                ret["WUBRG".index(c) + 1] += 1
+        
+            ret[0] = sum(ret)
+            return ret
+        except (IndexError,ValueError) as e:
+            raise ValueError(f"Error: {e} for cost {cost}")
+
     @staticmethod
     def _compare_cost(cost1: str, cost2: str):
         dc1 = CardDesc._decompose_cost(cost1)
