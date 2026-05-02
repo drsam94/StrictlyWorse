@@ -92,6 +92,8 @@ def simplify_obj(card):
                     "pmei": "tla",
                     "pspl": "phtr",
                     "punk": "phtr",
+                    "pf26": "phtr",
+                    "pf27": "phtr",
 
                 }.get(prop, prop)
             ret.append(prop)
