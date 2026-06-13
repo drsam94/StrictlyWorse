@@ -41,11 +41,12 @@ class CardDesc:
                    "oW", "oU", "oB", "oR", "oG", "o1", "Add",
                    "OrLand", "LifeGain", "TargetTwo", "HasteDraw",
                    "Convoke", "Treasure", "Clue", "AllCreatures",
-                   "Lesson", "Draw"]
+                   "Lesson", "Draw", "Unblockable", "Exalted"]
     remaps: dict[str, list[tuple[str, float]]] = {"NonPlayer" : [("CreatureOnly", 0.5)],
               "Bury": [("Exile", 0.5)],
               "Reach" : [("Flying", 0.5)],
               "OrVehicle" : [("OrArtifact", 0.5)],
+              "Menace" : [("Unblockable", 0.5)],
               "AttackingOnly" : [("InCombat", 2.0)],
               "Any" : [("oW", 1), ("oU", 1), ("oB", 1), ("oR", 1), ("oG", 1)]}
     # Nonstandard kws:

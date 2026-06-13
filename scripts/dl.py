@@ -26,8 +26,11 @@ def better_example(card, prev_data):
       return True
 
 def main():
-    r = requests.get('https://api.scryfall.com/bulk-data')
+    headers = {"User-Agent": "mtg.blue Strictly Worse Cards Database"}
+    r = requests.get('https://api.scryfall.com/bulk-data', headers=headers)
     j = r.json()
+    if r.status_code != 200:
+        print("Failed to get bulk-data:", r.text)
     oracle = next(datum for datum in j["data"] if datum["type"] == "default_cards")
 
     uri = oracle["download_uri"]
@@ -45,7 +48,7 @@ def main():
         json.dump(list(kept_entries.values()), f)
     with open('res/oracle-allcards.json', "w+") as f:
         json.dump(all_json, f)
-    sym = requests.get('https://api.scryfall.com/symbology')
+    sym = requests.get('https://api.scryfall.com/symbology', headers=headers)
     j = sym.json()
     if not os.path.exists("res/ico"):
       os.mkdir("res/ico")
@@ -56,7 +59,7 @@ def main():
         with open(f'res/ico/{name}.svg', 'wb+') as f:
             f.write(img.content)
     
-    sym = requests.get('https://api.scryfall.com/sets')
+    sym = requests.get('https://api.scryfall.com/sets', headers=headers)
     j = sym.json()
     for datum in j['data']:
         uri = datum.get('icon_svg_uri', None)
