@@ -19,7 +19,7 @@ export function makeDateHistogram(indata: Array<DateHistogramEntry>, startDate?:
   const parseDate = d3.timeParse("%Y-%m-%d");
   indata.sort((a, b) => parseDate(a.date) - parseDate(b.date));
 
-  const alldates = ["1993-01-01", "2025-01-01"].map(d => parseDate(d));
+  const alldates = ["1993-01-01", "2027-01-01"].map(d => parseDate(d));
   // Setup scales
   const x = d3.scaleTime()
     .domain(d3.extent(alldates))

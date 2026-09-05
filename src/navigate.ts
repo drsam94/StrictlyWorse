@@ -1,5 +1,5 @@
 import { Direction } from './card.js';
-
+import { HashInfo } from './hash.js';
 export enum Page {
   card,
   search,
@@ -14,22 +14,23 @@ export enum Page {
 }
 
 export function changeLocation(loc: Page, arg?: any): void {
+  const hash = new HashInfo();
   switch (loc) {
     case Page.card:
     case Page.search:
-      window.location.hash = Page[loc] + "-" + (arg as string);
+      hash.update(Page[loc], (arg as string));
       break;
     case Page.table:
-      window.location.hash = Page[loc] + "-" + Direction[arg as Direction];
+      hash.update(Page[loc], Direction[arg as Direction]);
       break;
     case Page.home:
-      window.location.hash = Page[loc];
+      hash.update(Page[loc]);
       break;
     case Page.path:
-      window.location.hash = Page[loc] + "-";
+      hash.update(Page[loc]);
       break;
     default:
-      window.location.hash = "page-" + Page[loc];
+      hash.update("page", Page[loc]);
       break;
   }
 }

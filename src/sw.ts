@@ -21,6 +21,7 @@ import { Page, changeLocation } from './navigate.js';
 import { initializeTotalSets, getMaximalCards, getTotalSet, getTotalChildSet } from './card_maps.js';
 import { Stats } from './stats.js'
 import { makeTree, processData } from './dag.js'
+import { HashInfo } from './hash.js'
 // import { makeCategoryChart } from './pie.js'
 
 function extractDates<T>(collection: Iterable<T>, extract: (arg0: T) => string, useMappedDate: boolean = false): Array<DateHistogramEntry> {
@@ -147,7 +148,7 @@ function doDisplayCharts(outdiv: HTMLElement, dag: Record<string, Card>, name: s
 
 function displayTextWithCardLinks(elem: HTMLElement, text: string, setHashTo?: string) {
   if (setHashTo) {
-    window.location.hash = "page-" + setHashTo;
+    (new HashInfo()).set("page", setHashTo);
     return;
   }
   const timer = new Timer();
@@ -198,7 +199,7 @@ function doRenderPath(outdiv: HTMLElement, dag: Record<string, Card>, names: str
       return;
     }
     globalSuppressOnHashChange = true;
-    window.location.hash = `path-${card1Input.value}&${card2Input.value}`;
+    (new HashInfo()).set("path", `${card1Input.value}&${card2Input.value}`);
     lastvs[0] = card1Input.value;
     lastvs[1] = card2Input.value;
     displayPath(dag, card1Input.value, card2Input.value, outputdiv);
@@ -451,7 +452,7 @@ function doRenderSearch(outdiv: HTMLElement, dag: Record<string, Card>, query: s
   }
   const submitSearch = () => {
     globalSuppressOnHashChange = true;
-    window.location.hash = `search-category=${CardCategory[poolIndex]}&${inputElem.value}`;
+    (new HashInfo()).update("search", `category=${CardCategory[poolIndex]}&${inputElem.value}`);
     displaySearch(tableDiv, dag, inputElem.value, poolIndex);
   };
   const addRadio = (i: CardCategory) => {
@@ -549,10 +550,10 @@ function doRenderHome(outdiv: HTMLDivElement, dag: Record<string, Card>) {
   a2.style.cursor = "pointer";
   a2.style.color = "blue";
   a2.style.textDecoration = "underline";
-  a2.onclick = () => window.location.hash = "page-philosophy";
+  a2.onclick = () => (new HashInfo()).update("page", "philosophy");
   const a3 = document.createElement("span");
   a3.textContent = "Help";
-  a3.onclick = () => window.location.hash = "page-help";
+  a3.onclick = () => (new HashInfo()).update("page", "help");
   a3.style.cursor = "pointer";
   a3.style.color = "blue";
   a3.style.textDecoration = "underline";
@@ -716,10 +717,10 @@ function initializePageFromHash(state: GlobalState) {
     globalSuppressOnHashChange = false;
     return;
   }
-  const hash = window.location.hash;
-  const loc = hash.indexOf('-');
-  const key = hash.substring(1, loc);
-  const val = decodeURI(hash.substring(loc + 1));
+  const hash = new HashInfo();
+  const key = hash.location;
+  const val = hash.args;
+  console.log(hash, key, val);
   if (key === "card") {
     state.searchBar.style.visibility = "visible";
     doDisplayCharts(state.outdiv, state.dag, val);

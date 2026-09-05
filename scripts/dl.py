@@ -3,6 +3,7 @@ import requests # type: ignore
 import datetime
 import json
 import os
+import gzip
 
 def is_bad(card):
     return card['lang'] != 'en' or card['digital'] == True 
@@ -32,12 +33,22 @@ def main():
     if r.status_code != 200:
         print("Failed to get bulk-data:", r.text)
     oracle = next(datum for datum in j["data"] if datum["type"] == "default_cards")
-
-    uri = oracle["download_uri"]
-    file_request = requests.get(uri)
+    uri = oracle["jsonl_download_uri"]
+    local_filename = "oracle_data.jsonl.gz"
+    with requests.get(uri, stream=True, headers=headers) as r:
+        r.raise_for_status()
+        with open(local_filename, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192): 
+                # If you have chunk encoded response uncomment if
+                # and set chunk_size parameter to None.
+                #if chunk: 
+                f.write(chunk)
+    jsonl_file = gzip.open(local_filename)
     kept_entries = {}
-    all_json = file_request.json()
-    for entry in all_json:
+    all_json = []
+    for line in jsonl_file:
+        entry = json.loads(line)
+        all_json.append(entry)
         name = entry["name"]
         if ("layout" in entry and "token" in entry["layout"]):
             continue

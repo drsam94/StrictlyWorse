@@ -270,7 +270,7 @@ def check_simplifying_placeholders(sw: list[list[str]]):
 def get_connected_components(id_to_edges):
     components = []
     id_to_component = {}
-    def get_connected_components_from_root(id, edges, new_component):
+    def get_connected_components_from_root(id, edges, new_component, depth):
         if id in id_to_component:
             # already reached this component by another edge
             return
@@ -278,14 +278,14 @@ def get_connected_components(id_to_edges):
         new_component.add(id)
         for elem in edges:
             val = abs(elem)
-            get_connected_components_from_root(val, id_to_edges[val], new_component)
+            get_connected_components_from_root(val, id_to_edges[val], new_component, depth + 1)
     
     for id_iter, edges_iter in id_to_edges.items():
         if id_iter in id_to_component:
             continue
         next_component = set()
         components.append(next_component)
-        get_connected_components_from_root(id_iter, edges_iter, next_component)
+        get_connected_components_from_root(id_iter, edges_iter, next_component, 0)
     return components
 
 def generate_dot_files(sw):
@@ -363,7 +363,12 @@ def generate_dot_files(sw):
                 if exemplar is None and good_name(card):
                     exemplar = card
             svg_name = ""
-        exemplar_name = id_to_card[exemplar] if out_data else "Total"
+        if not out_data:
+            exemplar_name = "Total"
+        elif exemplar is None:
+            exemplar_name = "Unknown"
+        else:
+            exemplar_name = id_to_card[exemplar] 
         out_data.append([exemplar_name.replace(',',''), size, svg_name])
     with open("res/graphs.csv", "w+") as outf:
         writer = csv.writer(outf)
